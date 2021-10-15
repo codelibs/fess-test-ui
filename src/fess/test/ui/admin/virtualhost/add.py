@@ -81,10 +81,10 @@ def run(playwright: Playwright) -> None:
     page.fill("input[name=\"name\"]", "N2SM")
 
     # Fill textarea[name="urls"]
-    page.fill("textarea[name=\"urls\"]", "https://www.n2sm.net/products/")
+    page.fill("textarea[name=\"urls\"]", "https://www.n2sm.net/")
 
     # Fill textarea[name="includedUrls"]
-    page.fill("textarea[name=\"includedUrls\"]", "https://www.n2sm.net/products/.*")
+    page.fill("textarea[name=\"includedUrls\"]", "https://www.n2sm.net/.*")
 
     # Fill textarea[name="excludedUrls"]
     page.fill("textarea[name=\"excludedUrls\"]", "(?i).*(css|js|jpeg|jpg|gif|png|bmp|wmv|xml|ico)")
@@ -139,7 +139,7 @@ def run(playwright: Playwright) -> None:
     page.fill("input[name=\"value\"]", "n2sm")
 
     # Fill textarea[name="includedPaths"]
-    page.fill("textarea[name=\"includedPaths\"]", "https://www.n2sm.net/products/.*")
+    page.fill("textarea[name=\"includedPaths\"]", "https://www.n2sm.net/.*")
 
     # Fill input[name="virtualHost"]
     page.fill("input[name=\"virtualHost\"]", "host2")
@@ -162,7 +162,7 @@ def run(playwright: Playwright) -> None:
     page.fill("input[name=\"term\"]", "fess")
 
     # Fill input[name="query"]
-    page.fill("input[name=\"query\"]", "url:*install*")
+    page.fill("input[name=\"query\"]", "fess AND n2sm")
 
     # Fill input[name="maxSize"]
     page.fill("input[name=\"maxSize\"]", "10")
@@ -186,7 +186,7 @@ def run(playwright: Playwright) -> None:
     page.fill("input[name=\"term\"]", "n2sm")
 
     # Fill input[name="query"]
-    page.fill("input[name=\"query\"]", "url:*products*")
+    page.fill("input[name=\"query\"]", "fess AND n2sm")
 
     # Fill input[name="maxSize"]
     page.fill("input[name=\"maxSize\"]", "10")
