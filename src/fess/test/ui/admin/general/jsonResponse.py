@@ -2,7 +2,7 @@ from playwright.sync_api import Playwright, sync_playwright
 
 
 def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False)
+    browser = playwright.chromium.launch(headless=False, slow_mo=500)
     context = browser.new_context()
 
     # Open new page
@@ -67,6 +67,9 @@ def run(playwright: Playwright) -> None:
 
     # Go to http://localhost:8080/json?q=fess
     page.goto("http://localhost:8080/json?q=fess")
+
+    # Go to http://localhost:8080/json/?type=ping
+    page.goto("http://localhost:8080/json/?type=ping")
 
     # Close page
     page.close()
