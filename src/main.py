@@ -4,7 +4,7 @@ import sys
 from playwright.sync_api import sync_playwright
 
 from fess.test.ui import FessContext
-from fess.test.ui.admin import badword
+from fess.test.ui.admin import badword, boostdoc
 
 
 def main():
@@ -13,6 +13,7 @@ def main():
         context.login()
 
         badword.run(context)
+        boostdoc.run(context)
 
         context.close()
 
