@@ -28,12 +28,12 @@ def run(context: FessContext) -> None:
 
     # Click text=ドキュメントブースト
     page.click("text=ドキュメントブースト")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Click text=/.*url\.matches\("https://www\.n2sm\.net/\.\*"\).*/
     page.click(f"text=/.*url\.matches\(\"https://{label_name}/\.\*\"\).*/")
     assert_startswith(
-        page.url, "http://localhost:8080/admin/boostdoc/details/4/")
+        page.url, context.url("/admin/boostdoc/details/4/"))
 
     # Click text=削除
     page.click("text=削除")
@@ -46,7 +46,7 @@ def run(context: FessContext) -> None:
 
     # Click text=キャンセル 削除 >> button[name="delete"]
     page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     assert_equal(page.inner_text("table").find(label_name), -1)
 

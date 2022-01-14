@@ -29,47 +29,47 @@ def run(context: FessContext) -> None:
 
     # Click text=除外ワード
     page.click("text=除外ワード")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
     # Click text=
     page.click(f"text={label_name}")
     assert_startswith(
-        page.url, "http://localhost:8080/admin/badword/details/4/")
+        page.url, context.url("/admin/badword/details/4/"))
 
     # Click text=編集
     page.click("text=編集")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
     # Click text=戻る
     page.click("text=戻る")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
     # Click text=編集
     page.click("text=編集")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
     # Fill input[name="suggestWord"]
     page.fill("input[name=\"suggestWord\"]", new_label_name)
 
     # Click text=更新
     page.click("text=更新")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
     # Click text=
     page.click(f"text={new_label_name}")
     assert_startswith(
-        page.url, "http://localhost:8080/admin/badword/details/4/")
+        page.url, context.url("/admin/badword/details/4/"))
 
     # Click text=編集
     page.click("text=編集")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
     # Fill input[name="suggestWord"]
     page.fill("input[name=\"suggestWord\"]", label_name)
 
     # Click text=更新
     page.click("text=更新")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
 
 if __name__ == "__main__":

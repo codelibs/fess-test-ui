@@ -56,3 +56,6 @@ class FessContext:
 
     def generate_str(self, len: int = 20) -> str:
         return ''.join(random.choices(string.ascii_letters + string.digits, k=len))
+
+    def url(self, path: str) -> str:
+        return self._base_url+path

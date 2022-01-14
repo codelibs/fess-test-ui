@@ -29,11 +29,11 @@ def run(context: FessContext) -> None:
 
     # Click text=ドキュメントブースト
     page.click("text=ドキュメントブースト")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Click text=新規作成
     page.click("text=新規作成")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/createnew/")
+    assert_equal(page.url, context.url("/admin/boostdoc/createnew/"))
 
     # Fill textarea[name="urlExpr"]
     page.fill("textarea[name=\"urlExpr\"]",
@@ -44,7 +44,7 @@ def run(context: FessContext) -> None:
 
     # Click button:has-text("作成")
     page.click("button:has-text(\"作成\")")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     assert_not_equal(page.inner_text("table").find(label_name), -1)
 

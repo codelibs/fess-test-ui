@@ -28,18 +28,18 @@ def run(context: FessContext) -> None:
 
     # Click text=除外ワード
     page.click("text=除外ワード")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
     # Click text=新規作成
     page.click("text=新規作成")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/createnew/")
+    assert_equal(page.url, context.url("/admin/badword/createnew/"))
 
     # Fill input[name="suggestWord"]
     page.fill("input[name=\"suggestWord\"]", label_name)
 
     # Click button:has-text("作成")
     page.click("button:has-text(\"作成\")")
-    assert_equal(page.url, "http://localhost:8080/admin/badword/")
+    assert_equal(page.url, context.url("/admin/badword/"))
 
     assert_not_equal(page.inner_text("table").find(label_name), -1)
 

@@ -22,38 +22,37 @@ def run(context: FessContext) -> None:
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
-    new_label_name: str = context.generate_str()
 
     # Click text=クローラー
     page.click("text=クローラー")
 
     # Click text=ドキュメントブースト
     page.click("text=ドキュメントブースト")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Click text=/.*url\.matches\("https://www\.n2sm\.net/\.\*"\).*/
     page.click(f"text=/.*url\.matches\(\"https://{label_name}/\.\*\"\).*/")
     assert_startswith(
-        page.url, "http://localhost:8080/admin/boostdoc/details/4/")
+        page.url, context.url("/admin/boostdoc/details/4/"))
 
     # Click text=編集
     page.click("text=編集")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Click text=戻る
     page.click("text=戻る")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Click text=編集
     page.click("text=編集")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Fill input[name="sortOrder"]
     page.fill("input[name=\"sortOrder\"]", "1")
 
     # Click text=更新
     page.click("text=更新")
-    assert_equal(page.url, "http://localhost:8080/admin/boostdoc/")
+    assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # TODO check content
 
