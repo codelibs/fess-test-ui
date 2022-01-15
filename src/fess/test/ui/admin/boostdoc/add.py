@@ -46,7 +46,10 @@ def run(context: FessContext) -> None:
     page.click("button:has-text(\"作成\")")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
-    assert_not_equal(page.inner_text("table").find(label_name), -1)
+    page.wait_for_load_state("domcontentloaded")
+    table_content: str = page.inner_text("table")
+    assert_not_equal(table_content.find(label_name), -1,
+                     f"{label_name} not in {table_content}")
 
 
 if __name__ == "__main__":

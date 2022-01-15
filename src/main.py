@@ -8,12 +8,20 @@ from fess.test.ui.admin import badword, boostdoc
 
 
 def main():
+    logger = logging.getLogger(__name__)
     with sync_playwright() as playwright:
         context: FessContext = FessContext(playwright)
         context.login()
 
-        badword.run(context)
-        boostdoc.run(context)
+        try:
+            badword.run(context)
+            boostdoc.run(context)
+        except:
+            page: "Page" = context.get_current_page()
+            if page is not None:
+                logger.info(f"URL: {page.url}")
+                logger.info(f"Content:\n{page.content()}")
+            raise
 
         context.close()
 

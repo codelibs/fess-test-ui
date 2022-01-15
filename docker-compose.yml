@@ -1,0 +1,52 @@
+version: "3"
+services:
+  fess01:
+    image: ghcr.io/codelibs/fess:13.16.0
+    container_name: fess01
+    environment:
+      - "ES_HTTP_URL=http://es01:9200"
+      - "FESS_DICTIONARY_PATH=${FESS_DICTIONARY_PATH:-/usr/share/elasticsearch/config/dictionary/}"
+#    ports:
+#      - "8080:8080"
+    networks:
+      - esnet
+    depends_on:
+      - es01
+  es01:
+    image: ghcr.io/codelibs/fess-elasticsearch:7.16.2
+    container_name: es01
+    environment:
+      - node.name=es01
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01
+      - cluster.name=fess-es
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g -Dlog4j2.formatMsgNoLookups=true"
+      - "FESS_DICTIONARY_PATH=/usr/share/elasticsearch/config/dictionary"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+#    ports:
+#      - 9200:9200
+    networks:
+      - esnet
+  test01:
+    build: .
+    container_name: test01
+    environment:
+      - "FESS_URL=http://fess01:8080"
+      - "BROWSER_LOCALE=ja-JP"
+      - "HEADLESS=true"
+    networks:
+      - esnet
+    depends_on:
+      - fess01
+
+networks:
+  esnet:
+    driver: bridge
+
