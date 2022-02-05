@@ -13,4 +13,4 @@ jobs:
       - name: run-compose
         shell: bash
         run: |
-          docker-compose up --abort-on-container-exit --exit-code-from test01
+          /bin/bash ./run_test.sh fess13 elasticsearch7
