@@ -11,12 +11,12 @@ $ docker-compose build
 ### Run
 
 ```
-$ docker-compose up --abort-on-container-exit --exit-code-from test01
+$ /bin/bash ./run_test.sh fess13 elasticsearch7
 ```
 
-### Remove Containers
+### Cleanup
 
 ```
-$ docker-compose down
+$ docker system prune -f
+$ docker volume prune -f
 ```
-
