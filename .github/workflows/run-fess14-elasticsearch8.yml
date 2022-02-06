@@ -1,4 +1,4 @@
-name: run-fess
+name: run-fess14-elasticsearch8
 
 on:
   push:
@@ -13,4 +13,4 @@ jobs:
       - name: run-compose
         shell: bash
         run: |
-          /bin/bash ./run_test.sh fess13 elasticsearch7
+          /bin/bash ./run_test.sh fess14 elasticsearch8
