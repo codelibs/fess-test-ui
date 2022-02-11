@@ -1,12 +1,12 @@
 version: "3"
 services:
-  es01:
+  estest01:
     image: ghcr.io/codelibs/fess-elasticsearch:8.0.0
-    container_name: es01
+    container_name: estest01
     environment:
-      - node.name=es01
-      - discovery.seed_hosts=es01
-      - cluster.initial_master_nodes=es01
+      - node.name=estest01
+      - discovery.seed_hosts=estest01
+      - cluster.initial_master_nodes=estest01
       - cluster.name=fess-es
       - bootstrap.memory_lock=true
       - xpack.security.enabled=false
@@ -22,4 +22,4 @@ services:
 #    ports:
 #      - 9200:9200
     networks:
-      - esnet
+      - estestnet

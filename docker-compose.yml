@@ -4,15 +4,15 @@ services:
     build: .
     container_name: test01
     environment:
-      - "FESS_URL=http://fess01:8080"
+      - "FESS_URL=http://fesstest01:8080"
       - "BROWSER_LOCALE=ja-JP"
       - "HEADLESS=true"
     networks:
-      - esnet
+      - estestnet
     depends_on:
-      - fess01
+      - fesstest01
 
 networks:
-  esnet:
+  estestnet:
     driver: bridge
 

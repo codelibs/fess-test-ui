@@ -1,14 +1,14 @@
 version: "3"
 services:
-  fess01:
+  fesstest01:
     image: ghcr.io/codelibs/fess:snapshot
-    container_name: fess01
+    container_name: fesstest01
     environment:
-      - "ES_HTTP_URL=http://es01:9200"
+      - "ES_HTTP_URL=http://estest01:9200"
       - "FESS_DICTIONARY_PATH=${FESS_DICTIONARY_PATH:-/usr/share/elasticsearch/config/dictionary/}"
 #    ports:
 #      - "8080:8080"
     networks:
-      - esnet
+      - estestnet
     depends_on:
-      - es01
+      - estest01
