@@ -9,8 +9,6 @@ services:
       - "HEADLESS=true"
     networks:
       - estestnet
-    depends_on:
-      - fesstest01
 
 networks:
   estestnet:
