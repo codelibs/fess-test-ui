@@ -2,6 +2,8 @@
 
 cd $(dirname $0)
 
+playwright install
+
 while true ; do
   status=$(curl -w '%{http_code}\n' -s -o /dev/null "${FESS_URL}")
   if [[ x"${status}" = x200 ]] ; then
