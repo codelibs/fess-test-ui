@@ -1,84 +1,57 @@
+import logging
+
+from fess.test import assert_equal, assert_not_equal
+from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
+logger = logging.getLogger(__name__)
 
-def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context()
 
-    # Open new page
-    page = context.new_page()
+def setup(playwright: Playwright) -> FessContext:
+    context: FessContext = FessContext(playwright)
+    context.login()
+    return context
 
-    # Go to http://localhost:8080/login/
-    page.goto("http://localhost:8080/login/")
 
-    # Fill [placeholder="ユーザー名"]
-    page.fill("[placeholder=\"ユーザー名\"]", "admin")
+def destroy(context: FessContext) -> None:
+    context.close()
 
-    # Fill [placeholder="パスワード"]
-    page.fill("[placeholder=\"パスワード\"]", "admin1234")
 
-    # Click button:has-text("ログイン")
-    page.click("button:has-text(\"ログイン\")")
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
+def run(context: FessContext) -> None:
+    logger.info(f"start")
+
+    page: "Page" = context.get_admin_page()
+    label_name: str = context.create_label_name()
 
     # Click text=クローラー
     page.click("text=クローラー")
 
     # Click text=重複ホスト
     page.click("text=重複ホスト")
-    # assert page.url == "http://localhost:8080/admin/duplicatehost/"
+    assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
     # Click text=新規作成
     page.click("text=新規作成")
-    # assert page.url == "http://localhost:8080/admin/duplicatehost/createnew/"
+    assert_equal(page.url, context.url("/admin/duplicatehost/createnew/"))
 
     # Fill input[name="regularName"]
-    page.fill("input[name=\"regularName\"]", "fess.codelibs.org")
+    page.fill("input[name=\"regularName\"]", f"{label_name}")
 
     # Fill input[name="duplicateHostName"]
-    page.fill("input[name=\"duplicateHostName\"]", "www.fess.codelibs.org")
+    page.fill("input[name=\"duplicateHostName\"]", "fess.codelibs.org")
 
     # Click button:has-text("作成")
     page.click("button:has-text(\"作成\")")
-    # assert page.url == "http://localhost:8080/admin/duplicatehost/"
+    assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
-    # Click a:has-text("ウェブ")
-    page.click("a:has-text(\"ウェブ\")")
-    # assert page.url == "http://localhost:8080/admin/webconfig/"
-
-    # Click text=新規作成
-    page.click("text=新規作成")
-    # assert page.url == "http://localhost:8080/admin/webconfig/createnew/"
-
-    # Fill input[name="name"]
-    page.fill("input[name=\"name\"]", "Fess")
-
-    # Fill textarea[name="urls"]
-    page.fill("textarea[name=\"urls\"]", "https://www.fess.codelibs.org/")
-
-    # Fill textarea[name="includedUrls"]
-    page.fill("textarea[name=\"includedUrls\"]", "https://fess.codelibs.org/.*")
-
-    # Fill textarea[name="excludedUrls"]
-    page.fill("textarea[name=\"excludedUrls\"]", "(?i).*(css|js|jpeg|jpg|gif|png|bmp|wmv|xml|ico)")
-
-    # Fill input[name="maxAccessCount"]
-    page.fill("input[name=\"maxAccessCount\"]", "5")
-
-    # Fill input[name="numOfThread"]
-    page.fill("input[name=\"numOfThread\"]", "2")
-
-    # Click button:has-text("作成")
-    page.click("button:has-text(\"作成\")")
-    # assert page.url == "http://localhost:8080/admin/webconfig/"
-
-    # Close page
-    page.close()
-
-    # ---------------------
-    context.close()
-    browser.close()
+    page.wait_for_load_state("domcontentloaded")
+    table_content: str = page.inner_text("table")
+    assert_not_equal(table_content.find(label_name), -1,
+                     f"{label_name} not in {table_content}")
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        context: FessContext = setup(playwright)
+        run(context)
+        destroy(context)
