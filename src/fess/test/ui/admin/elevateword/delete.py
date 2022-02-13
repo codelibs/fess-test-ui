@@ -1,36 +1,38 @@
+import logging
+
+from fess.test import assert_equal, assert_startswith
+from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
+logger = logging.getLogger(__name__)
 
-def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context()
 
-    # Open new page
-    page = context.new_page()
+def setup(playwright: Playwright) -> FessContext:
+    context: FessContext = FessContext(playwright)
+    context.login()
+    return context
 
-    # Go to http://localhost:8080/login/
-    page.goto("http://localhost:8080/login/")
 
-    # Fill [placeholder="ユーザー名"]
-    page.fill("[placeholder=\"ユーザー名\"]", "admin")
+def destroy(context: FessContext) -> None:
+    context.close()
 
-    # Fill [placeholder="パスワード"]
-    page.fill("[placeholder=\"パスワード\"]", "admin1234")
 
-    # Click button:has-text("ログイン")
-    page.click("button:has-text(\"ログイン\")")
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
+def run(context: FessContext) -> None:
+    logger.info(f"start")
+
+    page: "Page" = context.get_admin_page()
+    label_name: str = context.create_label_name()
 
     # Click text=サジェスト
     page.click("text=サジェスト")
 
     # Click text=追加ワード
     page.click("text=追加ワード")
-    # assert page.url == "http://localhost:8080/admin/elevateword/"
+    assert_equal(page.url, context.url("/admin/elevateword/"))
 
     # Click text=app
-    page.click("text=app")
-    # assert page.url == "http://localhost:8080/admin/elevateword/details/4/DQzuNXwBuUNoPYcy6EJl"
+    page.click(f"text={label_name}X")
+    assert_startswith(page.url, context.url("/admin/elevateword/details/4/"))
 
     # Click text=削除
     page.click("text=削除")
@@ -43,15 +45,16 @@ def run(playwright: Playwright) -> None:
 
     # Click text=キャンセル 削除 >> button[name="delete"]
     page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
-    # assert page.url == "http://localhost:8080/admin/elevateword/"
+    assert_equal(page.url, context.url("/admin/elevateword/"))
 
-    # Close page
-    page.close()
-
-    # ---------------------
-    context.close()
-    browser.close()
+    page.wait_for_load_state("domcontentloaded")
+    table_content: str = page.inner_text("section.content")
+    assert_equal(table_content.find(label_name), -1,
+                 f"{label_name} in {table_content}")
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        context: FessContext = setup(playwright)
+        run(context)
+        destroy(context)
