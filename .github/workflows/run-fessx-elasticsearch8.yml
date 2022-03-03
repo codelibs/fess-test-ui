@@ -1,0 +1,18 @@
+name: run-fessx-elasticsearch8
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '2 3 * * 4'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: run-compose
+        shell: bash
+        run: |
+          /bin/bash ./run_test.sh fessx elasticsearch8
