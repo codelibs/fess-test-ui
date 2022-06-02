@@ -1,0 +1,19 @@
+name: run-fessx-opensearch1
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '4 5 * * 6'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: run-compose
+        shell: bash
+        run: |
+          /bin/bash ./run_test.sh fessx opensearch2
+          /bin/bash ./run_test.sh fessx-centos7 opensearch2
