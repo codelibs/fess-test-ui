@@ -1,17 +1,16 @@
-version: "3"
 services:
   estest01:
-    image: ghcr.io/codelibs/fess-elasticsearch:8.3.3
+    image: ghcr.io/codelibs/fess-opensearch:2.2.0
     container_name: estest01
     environment:
       - node.name=estest01
       - discovery.seed_hosts=estest01
-      - cluster.initial_master_nodes=estest01
+      - cluster.initial_cluster_manager_nodes=estest01
       - cluster.name=fess-es
       - bootstrap.memory_lock=true
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-      - "FESS_DICTIONARY_PATH=/usr/share/elasticsearch/config/dictionary"
+      - plugins.security.disabled=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "FESS_DICTIONARY_PATH=/usr/share/opensearch/config/dictionary"
     ulimits:
       memlock:
         soft: -1

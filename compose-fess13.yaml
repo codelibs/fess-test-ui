@@ -1,7 +1,6 @@
-version: "3"
 services:
   fesstest01:
-    image: ghcr.io/codelibs/fess:snapshot-centos7
+    image: ghcr.io/codelibs/fess:13.16.0
     container_name: fesstest01
     environment:
       - "ES_HTTP_URL=http://estest01:9200"
