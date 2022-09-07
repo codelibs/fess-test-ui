@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 
 from fess.test.ui import FessContext
 from fess.test.ui.admin import (accesstoken, badword, boostdoc, duplicatehost,
-                                elevateword, keymatch, relatedcontent, user, group, role)
+                                elevateword, keymatch, relatedcontent, relatedquery, user, group, role)
 
 
 def main():
@@ -22,6 +22,7 @@ def main():
             elevateword.run(context)
             keymatch.run(context)
             relatedcontent.run(context)
+            relatedquery.run(context)
             user.run(context)
             group.run(context)
             role.run(context)
