@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 
 from fess.test.ui import FessContext
 from fess.test.ui.admin import (accesstoken, badword, boostdoc, duplicatehost,
-                                elevateword, keymatch, user)
+                                elevateword, keymatch, user, group)
 
 
 def main():
@@ -22,6 +22,7 @@ def main():
             elevateword.run(context)
             keymatch.run(context)
             user.run(context)
+            group.run(context)
         except:
             page: "Page" = context.get_current_page()
             if page is not None:
