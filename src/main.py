@@ -4,8 +4,16 @@ import sys
 from playwright.sync_api import sync_playwright
 
 from fess.test.ui import FessContext
-from fess.test.ui.admin import (accesstoken, badword, boostdoc, duplicatehost,
-                                elevateword, keymatch, relatedcontent, user, group, role)
+from fess.test.ui.admin import (accesstoken,
+                                badword,
+                                boostdoc,
+                                duplicatehost,
+                                elevateword,
+                                keymatch,
+                                relatedcontent,
+                                user,
+                                group,
+                                role)
 
 
 def main():
