@@ -11,6 +11,7 @@ from fess.test.ui.admin import (accesstoken,
                                 elevateword,
                                 keymatch,
                                 relatedcontent,
+                                relatedquery,
                                 user,
                                 group,
                                 role)
@@ -30,6 +31,7 @@ def main():
             elevateword.run(context)
             keymatch.run(context)
             relatedcontent.run(context)
+            relatedquery.run(context)
             user.run(context)
             group.run(context)
             role.run(context)
