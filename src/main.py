@@ -16,6 +16,7 @@ from fess.test.ui.admin import (accesstoken,
                                 group,
                                 role)
 
+from fess.test.ui.admin.dict import kuromoji
 
 def main():
     logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ def main():
             user.run(context)
             group.run(context)
             role.run(context)
+            kuromoji.run(context)
         except:
             page: "Page" = context.get_current_page()
             if page is not None:
