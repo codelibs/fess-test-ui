@@ -14,7 +14,8 @@ from fess.test.ui.admin import (accesstoken,
                                 relatedquery,
                                 user,
                                 group,
-                                role)
+                                role,
+                                webconfig)
 
 
 def main():
@@ -35,6 +36,7 @@ def main():
             user.run(context)
             group.run(context)
             role.run(context)
+            webconfig.run(context)
         except:
             page: "Page" = context.get_current_page()
             if page is not None:
