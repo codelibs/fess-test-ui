@@ -1,39 +1,42 @@
+
+import logging
+
+from fess.test import assert_equal, assert_not_equal
+from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
+logger = logging.getLogger(__name__)
 
-def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context()
 
-    # Open new page
-    page = context.new_page()
+def setup(playwright: Playwright) -> FessContext:
+    context: FessContext = FessContext(playwright)
+    context.login()
+    return context
 
-    # Go to http://localhost:8080/login/
-    page.goto("http://localhost:8080/login/")
 
-    # Fill [placeholder="ユーザー名"]
-    page.fill("[placeholder=\"ユーザー名\"]", "admin")
+def destroy(context: FessContext) -> None:
+    context.close()
 
-    # Fill [placeholder="パスワード"]
-    page.fill("[placeholder=\"パスワード\"]", "admin1234")
 
-    # Click button:has-text("ログイン")
-    page.click("button:has-text(\"ログイン\")")
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
+def run(context: FessContext) -> None:
+    logger.info(f"start")
+
+    page: "Page" = context.get_admin_page()
+    label_name: str = context.create_label_name()
 
     # Click text=クローラー
     page.click("text=クローラー")
 
     # Click text=ウェブ
     page.click("text=ウェブ")
-    # assert page.url == "http://localhost:8080/admin/webconfig/"
+    assert_equal(page.url, context.url("/admin/webconfig/"))
 
     # Click text=新規作成 >> em
     page.click("text=新規作成 >> em")
-    # assert page.url == "http://localhost:8080/admin/webconfig/createnew/"
+    assert_equal(page.url, context.url("/admin/webconfig/createnew/"))
 
     # Fill input[name="name"]
-    page.fill("input[name=\"name\"]", "Fess")
+    page.fill("input[name=\"name\"]", label_name)
 
     # Fill textarea[name="urls"]
     page.fill("textarea[name=\"urls\"]", "https://fess.codelibs.org/ja/")
@@ -55,83 +58,16 @@ def run(playwright: Playwright) -> None:
 
     # Click button:has-text("作成")
     page.click("button:has-text(\"作成\")")
-    # assert page.url == "http://localhost:8080/admin/webconfig/"
+    assert_equal(page.url, context.url("/admin/webconfig/"))
+
+    page.wait_for_load_state("domcontentloaded")
+    table_content: str = page.inner_text("table")
+    assert_not_equal(table_content.find(label_name), -1,
+                     f"{label_name} not in {table_content}")
 
 
-
-    # Click text=新規作成 >> em
-    page.click("text=新規作成 >> em")
-    # assert page.url == "http://localhost:8080/admin/webconfig/createnew/"
-
-    # Fill input[name="name"]
-    page.fill("input[name=\"name\"]", "N2SM")
-
-    # Fill textarea[name="urls"]
-    page.fill("textarea[name=\"urls\"]", "https://www.n2sm.net/products/")
-
-    # Fill textarea[name="includedUrls"]
-    page.fill("textarea[name=\"includedUrls\"]", "https://www.n2sm.net/products/.*")
-
-    # Fill textarea[name="excludedUrls"]
-    page.fill("textarea[name=\"excludedUrls\"]", "(?i).*(css|js|jpeg|jpg|gif|png|bmp|wmv|xml|ico)")
-
-    # Fill textarea[name="excludedDocUrls"]
-    page.fill("textarea[name=\"excludedDocUrls\"]", ".*/fess/.*")
-
-    # Fill input[name="depth"]
-    page.fill("input[name=\"depth\"]", "1")
-
-    # Fill input[name="maxAccessCount"]
-    page.fill("input[name=\"maxAccessCount\"]", "30")
-
-    # Fill input[name="numOfThread"]
-    page.fill("input[name=\"numOfThread\"]", "2")
-
-    # Fill input[name="boost"]
-    page.fill("input[name=\"boost\"]", "100")
-
-    # Fill textarea[name="description"]
-    page.fill("textarea[name=\"description\"]", "N2SMのサイト")
-
-    # Click button:has-text("作成")
-    page.click("button:has-text(\"作成\")")
-    # assert page.url == "http://localhost:8080/admin/webconfig/"
-
-
-    # Click text=新規作成 >> em
-    page.click("text=新規作成 >> em")
-    # assert page.url == "http://localhost:8080/admin/webconfig/createnew/"
-
-    # Fill input[name="name"]
-    page.fill("input[name=\"name\"]", "Elasticsearch")
-
-    # Fill textarea[name="urls"]
-    page.fill("textarea[name=\"urls\"]", "https://www.elastic.co/jp/elasticsearch/")
-
-    # Fill textarea[name="includedUrls"]
-    page.fill("textarea[name=\"includedUrls\"]", "https://www.elastic.co/jp/elasticsearch/.*")
-
-    # Fill textarea[name="excludedUrls"]
-    page.fill("textarea[name=\"excludedUrls\"]", "(?i).*(css|js|jpeg|jpg|gif|png|bmp|wmv|xml|ico)")
-
-    # Select false
-    page.select_option("select[name=\"available\"]", "false")
-
-    # Fill textarea[name="description"]
-    page.fill("textarea[name=\"description\"]", "Elasticsearchのサイト")
-
-    # Click button:has-text("作成")
-    page.click("button:has-text(\"作成\")")
-    # assert page.url == "http://localhost:8080/admin/webconfig/"
-
-
-    # Close page
-    page.close()
-
-    # ---------------------
-    context.close()
-    browser.close()
-
-
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        context: FessContext = setup(playwright)
+        run(context)
+        destroy(context)
