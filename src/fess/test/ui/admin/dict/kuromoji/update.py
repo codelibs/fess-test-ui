@@ -1,76 +1,71 @@
+import logging
+
+from fess.test import assert_equal, assert_startswith
+from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
+logger = logging.getLogger(__name__)
 
-def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context()
 
-    # Open new page
-    page = context.new_page()
+def setup(playwright: Playwright) -> FessContext:
+    context: FessContext = FessContext(playwright)
+    context.login()
+    return context
 
-    # Go to http://localhost:8080/login/
-    page.goto("http://localhost:8080/login/")
 
-    # Fill [placeholder="ユーザー名"]
-    page.fill("[placeholder=\"ユーザー名\"]", "admin")
+def destroy(context: FessContext) -> None:
+    context.close()
 
-    # Fill [placeholder="パスワード"]
-    page.fill("[placeholder=\"パスワード\"]", "admin1234")
 
-    # Click button:has-text("ログイン")
-    page.click("button:has-text(\"ログイン\")")
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
+def run(context: FessContext) -> None:
+    logger.info(f"start")
+
+    page: "Page" = context.get_admin_page()
+    label_name: str = context.create_label_name()
 
     # Click text=システム
     page.click("text=システム")
 
     # Click text=辞書
     page.click("text=辞書")
-    # assert page.url == "http://localhost:8080/admin/dict/"
+    assert_equal(page.url, context.url("/admin/dict/"))
 
     # Click text=ja/kuromoji.txt
     page.click("text=ja/kuromoji.txt")
-    # assert page.url == "http://localhost:8080/admin/dict/kuromoji/?dictId=amEva3Vyb21vamkudHh0"
+    assert_equal(page.url, context.url("/admin/dict/kuromoji/?dictId=amEva3Vyb21vamkudHh0"))
 
     # Click text=全文検索エンジン
-    page.click("text=全文検索エンジン")
-    # assert page.url == "http://localhost:8080/admin/dict/kuromoji/details/amEva3Vyb21vamkudHh0/4/5"
+    page.click(f"text={label_name}")
+    assert_equal(page.url, context.url("/admin/dict/kuromoji/details/amEva3Vyb21vamkudHh0/4/5"))
 
     # Click text=編集
     page.click("text=編集")
-    # assert page.url == "http://localhost:8080/admin/dict/kuromoji/"
+    assert_equal(page.url, context.url("/admin/dict/kuromoji/"))
 
     # Click text=戻る
     page.click("text=戻る")
-    # assert page.url == "http://localhost:8080/admin/dict/kuromoji/"
+    assert_equal(page.url, context.url("/admin/dict/kuromoji/"))
 
     # Click text=編集
     page.click("text=編集")
-    # assert page.url == "http://localhost:8080/admin/dict/kuromoji/"
-
-    # Fill input[name="token"]
-    page.fill("input[name=\"token\"]", "全文検索システム")
+    assert_equal(page.url, context.url("/admin/dict/kuromoji/"))
 
     # Fill input[name="segmentation"]
-    page.fill("input[name=\"segmentation\"]", "全文 検索 システム")
+    page.fill("input[name=\"segmentation\"]", "全文検索 システム")
 
     # Fill input[name="reading"]
-    page.fill("input[name=\"reading\"]", "ゼンブン ケンサク システム")
+    page.fill("input[name=\"reading\"]", "ゼンブンケンサク システム")
 
     # Fill input[name="pos"]
     page.fill("input[name=\"pos\"]", "カスタム")
 
     # Click text=更新
     page.click("text=更新")
-    # assert page.url == "http://localhost:8080/admin/dict/kuromoji/list/1?dictId=amEva3Vyb21vamkudHh0"
-
-    # Close page
-    page.close()
-
-    # ---------------------
-    context.close()
-    browser.close()
+    assert_equal(page.url, context.url("/admin/dict/kuromoji/list/1?dictId=amEva3Vyb21vamkudHh0"))
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        context: FessContext = setup(playwright)
+        run(context)
+        destroy(context)
