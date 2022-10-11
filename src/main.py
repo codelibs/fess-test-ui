@@ -14,7 +14,8 @@ from fess.test.ui.admin import (accesstoken,
                                 relatedquery,
                                 user,
                                 group,
-                                role)
+                                role,
+                                webconfig)
 
 from fess.test.ui.admin.dict import kuromoji
 
@@ -37,6 +38,7 @@ def main():
             group.run(context)
             role.run(context)
             kuromoji.run(context)
+            webconfig.run(context)
         except:
             page: "Page" = context.get_current_page()
             if page is not None:

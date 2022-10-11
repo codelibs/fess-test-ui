@@ -37,10 +37,10 @@ def run(context: FessContext) -> None:
 
     # Click text=新規作成
     page.click("text=新規作成")
-    assert_equal(page.url, context.url("/admin/dict/kuromoji/createnew/amEva3Vyb21vamkudHh0"))
+    assert_equal(page.url, context.url("/admin/dict/kuromoji/createnew/amEva3Vyb21vamkudHh0/"))
 
     # Fill input[name="token"]
-    page.fill("input[name=\"token\"]", "全文検索エンジン")
+    page.fill("input[name=\"token\"]", label_name)
 
     # Fill input[name="segmentation"]
     page.fill("input[name=\"segmentation\"]", "全文 検索 エンジン")

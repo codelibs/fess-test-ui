@@ -35,7 +35,7 @@ def run(context: FessContext) -> None:
     assert_equal(page.url, context.url("/admin/dict/kuromoji/?dictId=amEva3Vyb21vamkudHh0"))
 
     # Click text=全文検索エンジン
-    page.click("text=全文検索エンジン")
+    page.click(f"text={label_name}")
     assert_equal(page.url, context.url("/admin/dict/kuromoji/details/amEva3Vyb21vamkudHh0/4/5"))
 
     # Click text=編集
@@ -50,14 +50,11 @@ def run(context: FessContext) -> None:
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/dict/kuromoji/"))
 
-    # Fill input[name="token"]
-    page.fill("input[name=\"token\"]", "全文検索システム")
-
     # Fill input[name="segmentation"]
-    page.fill("input[name=\"segmentation\"]", "全文 検索 システム")
+    page.fill("input[name=\"segmentation\"]", "全文検索 システム")
 
     # Fill input[name="reading"]
-    page.fill("input[name=\"reading\"]", "ゼンブン ケンサク システム")
+    page.fill("input[name=\"reading\"]", "ゼンブンケンサク システム")
 
     # Fill input[name="pos"]
     page.fill("input[name=\"pos\"]", "カスタム")

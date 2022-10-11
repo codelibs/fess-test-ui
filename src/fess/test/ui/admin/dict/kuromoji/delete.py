@@ -35,7 +35,7 @@ def run(context: FessContext) -> None:
     assert_equal(page.url, context.url("/admin/dict/kuromoji/?dictId=amEva3Vyb21vamkudHh0"))
 
     # Click text=全文検索システム
-    page.click("text=全文検索システム")
+    page.click(f"text={label_name}")
     assert_equal(page.url, context.url("/admin/dict/kuromoji/details/amEva3Vyb21vamkudHh0/4/5"))
 
     # Click text=削除
