@@ -1,73 +1,72 @@
+import logging
+
+from fess.test import assert_equal, assert_startswith
+from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
+logger = logging.getLogger(__name__)
 
-def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context()
 
-    # Open new page
-    page = context.new_page()
+def setup(playwright: Playwright) -> FessContext:
+    context: FessContext = FessContext(playwright)
+    context.login()
+    return context
 
-    # Go to http://localhost:8080/login/
-    page.goto("http://localhost:8080/login/")
 
-    # Fill [placeholder="ユーザー名"]
-    page.fill("[placeholder=\"ユーザー名\"]", "admin")
+def destroy(context: FessContext) -> None:
+    context.close()
 
-    # Fill [placeholder="パスワード"]
-    page.fill("[placeholder=\"パスワード\"]", "admin1234")
 
-    # Click button:has-text("ログイン")
-    page.click("button:has-text(\"ログイン\")")
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
+def run(context: FessContext) -> None:
+    logger.info(f"start")
+
+    page: "Page" = context.get_admin_page()
+    label_name: str = context.create_label_name()
 
     # Click text=システム
     page.click("text=システム")
 
     # Click text=辞書
     page.click("text=辞書")
-    # assert page.url == "http://localhost:8080/admin/dict/"
+    assert_equal(page.url, context.url("/admin/dict/"))
 
     # Click :nth-match(:text("mapping.txt"), 3)
     page.click(":nth-match(:text(\"mapping.txt\"), 3)")
-    # assert page.url == "http://localhost:8080/admin/dict/mapping/?dictId=bWFwcGluZy50eHQ="
+    assert_equal(page.url, context.url("/admin/dict/mapping/?dictId=bWFwcGluZy50eHQ="))
 
-    # Go to http://localhost:8080/admin/dict/mapping/list/47?dictId=bWFwcGluZy50eHQ=
-    page.goto("http://localhost:8080/admin/dict/mapping/list/47?dictId=bWFwcGluZy50eHQ=")
+    # Go to http://localhost:8080/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ=
+    page.goto(context.url("/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ="))
+    assert_equal(page.url, context.url("/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ="))
 
     # Click text=[一]
-    page.click("text=[一]")
-    # assert page.url == "http://localhost:8080/admin/dict/mapping/details/bWFwcGluZy50eHQ%3D/4/1171"
+    page.click(f"text={label_name}")
+    assert_startswith(
+        page.url, context.url("/admin/dict/mapping/details/bWFwcGluZy50eHQ%3D/4/"))
 
     # Click text=編集
     page.click("text=編集")
-    # assert page.url == "http://localhost:8080/admin/dict/mapping/"
+    assert_equal(page.url, context.url("/admin/dict/mapping/"))
 
     # Click text=戻る
     page.click("text=戻る")
-    # assert page.url == "http://localhost:8080/admin/dict/mapping/"
+    assert_equal(page.url, context.url("/admin/dict/mapping/"))
 
     # Click text=編集
     page.click("text=編集")
-    # assert page.url == "http://localhost:8080/admin/dict/mapping/"
-
-    # Fill textarea:has-text("一")
-    page.fill("textarea:has-text(\"一\")", "二")
+    assert_equal(page.url, context.url("/admin/dict/mapping/"))
 
     # Fill input[name="output"]
-    page.fill("input[name=\"output\"]", "2")
+    page.fill("input[name=\"output\"]", "壱")
 
     # Click text=更新
     page.click("text=更新")
-    # assert page.url == "http://localhost:8080/admin/dict/mapping/list/1?dictId=bWFwcGluZy50eHQ="
+    assert_equal(page.url, context.url("/admin/dict/mapping/list/1?dictId=bWFwcGluZy50eHQ="))
+    
+    # TODO check content
+        
 
-    # Close page
-    page.close()
-
-    # ---------------------
-    context.close()
-    browser.close()
-
-
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        context: FessContext = setup(playwright)
+        run(context)
+        destroy(context)
