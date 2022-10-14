@@ -1,59 +1,62 @@
+
+import logging
+
+from fess.test import assert_equal, assert_not_equal
+from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
+logger = logging.getLogger(__name__)
 
-def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
 
-    context = browser.new_context()
+def setup(playwright: Playwright) -> FessContext:
+    context: FessContext = FessContext(playwright)
+    context.login()
+    return context
 
-    # Open new page
-    page = context.new_page()
 
-    # Go to http://localhost:8080/login/
-    page.goto("http://localhost:8080/login/")
+def destroy(context: FessContext) -> None:
+    context.close()
 
-    # Fill [placeholder="ユーザー名"]
-    page.fill("[placeholder=\"ユーザー名\"]", "admin")
 
-    # Fill [placeholder="パスワード"]
-    page.fill("[placeholder=\"パスワード\"]", "admin1234")
+def run(context: FessContext) -> None:
+    logger.info(f"start")
 
-    # Click button:has-text("ログイン")
-    page.click("button:has-text(\"ログイン\")")
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
+    page: "Page" = context.get_admin_page()
+    label_name: str = context.create_label_name()
 
     # Click text=システム
     page.click("text=システム")
 
     # Click text=辞書
     page.click("text=辞書")
-    # assert page.url == "http://localhost:8080/admin/dict/"
+    assert_equal(page.url, context.url("/admin/dict/"))
 
     # Click text=en/stemmer_override.txt
     page.click("text=en/stemmer_override.txt")
-    # assert page.url == "http://localhost:8080/admin/dict/stemmeroverride/?dictId=ZW4vc3RlbW1lcl9vdmVycmlkZS50eHQ="
+    assert_equal(page.url, context.url("/admin/dict/stemmeroverride/?dictId=ZW4vc3RlbW1lcl9vdmVycmlkZS50eHQ="))
 
     # Click text=新規作成
     page.click("text=新規作成")
-    # assert page.url == "http://localhost:8080/admin/dict/stemmeroverride/createnew/ZW4vc3RlbW1lcl9vdmVycmlkZS50eHQ%3D/"
+    assert_equal(page.url, context.url("/admin/dict/stemmeroverride/createnew/ZW4vc3RlbW1lcl9vdmVycmlkZS50eHQ%3D/"))
 
     # Fill input[name="input"]
-    page.fill("input[name=\"input\"]", "running")
+    page.fill("input[name=\"input\"]", label_name)
 
     # Fill input[name="output"]
     page.fill("input[name=\"output\"]", "run")
 
     # Click button:has-text("作成")
     page.click("button:has-text(\"作成\")")
-    # assert page.url == "http://localhost:8080/admin/dict/stemmeroverride/list/1?dictId=ZW4vc3RlbW1lcl9vdmVycmlkZS50eHQ="
+    assert_equal(page.url, context.url("/admin/dict/stemmeroverride/list/1?dictId=ZW4vc3RlbW1lcl9vdmVycmlkZS50eHQ="))
 
-    # Close page
-    page.close()
-
-    # ---------------------
-    context.close()
-    browser.close()
+    page.wait_for_load_state("domcontentloaded")
+    table_content: str = page.inner_text("table")
+    assert_not_equal(table_content.find(label_name), -1,
+                     f"{label_name} not in {table_content}")
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        context: FessContext = setup(playwright)
+        run(context)
+        destroy(context)
