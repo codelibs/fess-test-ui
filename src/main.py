@@ -18,6 +18,7 @@ from fess.test.ui.admin import (accesstoken,
                                 webconfig)
 
 from fess.test.ui.admin.dict import (kuromoji,
+                                     protwords,
                                      stemmeroverride)
 
 def main():
@@ -39,6 +40,7 @@ def main():
             group.run(context)
             role.run(context)
             kuromoji.run(context)
+            protwords.run(context)
             stemmeroverride.run(context)
             webconfig.run(context)
         except:
