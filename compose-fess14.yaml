@@ -1,6 +1,6 @@
 services:
   fesstest01:
-    image: ghcr.io/codelibs/fess:14.5.0
+    image: ghcr.io/codelibs/fess:14.6.0
     container_name: fesstest01
     environment:
       - "ES_HTTP_URL=http://estest01:9200"
