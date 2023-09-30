@@ -8,7 +8,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 8 * * 2'
+    - cron: '0 4 * * 5'
 
 jobs:
   build:
@@ -18,4 +18,4 @@ jobs:
       - name: run-compose
         shell: bash
         run: |
-          /bin/bash ./run_test.sh fessx opensearch2
+          /bin/bash ./run_test.sh fessx-centos7 opensearch2
