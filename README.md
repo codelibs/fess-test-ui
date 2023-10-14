@@ -22,7 +22,7 @@
 ### Build
 
 ```
-$ docker-compose build
+$ docker compose build
 ```
 
 ### Run
