@@ -1,4 +1,4 @@
-name: run-fessx-opensearch1
+name: run-fessx-centos7-opensearch1
 
 on:
   push:

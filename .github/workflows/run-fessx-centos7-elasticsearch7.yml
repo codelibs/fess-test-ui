@@ -1,4 +1,4 @@
-name: run-fessx-elasticsearch7
+name: run-fessx-centos7-elasticsearch7
 
 on:
   push:
