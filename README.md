@@ -16,8 +16,8 @@
 | [![run-fessx-centos7-opensearch1](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-centos7-opensearch1.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-centos7-opensearch1.yml) | Fess (snapshot-rpm) | OpenSearch 1 |
 | [![run-fessx-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-opensearch2.yml) | Fess (snapshot-deb) | OpenSearch 2 |
 | [![run-fessx-centos7-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-centos7-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-centos7-opensearch2.yml) | Fess (snapshot-rpm) | OpenSearch 2 |
-| [![run-fess15-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-opensearch2.yml) | Fess (snapshot-deb) | OpenSearch 2 |
-| [![run-fess15-al2023-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch2.yml) | Fess (snapshot-rpm) | OpenSearch 2 |
+| [![run-fess15-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-opensearch2.yml) | Fess 15 (snapshot-deb) | OpenSearch 2 |
+| [![run-fess15-al2023-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch2.yml) | Fess 15 (snapshot-rpm) | OpenSearch 2 |
 
 ## Usage
 
