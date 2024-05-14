@@ -18,7 +18,8 @@ from fess.test.ui.admin import (accesstoken,
                                 webconfig)
 
 from fess.test.ui.admin.dict import (kuromoji,
-                                     mapping)
+                                     protwords,
+                                     stemmeroverride)
 
 def main():
     logger = logging.getLogger(__name__)
@@ -39,7 +40,8 @@ def main():
             group.run(context)
             role.run(context)
             kuromoji.run(context)
-            mapping.run(context)
+            protwords.run(context)
+            stemmeroverride.run(context)
             webconfig.run(context)
         except:
             page: "Page" = context.get_current_page()

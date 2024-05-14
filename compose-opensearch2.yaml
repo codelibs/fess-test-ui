@@ -1,6 +1,6 @@
 services:
   estest01:
-    image: ghcr.io/codelibs/fess-opensearch:2.3.0
+    image: ghcr.io/codelibs/fess-opensearch:2.13.0
     container_name: estest01
     environment:
       - node.name=estest01
@@ -10,6 +10,7 @@ services:
       - bootstrap.memory_lock=true
       - plugins.security.disabled=true
       - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=w1Y7BdYMEpwSPj4A"
       - "FESS_DICTIONARY_PATH=/usr/share/opensearch/config/dictionary"
     ulimits:
       memlock:

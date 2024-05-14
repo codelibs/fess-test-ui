@@ -8,7 +8,7 @@ search_engine_name=$2
 docker_compose_files="-f ${base_dir}/compose.yaml"
 
 if [[ "$fess_name" = "" ]] ; then
-    fess_name=fess13
+    fess_name=fess14
 elif [[ ! -f "$base_dir/compose-${fess_name}.yaml" ]] ; then
     echo "${fess_name} is not found."
     exit 1
