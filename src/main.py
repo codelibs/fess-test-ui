@@ -19,6 +19,7 @@ from fess.test.ui.admin import (accesstoken,
 
 from fess.test.ui.admin.dict import (kuromoji,
                                      protwords,
+                                     mapping,
                                      stemmeroverride)
 
 def main():
@@ -41,6 +42,7 @@ def main():
             role.run(context)
             kuromoji.run(context)
             protwords.run(context)
+            mapping.run(context)
             stemmeroverride.run(context)
             webconfig.run(context)
         except:

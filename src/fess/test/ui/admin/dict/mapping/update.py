@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fess.test import assert_equal, assert_startswith
 from fess.test.ui import FessContext
@@ -34,9 +35,15 @@ def run(context: FessContext) -> None:
     page.click(":nth-match(:text(\"mapping.txt\"), 3)")
     assert_equal(page.url, context.url("/admin/dict/mapping/?dictId=bWFwcGluZy50eHQ="))
 
+    # Go to last page
+    page_info: str = page.inner_text("div.col-sm-2")
+    last_page = int(re.search(r'(\d+)/(\d+)', page_info).group(2)) if re.search(r'(\d+)/(\d+)', page_info) else None
+
     # Go to http://localhost:8080/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ=
-    page.goto(context.url("/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ="))
-    assert_equal(page.url, context.url("/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ="))
+    page.goto(page.url.replace("/admin/dict/mapping/?dictId=", f"/admin/dict/mapping/list/{last_page}?dictId="))
+    assert_equal(page.url, context.url(f"/admin/dict/mapping/list/{last_page}?dictId=bWFwcGluZy50eHQ="))
+
+    page.wait_for_load_state("domcontentloaded")
 
     # Click text=[一]
     page.click(f"text={label_name}")
@@ -61,9 +68,7 @@ def run(context: FessContext) -> None:
     # Click text=更新
     page.click("text=更新")
     assert_equal(page.url, context.url("/admin/dict/mapping/list/1?dictId=bWFwcGluZy50eHQ="))
-    
-    # TODO check content
-        
+            
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:

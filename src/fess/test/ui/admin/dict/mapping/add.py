@@ -1,5 +1,5 @@
-
 import logging
+import re
 
 from fess.test import assert_equal, assert_not_equal
 from fess.test.ui import FessContext
@@ -49,7 +49,17 @@ def run(context: FessContext) -> None:
     page.click("button:has-text(\"作成\")")
     assert_equal(page.url, context.url("/admin/dict/mapping/list/1?dictId=bWFwcGluZy50eHQ="))
 
-    # TODO check content
+    page.wait_for_load_state("domcontentloaded")
+
+    # Go to last page
+    page_info: str = page.inner_text("div.col-sm-2")
+    last_page = int(re.search(r'(\d+)/(\d+)', page_info).group(2)) if re.search(r'(\d+)/(\d+)', page_info) else None
+    page.goto(page.url.replace("/list/1", f"/list/{last_page}"))
+    
+    page.wait_for_load_state("domcontentloaded")
+    table_content: str = page.inner_text("table")
+    assert_not_equal(table_content.find(label_name), -1,
+                     f"{label_name} not in {table_content}")
 
 
 if __name__ == "__main__":

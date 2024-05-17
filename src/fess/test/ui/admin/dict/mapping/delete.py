@@ -1,4 +1,5 @@
 import logging
+import re
 
 from fess.test import assert_equal, assert_startswith
 from fess.test.ui import FessContext
@@ -34,9 +35,15 @@ def run(context: FessContext) -> None:
     page.click(":nth-match(:text(\"mapping.txt\"), 3)")
     assert_equal(page.url, context.url("/admin/dict/mapping/?dictId=bWFwcGluZy50eHQ="))
 
+    # Go to last page
+    page_info: str = page.inner_text("div.col-sm-2")
+    last_page = int(re.search(r'(\d+)/(\d+)', page_info).group(2)) if re.search(r'(\d+)/(\d+)', page_info) else None
+
     # Go to http://localhost:8080/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ=
-    page.goto(context.url("/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ="))
-    assert_equal(page.url, context.url("/admin/dict/mapping/list/49?dictId=bWFwcGluZy50eHQ="))
+    page.goto(page.url.replace("/admin/dict/mapping/?dictId=", f"/admin/dict/mapping/list/{last_page}?dictId="))
+    assert_equal(page.url, context.url(f"/admin/dict/mapping/list/{last_page}?dictId=bWFwcGluZy50eHQ="))
+
+    page.wait_for_load_state("domcontentloaded")
 
     # Click text=[二]
     page.click(f"text={label_name}")
@@ -56,7 +63,17 @@ def run(context: FessContext) -> None:
     page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
     assert_equal(page.url, context.url("/admin/dict/mapping/list/1?dictId=bWFwcGluZy50eHQ="))
 
-    # TODO check content
+    page.wait_for_load_state("domcontentloaded")
+
+    # Go to last page
+    page_info: str = page.inner_text("div.col-sm-2")
+    last_page = int(re.search(r'(\d+)/(\d+)', page_info).group(2)) if re.search(r'(\d+)/(\d+)', page_info) else None
+    page.goto(page.url.replace("/list/1", f"/list/{last_page}"))
+    
+    page.wait_for_load_state("domcontentloaded")
+    table_content: str = page.inner_text("section.content")
+    assert_equal(table_content.find(label_name), -1,
+                 f"{label_name} in {table_content}")
 
 
 if __name__ == "__main__":
