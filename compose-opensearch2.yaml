@@ -8,9 +8,9 @@ services:
       - cluster.initial_cluster_manager_nodes=estest01
       - cluster.name=fess-es
       - bootstrap.memory_lock=true
-      - plugins.security.disabled=true
       - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
-      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=w1Y7BdYMEpwSPj4A"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
       - "FESS_DICTIONARY_PATH=/usr/share/opensearch/config/dictionary"
     ulimits:
       memlock:
