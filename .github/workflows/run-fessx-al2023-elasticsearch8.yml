@@ -1,4 +1,4 @@
-name: run-fessx-centos7-elasticsearch8
+name: run-fessx-al2023-elasticsearch8
 
 on:
   push:
@@ -19,4 +19,4 @@ jobs:
         shell: bash
         run: |
           /bin/bash ./run_test.sh fessx elasticsearch8
-          /bin/bash ./run_test.sh fessx-centos7 elasticsearch8
+          /bin/bash ./run_test.sh fessx-al2023 elasticsearch8
