@@ -1,4 +1,4 @@
-name: run-fessx-al2023-opensearch1
+name: run-fess14x-elasticsearch7
 
 on:
   push:
@@ -7,8 +7,6 @@ on:
   pull_request:
     branches:
       - main
-  schedule:
-    - cron: '0 3 * * 2'
 
 jobs:
   build:
@@ -18,4 +16,4 @@ jobs:
       - name: run-compose
         shell: bash
         run: |
-          /bin/bash ./run_test.sh fessx-al2023 opensearch1
+          /bin/bash ./run_test.sh fess14x elasticsearch7
