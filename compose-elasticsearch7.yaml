@@ -1,6 +1,6 @@
 services:
   estest01:
-    image: ghcr.io/codelibs/fess-elasticsearch:7.17.7
+    image: ghcr.io/codelibs/fess-elasticsearch:7.17.27
     container_name: estest01
     environment:
       - node.name=estest01
