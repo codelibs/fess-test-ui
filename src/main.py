@@ -15,7 +15,8 @@ from fess.test.ui.admin import (accesstoken,
                                 user,
                                 group,
                                 role,
-                                webconfig)
+                                webconfig,
+                                fileconfig)
 
 from fess.test.ui.admin.dict import (kuromoji,
                                      protwords,
@@ -45,6 +46,7 @@ def main():
             mapping.run(context)
             stemmeroverride.run(context)
             webconfig.run(context)
+            fileconfig.run(context)
         except:
             page: "Page" = context.get_current_page()
             if page is not None:
