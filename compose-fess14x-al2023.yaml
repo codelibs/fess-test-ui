@@ -3,11 +3,11 @@ services:
     image: ghcr.io/codelibs/fess:14.19-snapshot-al2023
     container_name: fesstest01
     environment:
-      - "SEARCH_ENGINE_HTTP_URL=http://estest01:9200"
+      - "SEARCH_ENGINE_HTTP_URL=http://searchtest01:9200"
       - "FESS_DICTIONARY_PATH=${FESS_DICTIONARY_PATH:-/usr/share/elasticsearch/config/dictionary/}"
 #    ports:
 #      - "8080:8080"
     networks:
-      - estestnet
+      - searchtestnet
     depends_on:
-      - estest01
+      - searchtest01

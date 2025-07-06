@@ -17,7 +17,7 @@ docker_compose_files="${docker_compose_files} -f ${base_dir}/compose-${fess_name
 
 if [[ "$search_engine_name" = "" ]] ; then
     search_engine_name=elasticsearch7
-elif [[ "$search_engine_name" = "opensearch1" || "$search_engine_name" = "opensearch2" ]] ; then
+elif [[ "$search_engine_name" = "opensearch1" || "$search_engine_name" = "opensearch2" || "$search_engine_name" = "opensearch3" ]] ; then
     docker_compose_files="--env-file .env.opensearch ${docker_compose_files}"
 elif [[ ! -f "$base_dir/compose-${search_engine_name}.yaml" ]] ; then
     echo "${search_engine_name} is not found."

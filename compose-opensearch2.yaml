@@ -1,12 +1,12 @@
 services:
-  estest01:
+  searchtest01:
     image: ghcr.io/codelibs/fess-opensearch:2.19.1
-    container_name: estest01
+    container_name: searchtest01
     environment:
-      - node.name=estest01
-      - discovery.seed_hosts=estest01
-      - cluster.initial_cluster_manager_nodes=estest01
-      - cluster.name=fess-es
+      - node.name=searchtest01
+      - discovery.seed_hosts=searchtest01
+      - cluster.initial_cluster_manager_nodes=searchtest01
+      - cluster.name=fess-search
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
@@ -22,4 +22,4 @@ services:
 #    ports:
 #      - 9200:9200
     networks:
-      - estestnet
+      - searchtestnet

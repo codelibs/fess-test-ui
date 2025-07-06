@@ -7,9 +7,9 @@ services:
       - "BROWSER_LOCALE=ja-JP"
       - "HEADLESS=true"
     networks:
-      - estestnet
+      - searchtestnet
 
 networks:
-  estestnet:
+  searchtestnet:
     driver: bridge
 

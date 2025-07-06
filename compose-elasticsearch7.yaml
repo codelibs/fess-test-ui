@@ -1,12 +1,12 @@
 services:
-  estest01:
+  searchtest01:
     image: ghcr.io/codelibs/fess-elasticsearch:7.17.27
-    container_name: estest01
+    container_name: searchtest01
     environment:
-      - node.name=estest01
-      - discovery.seed_hosts=estest01
-      - cluster.initial_master_nodes=estest01
-      - cluster.name=fess-es
+      - node.name=searchtest01
+      - discovery.seed_hosts=searchtest01
+      - cluster.initial_master_nodes=searchtest01
+      - cluster.name=fess-search
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g -Dlog4j2.formatMsgNoLookups=true"
       - "FESS_DICTIONARY_PATH=/usr/share/elasticsearch/config/dictionary"
@@ -20,4 +20,4 @@ services:
 #    ports:
 #      - 9200:9200
     networks:
-      - estestnet
+      - searchtestnet
