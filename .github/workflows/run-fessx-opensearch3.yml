@@ -1,4 +1,4 @@
-name: run-fess14-elasticsearch8
+name: run-fessx-opensearch3
 
 on:
   push:
@@ -7,7 +7,10 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    - cron: '0 0 * * 0'
   workflow_dispatch:
+
 
 jobs:
   build:
@@ -17,4 +20,4 @@ jobs:
       - name: run-compose
         shell: bash
         run: |
-          /bin/bash ./run_test.sh fess14 elasticsearch8
+          /bin/bash ./run_test.sh fessx opensearch3
