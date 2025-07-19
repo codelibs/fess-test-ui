@@ -58,6 +58,13 @@ def run(context: FessContext) -> None:
     table_content: str = page.inner_text("table")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
+    page.click(f"text={label_name}")
+    assert_startswith(
+        page.url, context.url("/admin/webconfig/details/4/"))
+
+    # Verify that the value entered in the "description" field is displayed
+    desc_value = page.input_value("input[name=\"description\"]")
+    assert_equal(desc_value, "Fessのサイト-update", f"description value '{desc_value}' != expected 'Fessのサイト-update'")
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:

@@ -1,7 +1,7 @@
 
 import logging
 
-from fess.test import assert_equal, assert_not_equal
+from fess.test import assert_equal, assert_not_equal, assert_startswith
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -65,6 +65,17 @@ def run(context: FessContext) -> None:
     assert_not_equal(table_content.find(label_name), -1,
                      f"{label_name} not in {table_content}")
 
+    page.click(f"text={label_name}")
+    assert_startswith(
+        page.url, context.url("/admin/webconfig/details/4/"))
+
+    # Verify that the value entered in the "name" field is displayed
+    name_value = page.input_value("input[name=\"name\"]")
+    assert_equal(name_value, label_name, f"name value '{name_value}' != expected '{label_name}'")
+
+    # Verify that the value entered in the "description" field is displayed
+    desc_value = page.input_value("input[name=\"description\"]")
+    assert_equal(desc_value, "Fessのサイト", f"description value '{desc_value}' != expected 'Fessのサイト'")
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:
