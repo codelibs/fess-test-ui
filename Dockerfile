@@ -1,16 +1,20 @@
-FROM mcr.microsoft.com/playwright:v1.53.2-jammy
+FROM mcr.microsoft.com/playwright:v1.55.0-noble
 
 RUN apt-get update && \
-    apt-get install -y python3.10 python3-pip && \
-    update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1 && \
-    update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 && \
-    rm -rf /var/lib/apt/lists/* && \
-    pip install playwright
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        python3-venv \
+        python3-full \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir playwright
 
 COPY src /app
 WORKDIR /app
 
 ENTRYPOINT ["/bin/bash", "/app/run.sh"]
-
-

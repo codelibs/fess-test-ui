@@ -31,7 +31,7 @@ def run(context: FessContext) -> None:
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Click text=/.*url\.matches\("https://www\.n2sm\.net/\.\*"\).*/
-    page.click(f"text=/.*url\.matches\(\"https://{label_name}/\.\*\"\).*/")
+    page.click(rf"text=/.*url\.matches\(\"https://{label_name}/\.\*\"\).*/")
     assert_startswith(
         page.url, context.url("/admin/boostdoc/details/4/"))
 
