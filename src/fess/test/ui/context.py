@@ -19,7 +19,7 @@ class FessContext:
             "FESS_URL", "http://localhost:8080")
         self._current_page: "Page" = None
         self._test_label_name: str = os.environ.get("TEST_LABEL")
-        random.seed(datetime.now())
+        random.seed(int(datetime.now().timestamp() * 1000))
 
     def _create_browser(self):
         headless: bool = os.environ.get("HEADLESS", "false").lower() == "true"
