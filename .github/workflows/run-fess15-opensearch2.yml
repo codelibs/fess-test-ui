@@ -10,7 +10,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: run-compose
         shell: bash
         run: |
           /bin/bash ./run_test.sh fess15 opensearch2
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-fess15-opensearch2
+          path: |
+            src/test_results.json
+            src/screenshots/
+          retention-days: 30
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshots-fess15-opensearch2
+          path: src/screenshots/
+          retention-days: 30
