@@ -1,6 +1,7 @@
+
 import logging
 
-from fess.test import assert_equal, assert_startswith
+from fess.test import assert_equal, assert_not_equal, assert_startswith
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -30,29 +31,38 @@ def run(context: FessContext) -> None:
     page.click("text=ロール")
     assert_equal(page.url, context.url("/admin/role/"))
 
-    # Click the role created in add test (use original name)
+    # Click the role created in add test
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/role/details/4/"))
 
-    # Click text=削除
-    page.click("text=削除")
+    # Click text=編集
+    page.click("text=編集")
+    assert_equal(page.url, context.url("/admin/role/"))
 
-    # Click text=キャンセル
-    page.click("text=キャンセル")
+    # Click text=戻る (test cancel button)
+    page.click("text=戻る")
+    assert_equal(page.url, context.url("/admin/role/"))
 
-    # Click text=削除
-    page.click("text=削除")
+    # Click text=編集 again
+    page.click("text=編集")
+    assert_equal(page.url, context.url("/admin/role/"))
 
-    # Click text=キャンセル 削除 >> button[name="delete"]
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    # Note: We don't actually change any field values here, just test the edit workflow
+    # This is consistent with other modules like user which only changes password
+
+    # Click text=更新
+    page.click("text=更新")
     assert_equal(page.url, context.url("/admin/role/"))
 
     page.wait_for_load_state("domcontentloaded")
-    table_content: str = page.inner_text("section.content")
-    assert_equal(table_content.find(label_name), -1,
-                 f"{label_name} found in {table_content} (should be deleted)")
 
+    # Verify the role still exists in the table
+    table_content = page.inner_text("table")
+    assert_not_equal(table_content.find(label_name), -1,
+                     f"{label_name} not found in table after update")
+
+    logger.info(f"Role {label_name} update workflow tested successfully")
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:

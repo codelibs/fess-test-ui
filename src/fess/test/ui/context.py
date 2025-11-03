@@ -2,7 +2,9 @@ import logging
 import os
 import random
 import string
+import time
 from datetime import datetime
+from typing import Callable, Any, Optional
 
 from playwright.sync_api import Playwright
 
@@ -66,3 +68,91 @@ class FessContext:
 
     def url(self, path: str) -> str:
         return self._base_url+path
+
+    def retry_on_failure(self, func: Callable[[], Any], max_attempts: int = 3,
+                        delay: float = 1.0, context_name: str = "operation") -> Any:
+        """
+        Retry a function on failure (for handling flaky tests).
+
+        Args:
+            func: Function to execute
+            max_attempts: Maximum number of attempts (default: 3)
+            delay: Delay between retries in seconds (default: 1.0)
+            context_name: Name for logging context
+
+        Returns:
+            Result of the function
+
+        Raises:
+            Exception: If all attempts fail, raises the last exception
+        """
+        last_exception = None
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                logger.info(f"[RETRY] {context_name}: attempt {attempt}/{max_attempts}")
+                result = func()
+                if attempt > 1:
+                    logger.info(f"[RETRY] {context_name}: succeeded on attempt {attempt}")
+                return result
+
+            except Exception as e:
+                last_exception = e
+                if attempt < max_attempts:
+                    logger.warning(
+                        f"[RETRY] {context_name}: attempt {attempt} failed: {e}. "
+                        f"Retrying in {delay}s..."
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(
+                        f"[RETRY] {context_name}: all {max_attempts} attempts failed"
+                    )
+
+        # If we get here, all attempts failed
+        raise last_exception
+
+    def log_step(self, step_name: str, capture_screenshot: bool = False):
+        """
+        Log a test step for better debugging.
+
+        Args:
+            step_name: Name of the step
+            capture_screenshot: Whether to capture screenshot (default: False)
+        """
+        logger.info(f"[STEP] {step_name}")
+
+        if capture_screenshot and self._current_page:
+            try:
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                os.makedirs('screenshots/steps', exist_ok=True)
+                screenshot_path = f'screenshots/steps/step_{timestamp}.png'
+                self._current_page.screenshot(path=screenshot_path)
+                logger.debug(f"[STEP] Screenshot saved: {screenshot_path}")
+            except Exception as e:
+                logger.warning(f"[STEP] Failed to capture screenshot: {e}")
+
+    def capture_screenshot(self, name: str) -> Optional[str]:
+        """
+        Capture a screenshot with a custom name.
+
+        Args:
+            name: Name for the screenshot file
+
+        Returns:
+            Path to saved screenshot or None if failed
+        """
+        if not self._current_page:
+            logger.warning("No page available for screenshot")
+            return None
+
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            os.makedirs('screenshots', exist_ok=True)
+            screenshot_path = f'screenshots/{name}_{timestamp}.png'
+            self._current_page.screenshot(path=screenshot_path)
+            logger.info(f"Screenshot saved: {screenshot_path}")
+            return screenshot_path
+        except Exception as e:
+            logger.error(f"Failed to capture screenshot: {e}")
+            return None

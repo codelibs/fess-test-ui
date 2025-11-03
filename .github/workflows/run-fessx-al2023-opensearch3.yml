@@ -20,3 +20,21 @@ jobs:
         shell: bash
         run: |
           /bin/bash ./run_test.sh fessx-al2023 opensearch3
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-fessx-al2023-opensearch3
+          path: |
+            src/test_results.json
+            src/screenshots/
+          retention-days: 30
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshots-fessx-al2023-opensearch3
+          path: src/screenshots/
+          retention-days: 30
