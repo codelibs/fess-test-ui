@@ -32,6 +32,9 @@ def run(context: FessContext) -> None:
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/webauth/createnew/"))
 
+    # Wait for form to load
+    page.wait_for_load_state("domcontentloaded")
+
     # Fill hostname
     page.fill("input[name=\"hostname\"]", "test.example.com")
 
@@ -45,10 +48,12 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"password\"]", "testpass123")
 
     # Select protocol scheme
+    page.wait_for_selector("select[name=\"protocolScheme\"]", state="visible")
     page.select_option("select[name=\"protocolScheme\"]", "http")
 
     # Select web config if available
     try:
+        page.wait_for_selector("select[name=\"webConfigId\"]", state="visible", timeout=5000)
         page.select_option("select[name=\"webConfigId\"]", index=0)
     except Exception:
         logger.warning("No web config available, test may fail")

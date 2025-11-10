@@ -35,10 +35,14 @@ def run(context: FessContext) -> None:
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/dataconfig/createnew/"))
 
+    # Wait for form to load
+    page.wait_for_load_state("domcontentloaded")
+
     # Fill input[name="name"]
     page.fill("input[name=\"name\"]", label_name)
 
     # Fill input[name="handlerName"]
+    page.wait_for_selector("input[name=\"handlerName\"]", state="visible")
     page.fill("input[name=\"handlerName\"]", "org.codelibs.fess.ds.impl.CsvDataStoreImpl")
 
     # Fill textarea[name="description"]

@@ -34,6 +34,9 @@ def run(context: FessContext) -> None:
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/pathmap/createnew/"))
 
+    # Wait for form to load
+    page.wait_for_load_state("domcontentloaded")
+
     # Fill input[name="regex"]
     page.fill("input[name=\"regex\"]", "http://example\\.com/(.*)")
 
@@ -41,6 +44,7 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"replacement\"]", "https://newdomain.com/$1")
 
     # Fill select[name="processType"]
+    page.wait_for_selector("select[name=\"processType\"]", state="visible")
     page.select_option("select[name=\"processType\"]", "C")
 
     # Fill input[name="sortOrder"]

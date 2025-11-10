@@ -33,6 +33,9 @@ def run(context: FessContext) -> None:
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/scheduler/createnew/"))
 
+    # Wait for form to load
+    page.wait_for_load_state("domcontentloaded")
+
     # Fill name
     page.fill("input[name=\"name\"]", label_name)
 
@@ -43,6 +46,7 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"cronExpression\"]", "0 0 0 * * ?")
 
     # Select script type
+    page.wait_for_selector("select[name=\"scriptType\"]", state="visible")
     page.select_option("select[name=\"scriptType\"]", "groovy")
 
     # Fill script data

@@ -46,6 +46,9 @@ def run(context: FessContext) -> None:
         page.click("text=新規作成 >> em")
         assert_equal(page.url, context.url("/admin/reqheader/createnew/"))
 
+        # Wait for form to load
+        page.wait_for_load_state("domcontentloaded")
+
         # Fill name
         page.fill("input[name=\"name\"]", "User-Agent")
 
@@ -53,6 +56,7 @@ def run(context: FessContext) -> None:
         page.fill("input[name=\"value\"]", "Mozilla/5.0 Test Bot")
 
         # Select web config
+        page.wait_for_selector("select[name=\"webConfigId\"]", state="visible")
         page.select_option("select[name=\"webConfigId\"]", index=0)
 
         # Click create button

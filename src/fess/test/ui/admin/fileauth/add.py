@@ -32,6 +32,9 @@ def run(context: FessContext) -> None:
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/fileauth/createnew/"))
 
+    # Wait for form to load
+    page.wait_for_load_state("domcontentloaded")
+
     # Fill hostname
     page.fill("input[name=\"hostname\"]", "fileserver.example.com")
 
@@ -45,10 +48,12 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"password\"]", "filepass123")
 
     # Select protocol scheme
+    page.wait_for_selector("select[name=\"protocolScheme\"]", state="visible")
     page.select_option("select[name=\"protocolScheme\"]", "smb")
 
     # Select file config if available
     try:
+        page.wait_for_selector("select[name=\"fileConfigId\"]", state="visible", timeout=5000)
         page.select_option("select[name=\"fileConfigId\"]", index=0)
     except Exception:
         logger.warning("No file config available, test may fail")
