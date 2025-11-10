@@ -24,12 +24,12 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to web authentication list
-    page.click("text=クローラ")
+    page.click("text=クローラー")
     page.click("text=ウェブ認証")
     assert_equal(page.url, context.url("/admin/webauth/"))
 
     # Click new creation button
-    page.click("text=新規作成")
+    page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/webauth/createnew/"))
 
     # Fill hostname

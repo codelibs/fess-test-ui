@@ -25,7 +25,7 @@ def run(context: FessContext) -> None:
 
     # First ensure we have a web config to attach the request header to
     # Navigate to web config
-    page.click("text=クローラ")
+    page.click("text=クローラー")
     page.click("text=ウェブ")
     page.wait_for_load_state("domcontentloaded")
 
@@ -38,12 +38,12 @@ def run(context: FessContext) -> None:
             return
 
         # Navigate to request header list
-        page.click("text=クローラ")
+        page.click("text=クローラー")
         page.click("text=リクエストヘッダー")
         assert_equal(page.url, context.url("/admin/reqheader/"))
 
         # Click new creation button
-        page.click("text=新規作成")
+        page.click("text=新規作成 >> em")
         assert_equal(page.url, context.url("/admin/reqheader/createnew/"))
 
         # Fill name

@@ -24,15 +24,15 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
 
-    # Click text=クローラ
-    page.click("text=クローラ")
+    # Click text=クローラー
+    page.click("text=クローラー")
 
     # Click text=データストア
     page.click("text=データストア")
     assert_equal(page.url, context.url("/admin/dataconfig/"))
 
-    # Click text=新規作成
-    page.click("text=新規作成")
+    # Click text=新規作成 >> em
+    page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/dataconfig/createnew/"))
 
     # Fill input[name="name"]

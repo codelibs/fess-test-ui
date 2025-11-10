@@ -25,7 +25,7 @@ def run(context: FessContext) -> None:
     updated_description: str = "Updated test data configuration"
 
     # Navigate to data config list
-    page.click("text=クローラ")
+    page.click("text=クローラー")
     page.click("text=データストア")
     assert_equal(page.url, context.url("/admin/dataconfig/"))
 

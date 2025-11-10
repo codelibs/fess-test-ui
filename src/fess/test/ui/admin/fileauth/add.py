@@ -24,12 +24,12 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to file authentication list
-    page.click("text=クローラ")
+    page.click("text=クローラー")
     page.click("text=ファイル認証")
     assert_equal(page.url, context.url("/admin/fileauth/"))
 
     # Click new creation button
-    page.click("text=新規作成")
+    page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/fileauth/createnew/"))
 
     # Fill hostname

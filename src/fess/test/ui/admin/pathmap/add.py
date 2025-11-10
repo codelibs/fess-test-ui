@@ -31,7 +31,7 @@ def run(context: FessContext) -> None:
     assert_equal(page.url, context.url("/admin/pathmap/"))
 
     # Click text=新規作成
-    page.click("text=新規作成")
+    page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/pathmap/createnew/"))
 
     # Fill input[name="regex"]

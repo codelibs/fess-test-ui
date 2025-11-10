@@ -24,7 +24,7 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to failure URL list
-    page.click("text=クローラ")
+    page.click("text=クローラー")
     page.click("text=エラーURL")
     assert_equal(page.url, context.url("/admin/failureurl/"))
 

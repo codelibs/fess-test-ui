@@ -24,7 +24,7 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to data config list
-    page.click("text=クローラ")
+    page.click("text=クローラー")
     page.click("text=データストア")
     assert_equal(page.url, context.url("/admin/dataconfig/"))
 

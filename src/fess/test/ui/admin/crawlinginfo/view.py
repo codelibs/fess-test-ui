@@ -24,7 +24,7 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to crawling info list
-    page.click("text=クローラ")
+    page.click("text=クローラー")
     page.click("text=クロール情報")
     assert_equal(page.url, context.url("/admin/crawlinginfo/"))
 
