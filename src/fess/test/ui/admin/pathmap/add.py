@@ -24,18 +24,21 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Click text=システム
+    page.wait_for_selector("text=システム", state="visible", timeout=30000)
     page.click("text=システム")
 
     # Click text=パスマッピング
+    page.wait_for_selector("text=パスマッピング", state="visible", timeout=30000)
     page.click("text=パスマッピング")
     assert_equal(page.url, context.url("/admin/pathmap/"))
 
     # Click text=新規作成
+    page.wait_for_selector("text=新規作成 >> em", state="visible", timeout=30000)
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/pathmap/createnew/"))
 
-    # Wait for form to load
-    page.wait_for_load_state("domcontentloaded")
+    # Wait for form to load completely
+    page.wait_for_load_state("networkidle", timeout=60000)
 
     # Fill input[name="regex"]
     page.fill("input[name=\"regex\"]", "http://example\\.com/(.*)")
@@ -44,7 +47,7 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"replacement\"]", "https://newdomain.com/$1")
 
     # Fill select[name="processType"]
-    page.wait_for_selector("select[name=\"processType\"]", state="visible")
+    page.wait_for_selector("select[name=\"processType\"]", state="visible", timeout=30000)
     page.select_option("select[name=\"processType\"]", "C")
 
     # Fill input[name="sortOrder"]

@@ -25,16 +25,19 @@ def run(context: FessContext) -> None:
     label_name: str = context.create_label_name()
 
     # Navigate to scheduler list
+    page.wait_for_selector("text=システム", state="visible", timeout=30000)
     page.click("text=システム")
+    page.wait_for_selector("text=スケジューラ", state="visible", timeout=30000)
     page.click("text=スケジューラ")
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
     # Click new creation button
+    page.wait_for_selector("text=新規作成 >> em", state="visible", timeout=30000)
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/scheduler/createnew/"))
 
-    # Wait for form to load
-    page.wait_for_load_state("domcontentloaded")
+    # Wait for form to load completely
+    page.wait_for_load_state("networkidle", timeout=60000)
 
     # Fill name
     page.fill("input[name=\"name\"]", label_name)
@@ -46,7 +49,7 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"cronExpression\"]", "0 0 0 * * ?")
 
     # Select script type
-    page.wait_for_selector("select[name=\"scriptType\"]", state="visible")
+    page.wait_for_selector("select[name=\"scriptType\"]", state="visible", timeout=30000)
     page.select_option("select[name=\"scriptType\"]", "groovy")
 
     # Fill script data

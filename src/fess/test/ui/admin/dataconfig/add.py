@@ -25,24 +25,27 @@ def run(context: FessContext) -> None:
     label_name: str = context.create_label_name()
 
     # Click text=クローラー
+    page.wait_for_selector("text=クローラー", state="visible", timeout=30000)
     page.click("text=クローラー")
 
     # Click text=データストア
+    page.wait_for_selector("text=データストア", state="visible", timeout=30000)
     page.click("text=データストア")
     assert_equal(page.url, context.url("/admin/dataconfig/"))
 
     # Click text=新規作成 >> em
+    page.wait_for_selector("text=新規作成 >> em", state="visible", timeout=30000)
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/dataconfig/createnew/"))
 
-    # Wait for form to load
-    page.wait_for_load_state("domcontentloaded")
+    # Wait for form to load completely
+    page.wait_for_load_state("networkidle", timeout=60000)
 
     # Fill input[name="name"]
     page.fill("input[name=\"name\"]", label_name)
 
     # Fill input[name="handlerName"]
-    page.wait_for_selector("input[name=\"handlerName\"]", state="visible")
+    page.wait_for_selector("input[name=\"handlerName\"]", state="visible", timeout=30000)
     page.fill("input[name=\"handlerName\"]", "org.codelibs.fess.ds.impl.CsvDataStoreImpl")
 
     # Fill textarea[name="description"]

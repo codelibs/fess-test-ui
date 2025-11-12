@@ -24,11 +24,13 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to failure URL list
+    page.wait_for_selector("text=クローラー", state="visible", timeout=30000)
     page.click("text=クローラー")
+    page.wait_for_selector("text=エラーURL", state="visible", timeout=30000)
     page.click("text=エラーURL")
     assert_equal(page.url, context.url("/admin/failureurl/"))
 
-    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_load_state("networkidle", timeout=60000)
 
     # Check if the page loaded successfully
     try:
