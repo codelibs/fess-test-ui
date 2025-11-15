@@ -30,7 +30,7 @@ def run(context: FessContext) -> None:
 
     # Test 1: Required field validation - empty name
     logger.info("Test 1: Required field validation - empty name")
-    page.click("text=新規作成 >> em")
+    page.click("text=新規作成")
     assert_equal(page.url, context.url("/admin/webconfig/createnew/"))
 
     # Try to create without filling required fields
@@ -57,7 +57,7 @@ def run(context: FessContext) -> None:
 
     # Test 3: Special characters in name
     logger.info("Test 3: Special characters in name")
-    page.click("text=新規作成 >> em")
+    page.click("text=新規作成")
     special_char_name = f"Test<script>alert('xss')</script>{context.generate_str(5)}"
     page.fill("input[name=\"name\"]", special_char_name)
     page.fill("textarea[name=\"urls\"]", "https://example.com/")
@@ -75,7 +75,7 @@ def run(context: FessContext) -> None:
 
     # Test 4: Maximum length validation for name
     logger.info("Test 4: Maximum length validation")
-    page.click("text=新規作成 >> em")
+    page.click("text=新規作成")
     very_long_name = context.generate_str(300)  # Very long string
     page.fill("input[name=\"name\"]", very_long_name)
     page.fill("textarea[name=\"urls\"]", "https://example.com/")
@@ -92,7 +92,7 @@ def run(context: FessContext) -> None:
 
     # Test 5: Invalid URL format
     logger.info("Test 5: Invalid URL format")
-    page.click("text=新規作成 >> em")
+    page.click("text=新規作成")
     page.fill("input[name=\"name\"]", context.generate_str(10))
     page.fill("textarea[name=\"urls\"]", "not-a-valid-url")
     page.fill("textarea[name=\"includedUrls\"]", "also-not-valid")
@@ -111,7 +111,7 @@ def run(context: FessContext) -> None:
     duplicate_test_name = f"DuplicateTest_{context.generate_str(5)}"
 
     # Create first entry
-    page.click("text=新規作成 >> em")
+    page.click("text=新規作成")
     page.fill("input[name=\"name\"]", duplicate_test_name)
     page.fill("textarea[name=\"urls\"]", "https://example1.com/")
     page.fill("textarea[name=\"includedUrls\"]", "https://example1.com/.*")
@@ -120,7 +120,7 @@ def run(context: FessContext) -> None:
 
     if page.url == context.url("/admin/webconfig/"):
         # Try to create duplicate
-        page.click("text=新規作成 >> em")
+        page.click("text=新規作成")
         page.fill("input[name=\"name\"]", duplicate_test_name)
         page.fill("textarea[name=\"urls\"]", "https://example2.com/")
         page.fill("textarea[name=\"includedUrls\"]", "https://example2.com/.*")
