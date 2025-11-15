@@ -44,7 +44,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/webconfig/"
 
     # Click text=新規作成 >> em
-    page.click("text=新規作成 >> em")
+    page.click("text=新規作成")
     # assert page.url == "http://localhost:8080/admin/webconfig/createnew/"
 
     # Fill input[name="name"]
@@ -74,7 +74,7 @@ def run(playwright: Playwright) -> None:
 
 
     # Click text=新規作成 >> em
-    page.click("text=新規作成 >> em")
+    page.click("text=新規作成")
     # assert page.url == "http://localhost:8080/admin/webconfig/createnew/"
 
     # Fill input[name="name"]
