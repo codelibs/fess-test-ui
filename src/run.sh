@@ -28,16 +28,16 @@ while true ; do
   else
     admin_error_count=$((admin_error_count + 1))
   fi
-  if [[ ${admin_error_count} -ge 60 ]] ; then
-    echo "Admin interface not ready after 60 seconds."
+  if [[ ${admin_error_count} -ge 180 ]] ; then
+    echo "Admin interface not ready after 180 seconds."
     exit 1
   fi
   sleep 1
 done
 
 # Give the application a bit more time to fully initialize
-echo "Waiting additional 10 seconds for application to fully initialize..."
-sleep 10
+echo "Waiting additional 15 seconds for application to fully initialize..."
+sleep 15
 
 echo "Starting Automation Test..."
 python3 main.py
