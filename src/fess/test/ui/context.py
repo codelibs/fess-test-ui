@@ -31,22 +31,56 @@ class FessContext:
               password: str = os.environ.get("FESS_PASSWORD", "admin")) -> bool:
         page: "Page" = self._current_page if self._current_page is not None else self._context.new_page()
 
-        page.goto(f"{self._base_url}/login/")
-        logger.debug(f"URL: {page.url}")
+        # Navigate to login page
+        page.goto(f"{self._base_url}/login/", wait_until="networkidle", timeout=60000)
+        logger.debug(f"Login page URL: {page.url}")
 
+        # Fill login form
+        page.wait_for_selector("[placeholder=\"ユーザー名\"]", state="visible", timeout=30000)
         page.fill("[placeholder=\"ユーザー名\"]", username)
         page.fill("[placeholder=\"パスワード\"]", password)
 
+        # Click login and wait for navigation
         page.click("button:has-text(\"ログイン\")")
 
-        logger.debug(f"URL: {page.url}")
-        return True  # TODO
+        # Wait for navigation to complete (redirect after login)
+        page.wait_for_load_state("networkidle", timeout=30000)
+
+        logger.debug(f"After login URL: {page.url}")
+
+        # Verify we're not still on the login page (login succeeded)
+        if "/login" in page.url:
+            logger.error("Login may have failed - still on login page")
+            return False
+
+        logger.info("Login successful")
+        return True
 
     def get_admin_page(self) -> "Page":
         page: "Page" = self._current_page if self._current_page is not None else self._context.new_page()
         self._current_page = page
-        page.goto(f"{self._base_url}/admin/")
-        logger.debug(f"URL: {page.url}")
+
+        # Navigate to admin page
+        page.goto(f"{self._base_url}/admin/", wait_until="networkidle", timeout=60000)
+        logger.debug(f"Navigated to: {page.url}")
+
+        # Wait for the admin dashboard to be fully loaded
+        # The dashboard should have the main navigation menu
+        try:
+            page.wait_for_selector("nav.navbar, .navbar, [role='navigation']", state="visible", timeout=30000)
+            logger.debug("Admin dashboard navigation is visible")
+        except Exception as e:
+            logger.warning(f"Navigation selector not found: {e}")
+            # Try alternative: wait for any typical admin page element
+            try:
+                page.wait_for_selector("body.fess-admin, main, #wrapper", state="visible", timeout=10000)
+                logger.debug("Admin page body is visible")
+            except Exception as e2:
+                logger.error(f"Could not confirm admin page loaded: {e2}")
+
+        # Give UI a moment to finish rendering
+        page.wait_for_timeout(1000)
+
         return page
 
     def get_current_page(self) -> "Page":
