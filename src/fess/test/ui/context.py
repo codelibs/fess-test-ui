@@ -64,23 +64,50 @@ class FessContext:
         page.goto(f"{self._base_url}/admin/", wait_until="networkidle", timeout=60000)
         logger.debug(f"Navigated to: {page.url}")
 
-        # Wait for the admin dashboard to be fully loaded
-        # The dashboard should have the main navigation menu
+        # Wait much longer for the admin dashboard to be fully loaded and rendered
+        # The JavaScript needs time to execute and render the UI
+        logger.info("Waiting for admin dashboard to fully render...")
+        page.wait_for_timeout(5000)  # Give JavaScript time to execute
+
+        # Wait for the page body to be ready
         try:
-            page.wait_for_selector("nav.navbar, .navbar, [role='navigation']", state="visible", timeout=30000)
-            logger.debug("Admin dashboard navigation is visible")
+            page.wait_for_selector("body", state="attached", timeout=10000)
+            logger.debug("Page body is attached")
         except Exception as e:
-            logger.warning(f"Navigation selector not found: {e}")
-            # Try alternative: wait for any typical admin page element
-            try:
-                page.wait_for_selector("body.fess-admin, main, #wrapper", state="visible", timeout=10000)
-                logger.debug("Admin page body is visible")
-            except Exception as e2:
-                logger.error(f"Could not confirm admin page loaded: {e2}")
+            logger.warning(f"Body selector timeout: {e}")
 
-        # Give UI a moment to finish rendering
-        page.wait_for_timeout(1000)
+        # Additional wait for any AJAX/dynamic content to finish loading
+        page.wait_for_load_state("networkidle", timeout=30000)
 
+        # Final wait for UI to stabilize
+        page.wait_for_timeout(3000)
+
+        # Expand all collapsed menus to make all menu items visible
+        # This handles Fess admin UI's collapsible navigation menus
+        try:
+            page.evaluate("""
+                // Expand all Bootstrap collapse elements
+                document.querySelectorAll('.collapse:not(.show)').forEach(el => {
+                    el.classList.add('show');
+                });
+
+                // Click all collapsed menu toggles
+                document.querySelectorAll('[data-toggle="collapse"].collapsed').forEach(el => {
+                    el.click();
+                });
+
+                // Ensure all dropdown menus are accessible
+                document.querySelectorAll('.dropdown-menu').forEach(el => {
+                    el.style.display = 'block';
+                    el.style.position = 'static';
+                });
+            """)
+            logger.info("Expanded all collapsible menus")
+            page.wait_for_timeout(1000)  # Wait for menu animations
+        except Exception as e:
+            logger.warning(f"Could not expand menus: {e}")
+
+        logger.info("Admin dashboard should now be fully loaded with all menus visible")
         return page
 
     def get_current_page(self) -> "Page":
