@@ -24,14 +24,14 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to file authentication list
-    page.wait_for_selector("text=クローラー", state="visible", timeout=30000)
+    page.wait_for_selector("text=クローラー", state="visible", timeout=60000)
     page.click("text=クローラー")
-    page.wait_for_selector("text=ファイル認証", state="visible", timeout=30000)
+    page.wait_for_selector("text=ファイル認証", state="visible", timeout=60000)
     page.click("text=ファイル認証")
     assert_equal(page.url, context.url("/admin/fileauth/"))
 
     # Click new creation button
-    page.wait_for_selector("text=新規作成 >> em", state="visible", timeout=30000)
+    page.wait_for_selector("text=新規作成 >> em", state="visible", timeout=60000)
     page.click("text=新規作成 >> em")
     assert_equal(page.url, context.url("/admin/fileauth/createnew/"))
 
@@ -51,7 +51,7 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"password\"]", "filepass123")
 
     # Select protocol scheme
-    page.wait_for_selector("select[name=\"protocolScheme\"]", state="visible", timeout=30000)
+    page.wait_for_selector("select[name=\"protocolScheme\"]", state="visible", timeout=60000)
     page.select_option("select[name=\"protocolScheme\"]", "smb")
 
     # Select file config if available

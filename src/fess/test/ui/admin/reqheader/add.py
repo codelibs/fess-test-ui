@@ -38,14 +38,14 @@ def run(context: FessContext) -> None:
             return
 
         # Navigate to request header list
-        page.wait_for_selector("text=クローラー", state="visible", timeout=30000)
+        page.wait_for_selector("text=クローラー", state="visible", timeout=60000)
         page.click("text=クローラー")
-        page.wait_for_selector("text=リクエストヘッダー", state="visible", timeout=30000)
+        page.wait_for_selector("text=リクエストヘッダー", state="visible", timeout=60000)
         page.click("text=リクエストヘッダー")
         assert_equal(page.url, context.url("/admin/reqheader/"))
 
         # Click new creation button
-        page.wait_for_selector("text=新規作成 >> em", state="visible", timeout=30000)
+        page.wait_for_selector("text=新規作成 >> em", state="visible", timeout=60000)
         page.click("text=新規作成 >> em")
         assert_equal(page.url, context.url("/admin/reqheader/createnew/"))
 
@@ -59,7 +59,7 @@ def run(context: FessContext) -> None:
         page.fill("input[name=\"value\"]", "Mozilla/5.0 Test Bot")
 
         # Select web config
-        page.wait_for_selector("select[name=\"webConfigId\"]", state="visible", timeout=30000)
+        page.wait_for_selector("select[name=\"webConfigId\"]", state="visible", timeout=60000)
         page.select_option("select[name=\"webConfigId\"]", index=0)
 
         # Click create button

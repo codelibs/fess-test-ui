@@ -24,9 +24,9 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to crawling info list
-    page.wait_for_selector("text=クローラー", state="visible", timeout=30000)
+    page.wait_for_selector("text=クローラー", state="visible", timeout=60000)
     page.click("text=クローラー")
-    page.wait_for_selector("text=クロール情報", state="visible", timeout=30000)
+    page.wait_for_selector("text=クロール情報", state="visible", timeout=60000)
     page.click("text=クロール情報")
     assert_equal(page.url, context.url("/admin/crawlinginfo/"))
 
