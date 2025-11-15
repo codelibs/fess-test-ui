@@ -31,8 +31,8 @@ def run(context: FessContext) -> None:
     page.click("text=ファイルシステム")
     assert_equal(page.url, context.url("/admin/fileconfig/"))
 
-    # Click text=新規作成 >> em
-    page.click("text=新規作成 >> em")
+    # Click text=新規作成 >> i
+    page.click("text=新規作成 >> i")
     assert_equal(page.url, context.url("/admin/fileconfig/createnew/"))
 
     # Fill input[name="name"]

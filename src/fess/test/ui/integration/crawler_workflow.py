@@ -38,7 +38,7 @@ def run(context: FessContext) -> None:
     page.click("text=ウェブ")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
-    page.click("text=新規作成 >> em")
+    page.click("text=新規作成 >> i")
     assert_equal(page.url, context.url("/admin/webconfig/createnew/"))
 
     page.fill("input[name=\"name\"]", webconfig_name)
