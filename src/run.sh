@@ -60,14 +60,15 @@ echo ""
 echo "[3/3] Checking admin interface availability..."
 admin_error_count=0
 while true ; do
-  admin_status=$(curl -w '%{http_code}\n' -s -o /dev/null "${FESS_URL}/admin/")
-  if [[ x"${admin_status}" = x200 ]] ; then
-    echo "✓ Admin interface is ready!"
+  admin_status=$(curl -w '%{http_code}\n' -s -o /dev/null "${FESS_URL}/admin/login")
+  # Accept both 200 (login page loaded) and 302 (redirect to login) as success
+  if [[ x"${admin_status}" = x200 ]] || [[ x"${admin_status}" = x302 ]] ; then
+    echo "✓ Admin interface is ready! (HTTP ${admin_status})"
     break
   else
     admin_error_count=$((admin_error_count + 1))
     if [[ $((admin_error_count % 15)) -eq 0 ]] ; then
-      echo "  Still waiting for admin interface... (${admin_error_count}s elapsed)"
+      echo "  Still waiting for admin interface... (${admin_error_count}s elapsed, status: ${admin_status})"
     fi
   fi
   if [[ ${admin_error_count} -ge 300 ]] ; then
@@ -76,7 +77,8 @@ while true ; do
     echo "Debugging information:"
     echo "  - OpenSearch status: $(curl -w '%{http_code}' -s -o /dev/null ${SEARCH_ENGINE_URL})"
     echo "  - Fess base status: $(curl -w '%{http_code}' -s -o /dev/null ${FESS_URL})"
-    echo "  - Admin status: $(curl -w '%{http_code}' -s -o /dev/null ${FESS_URL}/admin/)"
+    echo "  - Admin login status: $(curl -w '%{http_code}' -s -o /dev/null ${FESS_URL}/admin/login)"
+    echo "  - Admin root status: $(curl -w '%{http_code}' -s -o /dev/null ${FESS_URL}/admin/)"
     exit 1
   fi
   sleep 1
