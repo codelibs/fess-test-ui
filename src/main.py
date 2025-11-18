@@ -13,17 +13,25 @@ from fess.test.metrics import MetricsCollector
 from fess.test.ui.admin import (accesstoken,
                                 badword,
                                 boostdoc,
+                                crawlinginfo,
+                                dataconfig,
                                 duplicatehost,
                                 elevateword,
+                                failureurl,
+                                fileauth,
+                                fileconfig,
+                                group,
                                 keymatch,
                                 label,
+                                pathmap,
                                 relatedcontent,
                                 relatedquery,
-                                user,
-                                group,
+                                reqheader,
                                 role,
-                                webconfig,
-                                fileconfig)
+                                scheduler,
+                                user,
+                                webauth,
+                                webconfig)
 
 from fess.test.ui.admin.dict import (kuromoji,
                                      protwords,
@@ -49,21 +57,29 @@ def get_modules_to_run() -> List[Any]:
         'accesstoken': accesstoken,
         'badword': badword,
         'boostdoc': boostdoc,
+        'crawlinginfo': crawlinginfo,
+        'dataconfig': dataconfig,
         'duplicatehost': duplicatehost,
         'elevateword': elevateword,
+        'failureurl': failureurl,
+        'fileauth': fileauth,
+        'fileconfig': fileconfig,
+        'group': group,
         'keymatch': keymatch,
+        'kuromoji': kuromoji,
         'label': label,
+        'mapping': mapping,
+        'pathmap': pathmap,
+        'protwords': protwords,
         'relatedcontent': relatedcontent,
         'relatedquery': relatedquery,
-        'user': user,
-        'group': group,
+        'reqheader': reqheader,
         'role': role,
-        'kuromoji': kuromoji,
-        'protwords': protwords,
-        'mapping': mapping,
+        'scheduler': scheduler,
         'stemmeroverride': stemmeroverride,
+        'user': user,
+        'webauth': webauth,
         'webconfig': webconfig,
-        'fileconfig': fileconfig,
         # 'integration': integration,  # Uncomment to enable
     }
 
@@ -73,10 +89,11 @@ def get_modules_to_run() -> List[Any]:
     if test_modules_env == 'all':
         # Run all modules in default order
         return [
-            accesstoken, badword, boostdoc, duplicatehost, elevateword,
-            keymatch, label, relatedcontent, relatedquery, user, group,
-            role, kuromoji, protwords, mapping, stemmeroverride,
-            webconfig, fileconfig
+            accesstoken, badword, boostdoc, crawlinginfo, dataconfig,
+            duplicatehost, elevateword, failureurl, fileauth, fileconfig,
+            group, keymatch, kuromoji, label, mapping, pathmap,
+            protwords, relatedcontent, relatedquery, reqheader, role,
+            scheduler, stemmeroverride, user, webauth, webconfig
         ]
     else:
         # Parse comma-separated list of module names

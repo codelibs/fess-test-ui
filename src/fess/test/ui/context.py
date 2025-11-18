@@ -31,22 +31,118 @@ class FessContext:
               password: str = os.environ.get("FESS_PASSWORD", "admin")) -> bool:
         page: "Page" = self._current_page if self._current_page is not None else self._context.new_page()
 
-        page.goto(f"{self._base_url}/login/")
-        logger.debug(f"URL: {page.url}")
+        # Navigate to login page
+        page.goto(f"{self._base_url}/login/", wait_until="networkidle", timeout=60000)
+        logger.debug(f"Login page URL: {page.url}")
 
+        # Fill login form
+        page.wait_for_selector("[placeholder=\"ユーザー名\"]", state="visible", timeout=30000)
         page.fill("[placeholder=\"ユーザー名\"]", username)
         page.fill("[placeholder=\"パスワード\"]", password)
 
+        # Click login and wait for navigation
         page.click("button:has-text(\"ログイン\")")
 
-        logger.debug(f"URL: {page.url}")
-        return True  # TODO
+        # Wait for navigation to complete (redirect after login)
+        page.wait_for_load_state("networkidle", timeout=30000)
+
+        logger.debug(f"After login URL: {page.url}")
+
+        # Verify we're not still on the login page (login succeeded)
+        if "/login" in page.url:
+            logger.error("Login may have failed - still on login page")
+            return False
+
+        logger.info("Login successful")
+        return True
 
     def get_admin_page(self) -> "Page":
         page: "Page" = self._current_page if self._current_page is not None else self._context.new_page()
         self._current_page = page
-        page.goto(f"{self._base_url}/admin/")
-        logger.debug(f"URL: {page.url}")
+
+        # Navigate to admin page
+        page.goto(f"{self._base_url}/admin/", wait_until="networkidle", timeout=60000)
+        logger.debug(f"Navigated to: {page.url}")
+
+        # Wait much longer for the admin dashboard to be fully loaded and rendered
+        # The JavaScript needs time to execute and render the UI
+        logger.info("Waiting for admin dashboard to fully render...")
+        page.wait_for_timeout(5000)  # Give JavaScript time to execute
+
+        # Wait for the page body to be ready
+        try:
+            page.wait_for_selector("body", state="attached", timeout=10000)
+            logger.debug("Page body is attached")
+        except Exception as e:
+            logger.warning(f"Body selector timeout: {e}")
+
+        # Additional wait for any AJAX/dynamic content to finish loading
+        page.wait_for_load_state("networkidle", timeout=30000)
+
+        # Final wait for UI to stabilize
+        page.wait_for_timeout(3000)
+
+        # Aggressively expand and make visible all menu items
+        # This handles Fess admin UI's complex navigation structure
+        try:
+            page.evaluate("""
+                // Force all elements with 'collapse' class to be visible
+                document.querySelectorAll('.collapse').forEach(el => {
+                    el.classList.add('show');
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                    el.style.height = 'auto';
+                });
+
+                // Click all collapsed menu toggles and make them active
+                document.querySelectorAll('[data-toggle="collapse"]').forEach(el => {
+                    el.classList.remove('collapsed');
+                    el.setAttribute('aria-expanded', 'true');
+                    if (el.classList.contains('collapsed')) {
+                        el.click();
+                    }
+                });
+
+                // Force all dropdown menus to be visible and accessible
+                document.querySelectorAll('.dropdown-menu').forEach(el => {
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                    el.style.position = 'static';
+                    el.style.opacity = '1';
+                });
+
+                // Make all navigation links visible
+                document.querySelectorAll('nav a, .navbar a, .sidebar a, [role="navigation"] a').forEach(el => {
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                    el.style.opacity = '1';
+                });
+
+                // Force show all list items in navigation
+                document.querySelectorAll('nav li, .navbar li, .sidebar li, [role="navigation"] li').forEach(el => {
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                });
+
+                // Remove any 'd-none' or 'hidden' classes
+                document.querySelectorAll('.d-none, .hidden').forEach(el => {
+                    el.classList.remove('d-none', 'hidden');
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                });
+
+                // Expand any accordion-style menus
+                document.querySelectorAll('.accordion-collapse').forEach(el => {
+                    el.classList.add('show');
+                    el.style.display = 'block';
+                });
+            """)
+            logger.info("Aggressively expanded all navigation menus")
+            page.wait_for_timeout(2000)  # Wait for all animations to complete
+        except Exception as e:
+            logger.warning(f"Could not expand menus: {e}")
+
+        logger.info("Admin dashboard should now be fully loaded with all menus visible")
         return page
 
     def get_current_page(self) -> "Page":

@@ -14,6 +14,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir playwright==1.56.0
 
+# Ensure browser binaries are installed
+RUN playwright install --with-deps chromium
+
 COPY src /app
 WORKDIR /app
 
