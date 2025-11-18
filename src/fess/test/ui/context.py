@@ -82,28 +82,63 @@ class FessContext:
         # Final wait for UI to stabilize
         page.wait_for_timeout(3000)
 
-        # Expand all collapsed menus to make all menu items visible
-        # This handles Fess admin UI's collapsible navigation menus
+        # Aggressively expand and make visible all menu items
+        # This handles Fess admin UI's complex navigation structure
         try:
             page.evaluate("""
-                // Expand all Bootstrap collapse elements
-                document.querySelectorAll('.collapse:not(.show)').forEach(el => {
+                // Force all elements with 'collapse' class to be visible
+                document.querySelectorAll('.collapse').forEach(el => {
                     el.classList.add('show');
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                    el.style.height = 'auto';
                 });
 
-                // Click all collapsed menu toggles
-                document.querySelectorAll('[data-toggle="collapse"].collapsed').forEach(el => {
-                    el.click();
+                // Click all collapsed menu toggles and make them active
+                document.querySelectorAll('[data-toggle="collapse"]').forEach(el => {
+                    el.classList.remove('collapsed');
+                    el.setAttribute('aria-expanded', 'true');
+                    if (el.classList.contains('collapsed')) {
+                        el.click();
+                    }
                 });
 
-                // Ensure all dropdown menus are accessible
+                // Force all dropdown menus to be visible and accessible
                 document.querySelectorAll('.dropdown-menu').forEach(el => {
                     el.style.display = 'block';
+                    el.style.visibility = 'visible';
                     el.style.position = 'static';
+                    el.style.opacity = '1';
+                });
+
+                // Make all navigation links visible
+                document.querySelectorAll('nav a, .navbar a, .sidebar a, [role="navigation"] a').forEach(el => {
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                    el.style.opacity = '1';
+                });
+
+                // Force show all list items in navigation
+                document.querySelectorAll('nav li, .navbar li, .sidebar li, [role="navigation"] li').forEach(el => {
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                });
+
+                // Remove any 'd-none' or 'hidden' classes
+                document.querySelectorAll('.d-none, .hidden').forEach(el => {
+                    el.classList.remove('d-none', 'hidden');
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                });
+
+                // Expand any accordion-style menus
+                document.querySelectorAll('.accordion-collapse').forEach(el => {
+                    el.classList.add('show');
+                    el.style.display = 'block';
                 });
             """)
-            logger.info("Expanded all collapsible menus")
-            page.wait_for_timeout(1000)  # Wait for menu animations
+            logger.info("Aggressively expanded all navigation menus")
+            page.wait_for_timeout(2000)  # Wait for all animations to complete
         except Exception as e:
             logger.warning(f"Could not expand menus: {e}")
 
