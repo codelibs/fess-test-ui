@@ -19,7 +19,7 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start validation tests for keymatch")
+    logger.info("Starting key match validation test")
 
     page: "Page" = context.get_admin_page()
 
@@ -38,7 +38,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/keymatch/createnew/"),
                 "Should stay on create page when required fields are empty")
-    logger.info("✓ Required field validation working")
+    logger.info("Test 1 passed: Required field validation working")
 
     # Test 2: XSS prevention
     logger.info("Test 2: XSS prevention in term field")
@@ -48,7 +48,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/keymatch/"):
-        logger.info("✓ XSS prevention working")
+        logger.info("Test 2 passed: XSS prevention working")
 
     # Test 3: Maximum length validation
     logger.info("Test 3: Maximum length validation")
@@ -58,12 +58,12 @@ def run(context: FessContext) -> None:
     page.click("button:has-text(\"作成\")")
 
     page.wait_for_load_state("domcontentloaded")
-    logger.info("✓ Long input handled")
+    logger.info("Test 3 passed: Long input handled")
 
     if page.url != context.url("/admin/keymatch/"):
         page.goto(context.url("/admin/keymatch/"))
 
-    logger.info("✓ All validation tests completed successfully")
+    logger.info("Key match validation test completed successfully")
 
 
 if __name__ == "__main__":

@@ -19,11 +19,13 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting webconfig add test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test label: {label_name}")
 
+    logger.info("Step 1: Navigate to web crawler configuration page")
     # Click text=クローラー
     page.click("text=クローラー")
 
@@ -31,10 +33,12 @@ def run(context: FessContext) -> None:
     page.click("text=ウェブ")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
+    logger.info("Step 2: Open create new configuration form")
     # Click text=新規作成
     page.click("text=新規作成")
     assert_equal(page.url, context.url("/admin/webconfig/createnew/"))
 
+    logger.info("Step 3: Fill in web configuration details")
     # Fill input[name="name"]
     page.fill("input[name=\"name\"]", label_name)
 
@@ -56,15 +60,18 @@ def run(context: FessContext) -> None:
     # Fill textarea[name="description"]
     page.fill("textarea[name=\"description\"]", "Fessのサイト")
 
+    logger.info("Step 4: Submit new web configuration")
     # Click button:has-text("作成")
     page.click("button:has-text(\"作成\")")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
+    logger.info("Step 5: Verify configuration appears in list")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("table")
     assert_not_equal(table_content.find(label_name), -1,
                      f"{label_name} not in {table_content}")
 
+    logger.info("Step 6: Verify configuration details")
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/webconfig/details/4/"))
@@ -76,6 +83,8 @@ def run(context: FessContext) -> None:
     # Verify that the value entered in the "description" field is displayed
     desc_value = page.input_value("input[name=\"description\"]")
     assert_equal(desc_value, "Fessのサイト", f"description value '{desc_value}' != expected 'Fessのサイト'")
+
+    logger.info("Webconfig add test completed successfully")
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:

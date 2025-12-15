@@ -18,39 +18,42 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting accesstoken delete test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test label: {label_name}")
 
-    # Click text=システム
+    # Step 1: Navigate to accesstoken page
+    logger.info("Step 1: Navigating to accesstoken page")
     page.click("text=システム")
-
-    # Click text=アクセストークン
     page.click("text=アクセストークン")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
-    # Click text=testtoken
+    # Step 2: Open accesstoken details
+    logger.info("Step 2: Opening accesstoken details")
     page.click(f"text={label_name}X")
     assert_startswith(page.url, context.url("/admin/accesstoken/details/4/"))
 
-    # Click text=削除
+    # Step 3: Test delete button and cancel
+    logger.info("Step 3: Testing delete button and cancel")
     page.click("text=削除")
-
-    # Click text=キャンセル
     page.click("text=キャンセル")
 
-    # Click text=削除
+    # Step 4: Delete accesstoken
+    logger.info("Step 4: Deleting accesstoken")
     page.click("text=削除")
-
-    # Click text=キャンセル 削除 >> button[name="delete"]
     page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
+    # Step 5: Verify accesstoken was deleted
+    logger.info("Step 5: Verifying accesstoken was deleted")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("section.content")
     assert_equal(table_content.find(label_name), -1,
                  f"{label_name} in {table_content}")
+
+    logger.info("Accesstoken delete test completed successfully")
 
 
 if __name__ == "__main__":

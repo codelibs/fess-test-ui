@@ -19,7 +19,7 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start validation tests for accesstoken")
+    logger.info("Starting access token validation test")
 
     page: "Page" = context.get_admin_page()
 
@@ -39,7 +39,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/accesstoken/createnew/"),
                 "Should stay on create page when required fields are empty")
-    logger.info("✓ Required field validation working")
+    logger.info("Test 1 passed: Required field validation working")
 
     # Test 2: XSS prevention in name field
     logger.info("Test 2: XSS prevention in name field")
@@ -48,7 +48,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/accesstoken/"):
-        logger.info("✓ XSS prevention working - token created with escaped content")
+        logger.info("Test 2 passed: XSS prevention working - token created with escaped content")
 
     # Test 3: Maximum length validation
     logger.info("Test 3: Maximum length validation")
@@ -57,13 +57,13 @@ def run(context: FessContext) -> None:
     page.click("button:has-text(\"作成\")")
 
     page.wait_for_load_state("domcontentloaded")
-    logger.info("✓ Long input handled")
+    logger.info("Test 3 passed: Long input handled")
 
     # Navigate back
     if page.url != context.url("/admin/accesstoken/"):
         page.goto(context.url("/admin/accesstoken/"))
 
-    logger.info("✓ All validation tests completed successfully")
+    logger.info("Access token validation test completed successfully")
 
 
 if __name__ == "__main__":

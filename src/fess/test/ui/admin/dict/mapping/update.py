@@ -19,23 +19,28 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting mapping dictionary update test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test label: {label_name}")
 
     # Click text=システム
+    logger.info("Step 1: Navigate to System menu")
     page.click("text=システム")
 
     # Click text=辞書
+    logger.info("Step 2: Navigate to Dictionary page")
     page.click("text=辞書")
     assert_equal(page.url, context.url("/admin/dict/"))
 
     # Click :nth-match(:text("mapping.txt"), 3)
+    logger.info("Step 3: Open mapping dictionary")
     page.click(":nth-match(:text(\"mapping.txt\"), 3)")
     assert_equal(page.url, context.url("/admin/dict/mapping/?dictId=bWFwcGluZy50eHQ="))
 
     # Go to last page
+    logger.info("Step 4: Navigate to last page")
     page_info: str = page.inner_text("div.col-sm-2")
     last_page = int(re.search(r'(\d+)/(\d+)', page_info).group(2)) if re.search(r'(\d+)/(\d+)', page_info) else None
 
@@ -46,28 +51,36 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
 
     # Click text=[一]
+    logger.info("Step 5: Open entry details")
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/dict/mapping/details/bWFwcGluZy50eHQ%3D/4/"))
 
     # Click text=編集
+    logger.info("Step 6: Click edit button")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/dict/mapping/"))
 
     # Click text=戻る
+    logger.info("Step 7: Test cancel button")
     page.click("text=戻る")
     assert_equal(page.url, context.url("/admin/dict/mapping/"))
 
     # Click text=編集
+    logger.info("Step 8: Click edit button again")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/dict/mapping/"))
 
     # Fill input[name="output"]
+    logger.info("Step 9: Update form field")
     page.fill("input[name=\"output\"]", "壱")
 
     # Click text=更新
+    logger.info("Step 10: Submit form to update entry")
     page.click("text=更新")
     assert_equal(page.url, context.url("/admin/dict/mapping/list/1?dictId=bWFwcGluZy50eHQ="))
+
+    logger.info("Mapping dictionary update test completed successfully")
             
 
 if __name__ == "__main__":

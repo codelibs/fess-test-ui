@@ -1,7 +1,11 @@
 from playwright.sync_api import Playwright, sync_playwright
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def run(playwright: Playwright) -> None:
+    logger.info("Starting JSON response test")
     browser = playwright.chromium.launch(headless=False, slow_mo=500)
     context = browser.new_context()
 
@@ -9,6 +13,7 @@ def run(playwright: Playwright) -> None:
     page = context.new_page()
 
     # Go to http://localhost:8080/login/
+    logger.info("Step 1: Navigate to login page")
     page.goto("http://localhost:8080/login/")
 
     # Click [placeholder="ユーザー名"]
@@ -24,10 +29,12 @@ def run(playwright: Playwright) -> None:
     page.fill("[placeholder=\"パスワード\"]", "admin1234")
 
     # Click button:has-text("ログイン")
+    logger.info("Step 2: Login with admin credentials")
     page.click("button:has-text(\"ログイン\")")
     # assert page.url == "http://localhost:8080/admin/dashboard/"
 
     # Click a:has-text("システム")
+    logger.info("Step 3: Navigate to System > General settings")
     page.click("a:has-text(\"システム\")")
 
     # Click a:has-text("全般")
@@ -35,6 +42,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Uncheck input[name="webApiJson"]
+    logger.info("Step 4: Disable JSON API")
     page.uncheck("input[name=\"webApiJson\"]")
 
     # Click button:has-text("更新")
@@ -42,6 +50,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Go to http://localhost:8080/json?q=fess
+    logger.info("Step 5: Verify JSON API is disabled")
     page.goto("http://localhost:8080/json?q=fess")
 
     # Click text=admin
@@ -59,6 +68,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Check input[name="webApiJson"]
+    logger.info("Step 6: Enable JSON API")
     page.check("input[name=\"webApiJson\"]")
 
     # Click button:has-text("更新")
@@ -66,6 +76,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Go to http://localhost:8080/json?q=fess
+    logger.info("Step 7: Verify JSON API is enabled")
     page.goto("http://localhost:8080/json?q=fess")
 
     # Go to http://localhost:8080/json/?type=ping
@@ -77,6 +88,8 @@ def run(playwright: Playwright) -> None:
     # ---------------------
     context.close()
     browser.close()
+
+    logger.info("JSON response test completed successfully")
 
 
 with sync_playwright() as playwright:

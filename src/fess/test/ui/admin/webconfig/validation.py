@@ -19,7 +19,7 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start validation tests for webconfig")
+    logger.info("Starting web config validation test")
 
     page: "Page" = context.get_admin_page()
 
@@ -40,6 +40,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/webconfig/createnew/"),
                 "Should stay on create page when required fields are empty")
+    logger.info("Test 1 passed: Required field validation working")
 
     # Test 2: Required field validation - name only
     logger.info("Test 2: Required field validation - name only, missing URLs")
@@ -50,6 +51,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/webconfig/createnew/"),
                 "Should stay on create page when URL fields are empty")
+    logger.info("Test 2 passed: Name only validation working")
 
     # Navigate back to list
     page.click("text=戻る")
@@ -71,7 +73,7 @@ def run(context: FessContext) -> None:
         # The script tag should not execute - verify it's displayed as text
         assert_not_equal(table_content.find("script"), -1,
                         "XSS attempt should be visible as text, not executed")
-        logger.info("✓ XSS prevention working - script tag displayed as text")
+        logger.info("Test 3 passed: XSS prevention working - script tag displayed as text")
 
     # Test 4: Maximum length validation for name
     logger.info("Test 4: Maximum length validation")
@@ -84,7 +86,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     # Should either reject or truncate
-    logger.info("✓ Long input handled (either rejected or truncated)")
+    logger.info("Test 4 passed: Long input handled (either rejected or truncated)")
 
     # Navigate back to list for cleanup
     if page.url != context.url("/admin/webconfig/"):
@@ -100,7 +102,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     # Should stay on create page or show error
-    logger.info("✓ Invalid URL format handled")
+    logger.info("Test 5 passed: Invalid URL format handled")
 
     # Navigate back to list
     if page.url != context.url("/admin/webconfig/"):
@@ -128,7 +130,7 @@ def run(context: FessContext) -> None:
         page.wait_for_load_state("domcontentloaded")
 
         # Should either reject or allow (depending on Fess behavior)
-        logger.info("✓ Duplicate name test completed")
+        logger.info("Test 6 passed: Duplicate name test completed")
 
         # Cleanup: delete the test entry
         page.goto(context.url("/admin/webconfig/"))
@@ -141,7 +143,7 @@ def run(context: FessContext) -> None:
             page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
             page.wait_for_load_state("domcontentloaded")
 
-    logger.info("✓ All validation tests completed successfully")
+    logger.info("Web config validation test completed successfully")
 
 
 if __name__ == "__main__":

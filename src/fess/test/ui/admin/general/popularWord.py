@@ -1,8 +1,12 @@
 from playwright.sync_api import Playwright, sync_playwright
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def run(playwright: Playwright) -> None:
+    logger.info("Starting popular word test")
     browser = playwright.chromium.launch(headless=False)
     context = browser.new_context()
 
@@ -10,8 +14,10 @@ def run(playwright: Playwright) -> None:
     page = context.new_page()
 
     # Go to http://localhost:8080/
+    logger.info("Step 1: Navigate to search page")
     page.goto("http://localhost:8080/search/?q=fess")
 
+    logger.info("Step 2: Perform repeated searches to generate popular word data")
     for i in range(10):
 
         time.sleep(60)
@@ -28,6 +34,8 @@ def run(playwright: Playwright) -> None:
     # ---------------------
     context.close()
     browser.close()
+
+    logger.info("Popular word test completed successfully")
 
 
 with sync_playwright() as playwright:

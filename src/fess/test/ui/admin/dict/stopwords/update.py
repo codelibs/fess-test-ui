@@ -1,71 +1,87 @@
+
+import logging
+
+from fess.test import assert_equal, assert_not_equal
+from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
+logger = logging.getLogger(__name__)
 
-def run(playwright: Playwright) -> None:
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context()
 
-    # Open new page
-    page = context.new_page()
+def setup(playwright: Playwright) -> FessContext:
+    context: FessContext = FessContext(playwright)
+    context.login()
+    return context
 
-    # Go to http://localhost:8080/login/
-    page.goto("http://localhost:8080/login/")
 
-    # Fill [placeholder="ユーザー名"]
-    page.fill("[placeholder=\"ユーザー名\"]", "admin")
+def destroy(context: FessContext) -> None:
+    context.close()
 
-    # Fill [placeholder="パスワード"]
-    page.fill("[placeholder=\"パスワード\"]", "admin1234")
 
-    # Click button:has-text("ログイン")
-    page.click("button:has-text(\"ログイン\")")
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
+def run(context: FessContext) -> None:
+    logger.info("Starting stopwords dictionary update test")
+
+    page: "Page" = context.get_admin_page()
+    label_name: str = context.create_label_name()
+    logger.debug(f"Using test label: {label_name}")
 
     # Click text=システム
+    logger.info("Step 1: Navigate to System menu")
     page.click("text=システム")
 
     # Click text=辞書
+    logger.info("Step 2: Navigate to Dictionary page")
     page.click("text=辞書")
-    # assert page.url == "http://localhost:8080/admin/dict/"
+    assert_equal(page.url, context.url("/admin/dict/"))
 
     # Click text=en/stopwords.txt
+    logger.info("Step 3: Open stopwords dictionary")
     page.click("text=en/stopwords.txt")
-    # assert page.url == "http://localhost:8080/admin/dict/stopwords/?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="
+    assert_equal(page.url, context.url("/admin/dict/stopwords/?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="))
 
-    # Click a:has-text("2")
+    # Click on page 2 to find the entry created by add test
+    logger.info("Step 4: Navigate to page 2")
     page.click("a:has-text(\"2\")")
-    # assert page.url == "http://localhost:8080/admin/dict/stopwords/list/2?dictId=ZW4vc3RvcHdvcmRzLnR4dA%3D%3D"
+    assert_equal(page.url, context.url("/admin/dict/stopwords/list/2?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="))
 
-    # Click :nth-match(:text("he"), 4)
-    page.click(":nth-match(:text(\"he\"), 4)")
-    # assert page.url == "http://localhost:8080/admin/dict/stopwords/details/ZW4vc3RvcHdvcmRzLnR4dA%3D%3D/4/34"
+    # Click on the first entry on page 2
+    logger.info("Step 5: Click on existing entry to view details")
+    page.click("table tbody tr:first-child td:first-child a")
 
     # Click text=編集
+    logger.info("Step 6: Click edit button")
     page.click("text=編集")
-    # assert page.url == "http://localhost:8080/admin/dict/stopwords/"
 
-    # Click text=戻る
+    # Click text=戻る (test cancel button)
+    logger.info("Step 7: Test cancel button")
     page.click("text=戻る")
-    # assert page.url == "http://localhost:8080/admin/dict/stopwords/"
 
-    # Click text=編集
+    # Click text=編集 again
+    logger.info("Step 8: Click edit button again")
     page.click("text=編集")
-    # assert page.url == "http://localhost:8080/admin/dict/stopwords/"
 
     # Fill input[name="input"]
-    page.fill("input[name=\"input\"]", "she")
+    logger.info("Step 9: Update form field")
+    page.fill("input[name=\"input\"]", label_name)
 
     # Click text=更新
+    logger.info("Step 10: Submit form to update entry")
     page.click("text=更新")
-    # assert page.url == "http://localhost:8080/admin/dict/stopwords/list/1?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="
+    assert_equal(page.url, context.url("/admin/dict/stopwords/list/1?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="))
 
-    # Close page
-    page.close()
+    logger.info("Step 11: Verify entry was updated successfully")
+    page.wait_for_load_state("domcontentloaded")
+    # Navigate back to page 2 to verify the updated entry
+    page.click("a:has-text(\"2\")")
+    table_content: str = page.inner_text("table")
+    assert_not_equal(table_content.find(label_name), -1,
+                     f"{label_name} not in {table_content}")
 
-    # ---------------------
-    context.close()
-    browser.close()
+    logger.info("Stopwords dictionary update test completed successfully")
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+if __name__ == "__main__":
+    with sync_playwright() as playwright:
+        context: FessContext = setup(playwright)
+        run(context)
+        destroy(context)

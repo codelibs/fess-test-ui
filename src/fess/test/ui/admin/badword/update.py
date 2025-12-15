@@ -18,58 +18,59 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting badword update test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
     new_label_name: str = context.generate_str()
+    logger.debug(f"Using test label: {label_name}")
+    logger.debug(f"Using new test label: {new_label_name}")
 
-    # Click text=サジェスト
+    # Step 1: Navigate to badword page
+    logger.info("Step 1: Navigating to badword page")
     page.click("text=サジェスト")
-
-    # Click text=除外ワード
     page.click("text=除外ワード")
     assert_equal(page.url, context.url("/admin/badword/"))
 
-    # Click text=
+    # Step 2: Open badword details
+    logger.info("Step 2: Opening badword details")
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/badword/details/4/"))
 
-    # Click text=編集
+    # Step 3: Test edit button and back button
+    logger.info("Step 3: Testing edit button and back button")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/badword/"))
-
-    # Click text=戻る
     page.click("text=戻る")
     assert_equal(page.url, context.url("/admin/badword/"))
 
-    # Click text=編集
+    # Step 4: Edit badword with new name
+    logger.info("Step 4: Editing badword with new name")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/badword/"))
-
-    # Fill input[name="suggestWord"]
     page.fill("input[name=\"suggestWord\"]", new_label_name)
 
-    # Click text=更新
+    # Step 5: Update badword
+    logger.info("Step 5: Updating badword")
     page.click("text=更新")
     assert_equal(page.url, context.url("/admin/badword/"))
 
-    # Click text=
+    # Step 6: Verify updated badword
+    logger.info("Step 6: Verifying updated badword")
     page.click(f"text={new_label_name}")
     assert_startswith(
         page.url, context.url("/admin/badword/details/4/"))
 
-    # Click text=編集
+    # Step 7: Restore original name
+    logger.info("Step 7: Restoring original name")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/badword/"))
-
-    # Fill input[name="suggestWord"]
     page.fill("input[name=\"suggestWord\"]", label_name)
-
-    # Click text=更新
     page.click("text=更新")
     assert_equal(page.url, context.url("/admin/badword/"))
+
+    logger.info("Badword update test completed successfully")
 
 
 if __name__ == "__main__":

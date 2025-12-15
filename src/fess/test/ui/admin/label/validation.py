@@ -19,7 +19,7 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start validation tests for label")
+    logger.info("Starting label validation test")
 
     page: "Page" = context.get_admin_page()
 
@@ -39,7 +39,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/labeltype/createnew/"),
                 "Should stay on create page when required fields are empty")
-    logger.info("✓ Required field validation working")
+    logger.info("Test 1 passed: Required field validation working")
 
     # Test 2: Special characters in name (XSS prevention)
     logger.info("Test 2: XSS prevention in name field")
@@ -51,7 +51,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/labeltype/"):
-        logger.info("✓ XSS prevention working - label created with escaped content")
+        logger.info("Test 2 passed: XSS prevention working - label created with escaped content")
 
     # Test 3: Invalid sortOrder (non-numeric)
     logger.info("Test 3: Invalid sortOrder validation")
@@ -64,7 +64,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     # Should either reject or default to 0
-    logger.info("✓ Non-numeric sortOrder handled")
+    logger.info("Test 3 passed: Non-numeric sortOrder handled")
 
     # Navigate back
     if page.url != context.url("/admin/labeltype/"):
@@ -80,11 +80,11 @@ def run(context: FessContext) -> None:
     page.click("button:has-text(\"作成\")")
 
     page.wait_for_load_state("domcontentloaded")
-    logger.info("✓ Long input handled")
+    logger.info("Test 4 passed: Long input handled")
 
     # Cleanup any test entries created
     page.goto(context.url("/admin/labeltype/"))
-    logger.info("✓ All validation tests completed successfully")
+    logger.info("Label validation test completed successfully")
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from playwright.sync_api import sync_playwright
 from fess.test.ui import FessContext
 from fess.test.result import ResultCollector, TestResult
 from fess.test.metrics import MetricsCollector
+from fess.test.logging_config import setup_logging
 from fess.test.ui.admin import (accesstoken,
                                 badword,
                                 boostdoc,
@@ -149,6 +150,9 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
     module_name = module.__name__.split('.')[-1]
     logger.info(f"Starting module: {module_name}")
 
+    # Start module trace
+    context.start_module_trace(module_name)
+
     start_time = time.time()
     result = None
 
@@ -165,6 +169,9 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
         )
         collector.add_result(result)
         metrics.add_metric(module_name, duration, 'passed')
+
+        # Stop trace without saving for passed tests (unless TRACE_ALL)
+        context.stop_module_trace(save=False, status='passed')
         return True
 
     except AssertionError as e:
@@ -172,6 +179,9 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
         duration = time.time() - start_time
         error_msg = str(e)
         screenshot_path = save_failure_screenshot(context, module_name)
+
+        # Stop and save trace for failed tests
+        trace_path = context.stop_module_trace(save=True, status='failed')
 
         page = context.get_current_page()
         url = page.url if page else None
@@ -191,6 +201,8 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
         logger.error(f"Module {module_name} failed: {error_msg}")
         if url:
             logger.error(f"URL at failure: {url}")
+        if trace_path:
+            logger.info(f"Trace available: {trace_path}")
 
         return False
 
@@ -200,6 +212,9 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
         error_msg = str(e)
         error_type = type(e).__name__
         screenshot_path = save_failure_screenshot(context, module_name)
+
+        # Stop and save trace for error tests
+        trace_path = context.stop_module_trace(save=True, status='error')
 
         page = context.get_current_page()
         url = page.url if page else None
@@ -219,6 +234,8 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
         logger.error(f"Module {module_name} error ({error_type}): {error_msg}")
         if url:
             logger.error(f"URL at failure: {url}")
+        if trace_path:
+            logger.info(f"Trace available: {trace_path}")
 
         # Also log page content for debugging
         if page:
@@ -296,8 +313,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    setup_logging()
     sys.exit(main())
