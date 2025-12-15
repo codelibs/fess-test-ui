@@ -19,33 +19,40 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting role add test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test role: {label_name}")
 
-    # Click text=ユーザー
+    # Step 1: Navigate to role page
+    logger.info("Step 1: Navigating to role page")
     page.click("text=ユーザー")
-
-    # Click text=ロール
     page.click("text=ロール")
     assert_equal(page.url, context.url("/admin/role/"))
 
-    # Click text=新規作成
+    # Step 2: Open create form
+    logger.info("Step 2: Opening create form")
     page.click("text=新規作成")
     assert_equal(page.url, context.url("/admin/role/createnew/"))
 
-    # Fill input[name="name"]
+    # Step 3: Fill role information
+    logger.info("Step 3: Filling role information")
     page.fill("input[name=\"name\"]", label_name)
 
-    # Click button:has-text("作成")
+    # Step 4: Submit form
+    logger.info("Step 4: Submitting form")
     page.click("button:has-text(\"作成\")")
     assert_equal(page.url, context.url("/admin/role/"))
 
+    # Step 5: Verify role was created
+    logger.info("Step 5: Verifying role was created")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("table")
     assert_not_equal(table_content.find(label_name), -1,
                      f"{label_name} not in {table_content}")
+
+    logger.info("Role add test completed successfully")
 
 
 if __name__ == "__main__":

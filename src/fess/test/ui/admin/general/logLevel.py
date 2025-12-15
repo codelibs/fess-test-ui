@@ -1,7 +1,11 @@
 from playwright.sync_api import Playwright, sync_playwright
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def run(playwright: Playwright) -> None:
+    logger.info("Starting log level test")
     browser = playwright.chromium.launch(headless=False, slow_mo=500)
     context = browser.new_context()
 
@@ -9,6 +13,7 @@ def run(playwright: Playwright) -> None:
     page = context.new_page()
 
     # Go to http://localhost:8080/login/
+    logger.info("Step 1: Navigate to login page")
     page.goto("http://localhost:8080/login/")
 
     # Fill [placeholder="ユーザー名"]
@@ -18,10 +23,12 @@ def run(playwright: Playwright) -> None:
     page.fill("[placeholder=\"パスワード\"]", "admin1234")
 
     # Click button:has-text("ログイン")
+    logger.info("Step 2: Login with admin credentials")
     page.click("button:has-text(\"ログイン\")")
     # assert page.url == "http://localhost:8080/admin/dashboard/"
 
     # Click a:has-text("システム")
+    logger.info("Step 3: Navigate to System > General settings")
     page.click("a:has-text(\"システム\")")
 
     # Click text=全般
@@ -29,6 +36,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Select DEBUG
+    logger.info("Step 4: Change log level to DEBUG")
     page.select_option("select[name=\"logLevel\"]", "DEBUG")
 
     # Click button:has-text("更新")
@@ -36,6 +44,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Go to http://localhost:8080/search/?q=fess
+    logger.info("Step 5: Verify DEBUG log level by performing search")
     page.goto("http://localhost:8080/search/?q=fess")
 
     # Click text=admin
@@ -53,6 +62,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Select WARN
+    logger.info("Step 6: Change log level to WARN")
     page.select_option("select[name=\"logLevel\"]", "WARN")
 
     # Click button:has-text("更新")
@@ -60,6 +70,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Go to http://localhost:8080/search/?q=fess
+    logger.info("Step 7: Verify WARN log level by performing search")
     page.goto("http://localhost:8080/search/?q=fess")
 
     # Close page
@@ -68,6 +79,8 @@ def run(playwright: Playwright) -> None:
     # ---------------------
     context.close()
     browser.close()
+
+    logger.info("Log level test completed successfully")
 
 
 with sync_playwright() as playwright:

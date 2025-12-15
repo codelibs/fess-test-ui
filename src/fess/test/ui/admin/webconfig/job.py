@@ -19,11 +19,13 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting webconfig job test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test label: {label_name}")
 
+    logger.info("Step 1: Navigate to web crawler configuration page")
     # Click text=クローラー
     page.click("text=クローラー")
 
@@ -31,11 +33,13 @@ def run(context: FessContext) -> None:
     page.click("text=ウェブ")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
+    logger.info("Step 2: Open configuration details")
     # Click text=N2SM
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/webconfig/details/4/"))
 
+    logger.info("Step 3: Test create new job button and cancel")
     # Click text=新しいジョブの作成
     page.click("text=新しいジョブの作成")
     # assert_equal(page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
@@ -46,6 +50,7 @@ def run(context: FessContext) -> None:
     page.click("text=戻る")
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
+    logger.info("Step 4: Navigate back to configuration and create job")
     # Click text=クローラー
     page.click("text=クローラー")
 
@@ -64,15 +69,18 @@ def run(context: FessContext) -> None:
     assert_startswith(
         page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
 
+    logger.info("Step 5: Submit new job creation")
     # Click button:has-text("作成")
     page.click("button:has-text(\"作成\")")
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
+    logger.info("Step 6: Verify job appears in scheduler list")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("table")
     assert_not_equal(table_content.find(label_name), -1,
                      f"{label_name} not in {table_content}")
 
+    logger.info("Step 7: Open job details and test delete cancel")
     # Click text=N2SM
     page.click(f"text=Web Crawler - {label_name}")
     assert_startswith(
@@ -84,6 +92,7 @@ def run(context: FessContext) -> None:
     # Click text=キャンセル
     page.click("text=キャンセル")
 
+    logger.info("Step 8: Confirm job deletion")
     # Click text=削除
     page.click("text=削除")
 
@@ -91,10 +100,13 @@ def run(context: FessContext) -> None:
     page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
+    logger.info("Step 9: Verify job is removed from scheduler list")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("section.content")
     assert_equal(table_content.find(label_name), -1,
                  f"{label_name} in {table_content}")
+
+    logger.info("Webconfig job test completed successfully")
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:

@@ -19,7 +19,7 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start validation tests for role")
+    logger.info("Starting role validation test")
 
     page: "Page" = context.get_admin_page()
 
@@ -39,7 +39,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/role/createnew/"),
                 "Should stay on create page when required fields are empty")
-    logger.info("✓ Required field validation working")
+    logger.info("Test 1 passed: Required field validation working")
 
     # Test 2: Special characters in role name (XSS prevention)
     logger.info("Test 2: XSS prevention in role name")
@@ -48,7 +48,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/role/"):
-        logger.info("✓ XSS prevention working - role created with escaped content")
+        logger.info("Test 2 passed: XSS prevention working - role created with escaped content")
 
     # Test 3: Maximum length validation
     logger.info("Test 3: Maximum length validation")
@@ -57,7 +57,7 @@ def run(context: FessContext) -> None:
     page.click("button:has-text(\"作成\")")
 
     page.wait_for_load_state("domcontentloaded")
-    logger.info("✓ Long input handled")
+    logger.info("Test 3 passed: Long input handled")
 
     # Navigate back
     if page.url != context.url("/admin/role/"):
@@ -81,7 +81,7 @@ def run(context: FessContext) -> None:
         page.wait_for_load_state("domcontentloaded")
 
         # Should reject duplicate
-        logger.info("✓ Duplicate role name test completed")
+        logger.info("Test 4 passed: Duplicate role name test completed")
 
         # Cleanup: delete the test role
         page.goto(context.url("/admin/role/"))
@@ -94,7 +94,7 @@ def run(context: FessContext) -> None:
             page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
             page.wait_for_load_state("domcontentloaded")
 
-    logger.info("✓ All validation tests completed successfully")
+    logger.info("Role validation test completed successfully")
 
 
 if __name__ == "__main__":

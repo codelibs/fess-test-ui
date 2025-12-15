@@ -19,7 +19,7 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start validation tests for user")
+    logger.info("Starting user validation test")
 
     page: "Page" = context.get_admin_page()
 
@@ -39,7 +39,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/user/createnew/"),
                 "Should stay on create page when required fields are empty")
-    logger.info("✓ Required field validation working")
+    logger.info("Test 1 passed: Required field validation working")
 
     # Test 2: Password mismatch
     logger.info("Test 2: Password confirmation mismatch")
@@ -52,7 +52,7 @@ def run(context: FessContext) -> None:
     # Should stay on create page with error
     assert_equal(page.url, context.url("/admin/user/createnew/"),
                 "Should stay on create page when passwords don't match")
-    logger.info("✓ Password mismatch validation working")
+    logger.info("Test 2 passed: Password mismatch validation working")
 
     # Test 3: Special characters in username (XSS prevention)
     logger.info("Test 3: XSS prevention in username")
@@ -63,7 +63,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/user/"):
-        logger.info("✓ XSS prevention working - user created with escaped content")
+        logger.info("Test 3 passed: XSS prevention working - user created with escaped content")
 
     # Test 4: Invalid password (too short or weak)
     logger.info("Test 4: Weak password validation")
@@ -75,7 +75,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     # Should either reject or allow depending on Fess password policy
-    logger.info("✓ Weak password test completed")
+    logger.info("Test 4 passed: Weak password test completed")
 
     # Navigate back
     if page.url != context.url("/admin/user/"):
@@ -103,7 +103,7 @@ def run(context: FessContext) -> None:
         page.wait_for_load_state("domcontentloaded")
 
         # Should reject duplicate username
-        logger.info("✓ Duplicate username test completed")
+        logger.info("Test 5 passed: Duplicate username test completed")
 
         # Cleanup: delete the test user
         page.goto(context.url("/admin/user/"))
@@ -116,7 +116,7 @@ def run(context: FessContext) -> None:
             page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
             page.wait_for_load_state("domcontentloaded")
 
-    logger.info("✓ All validation tests completed successfully")
+    logger.info("User validation test completed successfully")
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start validation tests for group")
+    logger.info("Starting group validation test")
 
     page: "Page" = context.get_admin_page()
 
@@ -39,7 +39,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/group/createnew/"),
                 "Should stay on create page when required fields are empty")
-    logger.info("✓ Required field validation working")
+    logger.info("Test 1 passed: Required field validation working")
 
     # Test 2: Special characters in group name (XSS prevention)
     logger.info("Test 2: XSS prevention in group name")
@@ -48,7 +48,7 @@ def run(context: FessContext) -> None:
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/group/"):
-        logger.info("✓ XSS prevention working - group created with escaped content")
+        logger.info("Test 2 passed: XSS prevention working - group created with escaped content")
 
     # Test 3: Maximum length validation
     logger.info("Test 3: Maximum length validation")
@@ -57,7 +57,7 @@ def run(context: FessContext) -> None:
     page.click("button:has-text(\"作成\")")
 
     page.wait_for_load_state("domcontentloaded")
-    logger.info("✓ Long input handled")
+    logger.info("Test 3 passed: Long input handled")
 
     # Navigate back
     if page.url != context.url("/admin/group/"):
@@ -81,7 +81,7 @@ def run(context: FessContext) -> None:
         page.wait_for_load_state("domcontentloaded")
 
         # Should reject duplicate
-        logger.info("✓ Duplicate group name test completed")
+        logger.info("Test 4 passed: Duplicate group name test completed")
 
         # Cleanup: delete the test group
         page.goto(context.url("/admin/group/"))
@@ -94,7 +94,7 @@ def run(context: FessContext) -> None:
             page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
             page.wait_for_load_state("domcontentloaded")
 
-    logger.info("✓ All validation tests completed successfully")
+    logger.info("Group validation test completed successfully")
 
 
 if __name__ == "__main__":

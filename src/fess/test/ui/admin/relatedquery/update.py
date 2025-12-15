@@ -18,41 +18,52 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting relatedquery update test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test label: {label_name}")
 
     # Click text=クローラー
+    logger.info("Step 1: Navigate to Crawler menu")
     page.click("text=クローラー")
 
     # Click text=関連クエリー
+    logger.info("Step 2: Navigate to Related Query page")
     page.click("text=関連クエリー")
     assert_equal(page.url, context.url("/admin/relatedquery/"))
 
     # Click text=fess
+    logger.info("Step 3: Open related query details")
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/relatedquery/details/4/"))
 
     # Click text=編集
+    logger.info("Step 4: Click edit button")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/relatedquery/"))
 
     # Click text=戻る
+    logger.info("Step 5: Click back button to test navigation")
     page.click("text=戻る")
     assert_equal(page.url, context.url("/admin/relatedquery/"))
 
     # Click text=編集
+    logger.info("Step 6: Click edit button again")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/relatedquery/"))
 
     # Fill text=n2sm
+    logger.info("Step 7: Update query field")
     page.fill("text=n2sm", "elasticsearch")
 
     # Click text=更新
+    logger.info("Step 8: Submit form to update related query")
     page.click("text=更新")
     assert_equal(page.url, context.url("/admin/relatedquery/"))
+
+    logger.info("Relatedquery update test completed successfully")
 
 
 if __name__ == "__main__":

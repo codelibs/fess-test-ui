@@ -19,51 +19,49 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting user add test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test user: {label_name}")
 
-    # Click text=ユーザー
+    # Step 1: Navigate to user page
+    logger.info("Step 1: Navigating to user page")
     page.click("text=ユーザー")
-
-    # Click text=ユーザー ロール グループ >> p
     page.click("text=ユーザー ロール グループ >> p")
     assert_equal(page.url, context.url("/admin/user/"))
 
-    # Click text=新規作成
+    # Step 2: Open create form
+    logger.info("Step 2: Opening create form")
     page.click("text=新規作成")
     assert_equal(page.url, context.url("/admin/user/createnew/"))
 
-    # Fill input[name="name"]
+    # Step 3: Fill user information
+    logger.info("Step 3: Filling user information")
     page.fill("input[name=\"name\"]", label_name)
-
-    # Fill input[name="password"]
     page.fill("input[name=\"password\"]", "taro1234")
-
-    # Fill input[name="confirmPassword"]
     page.fill("input[name=\"confirmPassword\"]", "taro1234")
-
-    # Fill input[name="attributes.surname"]
     page.fill("input[name=\"attributes.surname\"]", "Yamada")
-
-    # Fill input[name="attributes.givenName"]
     page.fill("input[name=\"attributes.givenName\"]", "Taro")
-
-    # Fill input[name="attributes.mail"]
     page.fill("input[name=\"attributes.mail\"]", "taro@example.com")
 
-    # Click select[name="roles"]
+    # Step 4: Select roles
+    logger.info("Step 4: Selecting roles")
     page.select_option('select#roles', ['YWRtaW4=', 'Z3Vlc3Q='])
 
-    # Click button:has-text("作成")
+    # Step 5: Submit form
+    logger.info("Step 5: Submitting form")
     page.click("button:has-text(\"作成\")")
     assert_equal(page.url, context.url("/admin/user/"))
 
+    # Step 6: Verify user was created
+    logger.info("Step 6: Verifying user was created")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("table")
     assert_not_equal(table_content.find(label_name), -1,
                      f"{label_name} not in {table_content}")
+
+    logger.info("User add test completed successfully")
 
 
 if __name__ == "__main__":

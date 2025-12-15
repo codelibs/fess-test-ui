@@ -18,40 +18,43 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting label delete test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test label: {label_name}")
 
-    # Click text=クローラー
+    # Step 1: Navigate to label page
+    logger.info("Step 1: Navigating to label page")
     page.click("text=クローラー")
-
-    # Click text=ラベル
     page.click("text=ラベル")
     assert_equal(page.url, context.url("/admin/labeltype/"))
 
-    # Click the label created in previous tests
+    # Step 2: Open label details
+    logger.info("Step 2: Opening label details")
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/labeltype/details/4/"))
 
-    # Click text=削除
+    # Step 3: Test cancel button
+    logger.info("Step 3: Testing delete cancel button")
     page.click("text=削除")
-
-    # Click text=キャンセル (test cancel button)
     page.click("text=キャンセル")
 
-    # Click text=削除 again
+    # Step 4: Perform delete
+    logger.info("Step 4: Performing delete")
     page.click("text=削除")
-
-    # Click the actual delete button
     page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
     assert_equal(page.url, context.url("/admin/labeltype/"))
 
+    # Step 5: Verify deletion
+    logger.info("Step 5: Verifying deletion")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("section.content")
     assert_equal(table_content.find(label_name), -1,
                  f"{label_name} found in {table_content} (should be deleted)")
+
+    logger.info("Label delete test completed successfully")
 
 
 if __name__ == "__main__":

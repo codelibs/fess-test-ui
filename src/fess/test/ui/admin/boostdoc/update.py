@@ -18,42 +18,43 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting boostdoc update test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test label: {label_name}")
 
-    # Click text=クローラー
+    # Step 1: Navigate to boostdoc page
+    logger.info("Step 1: Navigating to boostdoc page")
     page.click("text=クローラー")
-
-    # Click text=ドキュメントブースト
     page.click("text=ドキュメントブースト")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
-    # Click text=/.*url\.matches\("https://www\.n2sm\.net/\.\*"\).*/
+    # Step 2: Open boostdoc details
+    logger.info("Step 2: Opening boostdoc details")
     page.click(rf"text=/.*url\.matches\(\"https://{label_name}/\.\*\"\).*/")
     assert_startswith(
         page.url, context.url("/admin/boostdoc/details/4/"))
 
-    # Click text=編集
+    # Step 3: Test edit button and back button
+    logger.info("Step 3: Testing edit button and back button")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
-
-    # Click text=戻る
     page.click("text=戻る")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
-    # Click text=編集
+    # Step 4: Edit boostdoc details
+    logger.info("Step 4: Editing boostdoc details")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
-
-    # Fill input[name="sortOrder"]
     page.fill("input[name=\"sortOrder\"]", "1")
 
-    # Click text=更新
+    # Step 5: Update boostdoc
+    logger.info("Step 5: Updating boostdoc")
     page.click("text=更新")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
+    logger.info("Boostdoc update test completed successfully")
     # TODO check content
 
 

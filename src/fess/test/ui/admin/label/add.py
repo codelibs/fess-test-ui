@@ -19,54 +19,55 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting label add test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Generated test label: {label_name}")
 
-    # Click text=クローラー
+    # Step 1: Navigate to label page
+    logger.info("Step 1: Navigating to label page")
     page.click("text=クローラー")
-
-    # Click text=ラベル
     page.click("text=ラベル")
     assert_equal(page.url, context.url("/admin/labeltype/"))
 
-    # Click text=新規作成
+    # Step 2: Open create form
+    logger.info("Step 2: Opening create form")
     page.click("text=新規作成")
     assert_equal(page.url, context.url("/admin/labeltype/createnew/"))
 
-    # Fill input[name="name"]
+    # Step 3: Fill form fields
+    logger.info("Step 3: Filling form fields")
     page.fill("input[name=\"name\"]", label_name)
-
-    # Fill input[name="value"]
     page.fill("input[name=\"value\"]", label_name.lower())
-
-    # Fill textarea[name="includedPaths"]
     page.fill("textarea[name=\"includedPaths\"]", "https://example.com/.*")
-
-    # Fill input[name="sortOrder"]
     page.fill("input[name=\"sortOrder\"]", "1")
 
-    # Click button:has-text("作成")
+    # Step 4: Submit form
+    logger.info("Step 4: Submitting form")
     page.click("button:has-text(\"作成\")")
     assert_equal(page.url, context.url("/admin/labeltype/"))
 
+    # Step 5: Verify label in list
+    logger.info("Step 5: Verifying label in list")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("table")
     assert_not_equal(table_content.find(label_name), -1,
                      f"{label_name} not in {table_content}")
 
+    # Step 6: Verify label details
+    logger.info("Step 6: Verifying label details")
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/labeltype/details/4/"))
 
-    # Verify that the value entered in the "name" field is displayed
     name_value = page.input_value("input[name=\"name\"]")
     assert_equal(name_value, label_name, f"name value '{name_value}' != expected '{label_name}'")
 
-    # Verify that the value entered in the "value" field is displayed
     value_value = page.input_value("input[name=\"value\"]")
     assert_equal(value_value, label_name.lower(), f"value value '{value_value}' != expected '{label_name.lower()}'")
+
+    logger.info("Label add test completed successfully")
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:

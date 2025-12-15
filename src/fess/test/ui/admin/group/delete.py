@@ -18,41 +18,43 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting group delete test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test group: {label_name}")
 
-    # Click text=ユーザー
+    # Step 1: Navigate to group page
+    logger.info("Step 1: Navigating to group page")
     page.click("text=ユーザー")
-
-    # Click text=グループ
     page.click("text=グループ")
     assert_equal(page.url, context.url("/admin/group/"))
 
-    # Click text=test
+    # Step 2: Open group details
+    logger.info("Step 2: Opening group details")
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/group/details/4/"))
 
-    # Click text=削除
+    # Step 3: Test delete with cancel
+    logger.info("Step 3: Testing delete with cancel")
     page.click("text=削除")
-
-    # Click text=キャンセル
     page.click("text=キャンセル")
 
-    # Click text=削除
+    # Step 4: Execute delete
+    logger.info("Step 4: Executing delete")
     page.click("text=削除")
-
-    # Click text=キャンセル 削除 >> button[name="delete"]
     page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
     assert_equal(page.url, context.url("/admin/group/"))
 
-
+    # Step 5: Verify group was deleted
+    logger.info("Step 5: Verifying group was deleted")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("section.content")
     assert_equal(table_content.find(label_name), -1,
                  f"{label_name} in {table_content}")
+
+    logger.info("Group delete test completed successfully")
 
 
 if __name__ == "__main__":

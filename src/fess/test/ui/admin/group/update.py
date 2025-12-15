@@ -18,41 +18,46 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting group update test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Using test group: {label_name}")
 
-    # Click text=ユーザー
+    # Step 1: Navigate to group page
+    logger.info("Step 1: Navigating to group page")
     page.click("text=ユーザー")
-
-    # Click text=グループ
     page.click("text=グループ")
     assert_equal(page.url, context.url("/admin/group/"))
 
-    # Click text=test
+    # Step 2: Open group details
+    logger.info("Step 2: Opening group details")
     page.click(f"text={label_name}")
     assert_startswith(
         page.url, context.url("/admin/group/details/4/"))
 
-    # Click text=編集
+    # Step 3: Test edit and cancel
+    logger.info("Step 3: Testing edit and cancel")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/group/"))
-
-    # Click text=戻る
     page.click("text=戻る")
     assert_equal(page.url, context.url("/admin/group/"))
 
-    # Click text=編集
+    # Step 4: Open edit form
+    logger.info("Step 4: Opening edit form")
     page.click("text=編集")
     assert_equal(page.url, context.url("/admin/group/"))
 
-    # Fill input[name="attributes.gidNumber"]
+    # Step 5: Update group attributes
+    logger.info("Step 5: Updating group attributes")
     page.fill("input[name=\"attributes.gidNumber\"]", "300")
 
-    # Click text=更新
+    # Step 6: Submit update
+    logger.info("Step 6: Submitting update")
     page.click("text=更新")
     assert_equal(page.url, context.url("/admin/group/"))
+
+    logger.info("Group update test completed successfully")
 
 if __name__ == "__main__":
     with sync_playwright() as playwright:

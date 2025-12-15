@@ -1,17 +1,24 @@
+import logging
+
 from playwright.sync_api import Playwright, sync_playwright
+
+logger = logging.getLogger(__name__)
 
 
 def run(playwright: Playwright) -> None:
+    logger.info("Starting virtualhost add test")
     browser = playwright.chromium.launch(headless=False, slow_mo=500)
     context = browser.new_context()
 
     # Open new page
+    logger.info("Step 1: Open browser and navigate to login page")
     page = context.new_page()
 
     # Go to http://localhost:8080/login/
     page.goto("http://localhost:8080/login/")
 
     # Fill [placeholder="ユーザー名"]
+    logger.info("Step 2: Login to admin panel")
     page.fill("[placeholder=\"ユーザー名\"]", "admin")
 
     # Fill [placeholder="パスワード"]
@@ -22,6 +29,7 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/dashboard/"
 
     # Click text=システム
+    logger.info("Step 3: Configure virtual host settings")
     page.click("text=システム")
 
     # Click text=全般
@@ -37,6 +45,7 @@ def run(playwright: Playwright) -> None:
 
 
     # Click text=クローラー
+    logger.info("Step 4: Create web configurations with virtual hosts")
     page.click("text=クローラー")
 
     # Click text=ウェブ
@@ -105,6 +114,7 @@ def run(playwright: Playwright) -> None:
 
 
     # Click text=ラベル
+    logger.info("Step 5: Create labels with virtual hosts")
     page.click("text=ラベル")
     # assert page.url == "http://localhost:8080/admin/labeltype/"
 
@@ -151,6 +161,7 @@ def run(playwright: Playwright) -> None:
 
 
     # Click text=キーマッチ
+    logger.info("Step 6: Create key matches with virtual hosts")
     page.click("text=キーマッチ")
     # assert page.url == "http://localhost:8080/admin/keymatch/"
 
@@ -201,6 +212,7 @@ def run(playwright: Playwright) -> None:
 
 
     # Click text=関連コンテンツ
+    logger.info("Step 7: Create related content with virtual hosts")
     page.click("text=関連コンテンツ")
     # assert page.url == "http://localhost:8080/admin/relatedcontent/"
 
@@ -240,6 +252,7 @@ def run(playwright: Playwright) -> None:
 
 
     # Click text=関連クエリー
+    logger.info("Step 8: Create related queries with virtual hosts")
     page.click("text=関連クエリー")
     # assert page.url == "http://localhost:8080/admin/relatedquery/"
 
@@ -281,6 +294,7 @@ def run(playwright: Playwright) -> None:
     page.click("button:has-text(\"作成\")")
     # assert page.url == "http://localhost:8080/admin/relatedquery/"
 
+    logger.info("Virtualhost add test completed successfully")
 
     # Close page
     page.close()

@@ -19,42 +19,43 @@ def destroy(context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
-    logger.info(f"start")
+    logger.info("Starting accesstoken add test")
 
     page: "Page" = context.get_admin_page()
     label_name: str = context.create_label_name()
+    logger.debug(f"Generated test label: {label_name}")
 
-    # Click text=システム
+    # Step 1: Navigate to accesstoken page
+    logger.info("Step 1: Navigating to accesstoken page")
     page.click("text=システム")
-
-    # Click text=アクセストークン
     page.click("text=アクセストークン")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
-    # Click text=新規作成
+    # Step 2: Open new accesstoken creation form
+    logger.info("Step 2: Opening new accesstoken creation form")
     page.click("text=新規作成")
     assert_equal(page.url, context.url("/admin/accesstoken/createnew/"))
 
-    # Fill input[name="name"]
+    # Step 3: Fill in accesstoken details
+    logger.info("Step 3: Filling in accesstoken details")
     page.fill("input[name=\"name\"]", label_name)
-
-    # Fill textarea[name="permissions"]
     page.fill("textarea[name=\"permissions\"]", "{role}admin-api")
-
-    # Fill input[name="parameterName"]
     page.fill("input[name=\"parameterName\"]", "testpram")
-
-    # Fill input[name="expires"]
     page.fill("input[name=\"expires\"]", "2025-12-31T23:59:59")
 
-    # Click button:has-text("作成")
+    # Step 4: Create accesstoken
+    logger.info("Step 4: Creating accesstoken")
     page.click("button:has-text(\"作成\")")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
+    # Step 5: Verify accesstoken was created
+    logger.info("Step 5: Verifying accesstoken was created")
     page.wait_for_load_state("domcontentloaded")
     table_content: str = page.inner_text("table")
     assert_not_equal(table_content.find(label_name), -1,
                      f"{label_name} not in {table_content}")
+
+    logger.info("Accesstoken add test completed successfully")
 
 
 if __name__ == "__main__":
