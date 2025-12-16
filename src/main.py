@@ -11,6 +11,12 @@ from fess.test.ui import FessContext
 from fess.test.result import ResultCollector, TestResult
 from fess.test.metrics import MetricsCollector
 from fess.test.logging_config import setup_logging
+from fess.test.coverage import (
+    CoverageAnalyzer,
+    InventoryManager,
+    CoverageReporter,
+    TestStubGenerator,
+)
 from fess.test.ui.admin import (accesstoken,
                                 badword,
                                 boostdoc,
@@ -299,6 +305,12 @@ def main():
     except Exception as e:
         logger.error(f"Failed to save/print metrics: {e}")
 
+    # Run coverage analysis if HTML capture was enabled
+    try:
+        run_coverage_analysis()
+    except Exception as e:
+        logger.error(f"Failed to run coverage analysis: {e}")
+
     # Print summary to console
     collector.print_summary()
 
@@ -310,6 +322,90 @@ def main():
     else:
         logger.info("TEST SUITE PASSED")
         return 0
+
+
+def run_coverage_analysis() -> None:
+    """
+    Run coverage analysis on captured HTML files.
+
+    This function analyzes HTML snapshots captured during test execution,
+    calculates coverage metrics, and generates reports.
+    """
+    coverage_enabled = os.environ.get("COVERAGE_ANALYSIS", "false").lower() == "true"
+    html_capture_dir = os.environ.get("HTML_CAPTURE_DIR", "html_snapshots")
+
+    if not coverage_enabled:
+        logger.debug("Coverage analysis is disabled (set COVERAGE_ANALYSIS=true to enable)")
+        return
+
+    if not os.path.exists(html_capture_dir):
+        logger.info(f"No HTML snapshots found in {html_capture_dir}")
+        return
+
+    logger.info("=" * 60)
+    logger.info("COVERAGE ANALYSIS - Starting")
+    logger.info("=" * 60)
+
+    # Initialize components
+    analyzer = CoverageAnalyzer()
+    inventory_manager = InventoryManager()
+    report_format = os.environ.get("COVERAGE_REPORT_FORMAT", "json")
+    report_dir = os.environ.get("COVERAGE_REPORT_DIR", "coverage_reports")
+    reporter = CoverageReporter(output_dir=report_dir)
+
+    # Analyze HTML files
+    inventories = analyzer.analyze_directory(html_capture_dir)
+    if not inventories:
+        logger.warning("No HTML files found for analysis")
+        return
+
+    logger.info(f"Analyzed {len(inventories)} HTML snapshots")
+
+    # Add inventories to manager
+    for inv in inventories:
+        inventory_manager.add_inventory(inv)
+
+    # Import test logs to identify tested elements
+    log_file = os.environ.get("LOG_FILE_PATH")
+    if log_file and os.path.exists(log_file):
+        with open(log_file, 'r', encoding='utf-8') as f:
+            log_content = f.read()
+        inventory_manager.import_test_logs(log_content)
+
+    # Calculate coverage for each page
+    page_coverages = {}
+    for url_path in inventory_manager._inventories.keys():
+        coverage = inventory_manager.calculate_coverage(url_path)
+        if coverage:
+            page_coverages[url_path] = coverage
+
+    # Identify coverage gaps
+    gaps = inventory_manager.identify_gaps(min_priority=0.5)
+
+    # Generate reports
+    if report_format == "all":
+        reporter.generate_report(page_coverages, gaps, "json")
+        reporter.generate_report(page_coverages, gaps, "html")
+        reporter.generate_report(page_coverages, gaps, "md")
+    else:
+        reporter.generate_report(page_coverages, gaps, report_format)
+
+    # Print console summary
+    reporter.print_console_summary(page_coverages, gaps)
+
+    # Generate test stubs if gaps found
+    generate_stubs = os.environ.get("COVERAGE_GENERATE_STUBS", "false").lower() == "true"
+    if generate_stubs and gaps:
+        stub_dir = os.environ.get("COVERAGE_STUB_DIR", "generated_tests")
+        generator = TestStubGenerator(output_dir=stub_dir)
+        generator.generate_from_gaps(gaps)
+        logger.info(f"Generated test stubs in {stub_dir}")
+
+    # Save inventory for future reference
+    inventory_manager.save_inventory()
+
+    logger.info("Coverage analysis completed")
+    logger.info("=" * 60)
 
 
 if __name__ == "__main__":

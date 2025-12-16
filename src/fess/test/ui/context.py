@@ -8,6 +8,8 @@ from typing import Callable, Any, Optional, TYPE_CHECKING
 
 from playwright.sync_api import Playwright
 
+from fess.test.capture import HTMLCapture
+
 if TYPE_CHECKING:
     from playwright.sync_api import Page, Response, ElementHandle
 
@@ -19,11 +21,13 @@ class PageWrapper:
     Wrapper for Playwright Page that adds logging to browser operations.
 
     Logs click, fill, navigation, and other browser interactions at DEBUG level.
+    Optionally captures HTML on page navigation for coverage analysis.
     """
 
-    def __init__(self, page: "Page"):
+    def __init__(self, page: "Page", html_capture: HTMLCapture = None):
         self._page = page
         self._logger = logging.getLogger(f"{__name__}.PageWrapper")
+        self._html_capture = html_capture
 
     def __getattr__(self, name: str):
         """Delegate unknown attributes to the wrapped page."""
@@ -51,12 +55,17 @@ class PageWrapper:
             raise
 
     def goto(self, url: str, **kwargs) -> "Response":
-        """Navigate to a URL with logging."""
+        """Navigate to a URL with logging and optional HTML capture."""
         self._logger.debug(f"[GOTO] url='{url}'")
         try:
             response = self._page.goto(url, **kwargs)
             status = response.status if response else 'N/A'
             self._logger.debug(f"[GOTO] completed: {url} status={status}")
+
+            # Capture HTML on navigation
+            if self._html_capture and self._html_capture.enabled:
+                self._html_capture.capture(self._page, "navigate", url)
+
             return response
         except Exception as e:
             self._logger.error(f"[GOTO] failed: {url} - {e}")
@@ -153,6 +162,9 @@ class FessContext:
         self._tracing_active = False
         self._current_module_name: str = None
 
+        # HTML capture for coverage analysis
+        self._html_capture = HTMLCapture()
+
         # Start tracing if enabled
         if self._trace_all or self._trace_on_failure:
             self._start_tracing()
@@ -198,6 +210,10 @@ class FessContext:
             module_name: Name of the test module
         """
         self._current_module_name = module_name
+
+        # Set HTML capture context
+        self._html_capture.set_context(module_name)
+
         if self._tracing_active:
             try:
                 self._context.tracing.start_chunk()
@@ -244,22 +260,27 @@ class FessContext:
         return trace_path
 
     def get_admin_page(self) -> PageWrapper:
-        """Get admin page with logging wrapper."""
+        """Get admin page with logging wrapper and HTML capture."""
         page: "Page" = self._current_page if self._current_page is not None else self._context.new_page()
         self._current_page = page
         page.goto(f"{self._base_url}/admin/")
         logger.debug(f"URL: {page.url}")
-        return PageWrapper(page)
+        return PageWrapper(page, self._html_capture)
 
     def get_current_page(self) -> "Page":
         """Get current raw page (for backwards compatibility)."""
         return self._current_page
 
     def get_wrapped_page(self) -> Optional[PageWrapper]:
-        """Get current page with logging wrapper."""
+        """Get current page with logging wrapper and HTML capture."""
         if self._current_page is None:
             return None
-        return PageWrapper(self._current_page)
+        return PageWrapper(self._current_page, self._html_capture)
+
+    @property
+    def html_capture(self) -> HTMLCapture:
+        """Get HTML capture instance for coverage analysis."""
+        return self._html_capture
 
     def close(self) -> None:
         """Close browser context and stop tracing."""

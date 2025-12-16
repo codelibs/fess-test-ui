@@ -7,16 +7,19 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 - **Multi-Version Testing**: Supports Fess 15.x and snapshot builds across different OS distributions (Debian, AL2023, Noble)
 - **Multi-Engine Support**: Tests against OpenSearch 2.x and 3.x configurations
 - **Comprehensive Admin UI Coverage**: Tests all major admin functionality including search configurations, dictionaries, user management, and content management
+- **Coverage Analysis**: HTML capture and DOM analysis to identify untested UI elements with automatic test stub generation
 - **Docker-Based**: Fully containerized test environment with dynamic compose file selection
 - **Japanese UI Support**: Native testing of Japanese Fess interface elements
+- **Enhanced Logging**: Comprehensive logging with configurable levels and browser interaction tracking
 
 ## Tech Stack
 
-- **Testing Framework**: [Playwright](https://playwright.dev/) 1.17.1 with Python
+- **Testing Framework**: [Playwright](https://playwright.dev/) 1.56.0 with Python
+- **HTML Analysis**: [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/) for DOM parsing
 - **Containerization**: Docker & Docker Compose
 - **Search Engines**: OpenSearch 2.19.1, OpenSearch 3.3.0
-- **Fess Versions**: 15.2.0 (stable), snapshot builds
-- **Base Images**: Microsoft Playwright (Ubuntu Jammy), CodeLibs Fess & OpenSearch
+- **Fess Versions**: 15.3.2 (stable), snapshot builds
+- **Base Images**: Microsoft Playwright (Ubuntu Noble), CodeLibs Fess & OpenSearch
 
 ## Status
 
@@ -90,6 +93,8 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 
 ### Environment Variables
 
+#### Core Configuration
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `FESS_URL` | `http://localhost:8080` | Fess instance URL |
@@ -98,7 +103,36 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 | `BROWSER_LOCALE` | `ja-JP` | Browser locale for Playwright |
 | `HEADLESS` | `false` (CI: `true`) | Run browser in headless mode |
 | `TEST_LABEL` | (auto-generated) | Override test label generation |
+| `TEST_MODULES` | `all` | Comma-separated list of modules to run |
 | `FESS_DICTIONARY_PATH` | (engine-specific) | Dictionary path for Fess |
+
+#### Logging Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `LOG_FILE` | `false` | Enable file logging |
+| `LOG_DIR` | `logs` | Directory for log files |
+
+#### Tracing Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TRACE_ON_FAILURE` | `false` | Save Playwright traces for failed tests |
+| `TRACE_ALL` | `false` | Save traces for all tests |
+| `TRACE_DIR` | `traces` | Directory for trace files |
+
+#### HTML Capture & Coverage Analysis
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HTML_CAPTURE` | `false` | Enable HTML capture (`true`, `false`, `on_failure`) |
+| `HTML_CAPTURE_DIR` | `html_snapshots` | Directory for HTML snapshots |
+| `COVERAGE_ANALYSIS` | `false` | Run coverage analysis after tests |
+| `COVERAGE_REPORT_FORMAT` | `json` | Report format (`json`, `html`, `md`, `all`) |
+| `COVERAGE_REPORT_DIR` | `coverage_reports` | Directory for coverage reports |
+| `COVERAGE_GENERATE_STUBS` | `false` | Generate test stubs for untested elements |
+| `COVERAGE_STUB_DIR` | `generated_tests` | Directory for generated test stubs |
 
 ### Custom Configuration
 
@@ -109,6 +143,22 @@ FESS_USERNAME=testuser
 FESS_PASSWORD=testpass
 HEADLESS=true
 ```
+
+### Running with Coverage Analysis
+
+To capture HTML and analyze test coverage:
+```bash
+HTML_CAPTURE=true \
+COVERAGE_ANALYSIS=true \
+COVERAGE_REPORT_FORMAT=all \
+COVERAGE_GENERATE_STUBS=true \
+./run_test.sh fess15 opensearch2
+```
+
+This generates:
+- `html_snapshots/` - Captured HTML files with metadata
+- `coverage_reports/` - Coverage reports in JSON, HTML, and Markdown formats
+- `generated_tests/` - Auto-generated test stubs for untested elements
 
 ## Testing Features
 
@@ -144,27 +194,41 @@ The test suite covers the following Fess admin functionality:
 
 ```
 fess-test-ui/
-├── src/                          # Test source code
-│   ├── main.py                   # Test execution entry point
-│   ├── run.sh                    # Container startup script
+├── src/                              # Test source code
+│   ├── main.py                       # Test execution entry point
+│   ├── run.sh                        # Container startup script
 │   └── fess/
 │       └── test/
-│           ├── __init__.py       # Test utilities and assertions
+│           ├── __init__.py           # Test utilities and assertions
+│           ├── logging_config.py     # Logging configuration
+│           ├── result.py             # Test result collection
+│           ├── metrics.py            # Performance metrics tracking
+│           ├── capture/              # HTML capture module
+│           │   ├── __init__.py
+│           │   └── html_capture.py   # HTML snapshot capture
+│           ├── coverage/             # Coverage analysis module
+│           │   ├── __init__.py
+│           │   ├── models.py         # Data models (DOMElement, PageInventory, etc.)
+│           │   ├── analyzer.py       # DOM analysis engine
+│           │   ├── inventory.py      # Element inventory management
+│           │   ├── reporter.py       # Coverage report generation
+│           │   └── generator.py      # Test stub generation
 │           └── ui/
-│               ├── context.py    # FessContext class for browser management
-│               └── admin/        # Admin UI test modules
-│                   ├── badword/  # Bad word management tests
-│                   ├── user/     # User management tests
-│                   ├── dict/     # Dictionary management tests
-│                   └── ...       # Other admin feature tests
-├── compose.yaml                  # Base test container configuration
-├── compose-fess15.yaml          # Fess 15 configuration
-├── compose-fessx.yaml           # Fess snapshot configuration
-├── compose-opensearch2.yaml     # OpenSearch 2 configuration
-├── compose-opensearch3.yaml     # OpenSearch 3 configuration
-├── run_test.sh                  # Test execution script
-├── Dockerfile                   # Test container image
-└── requirements.txt             # Python dependencies
+│               ├── context.py        # FessContext class for browser management
+│               ├── testdata.py       # Test data builders and patterns
+│               └── admin/            # Admin UI test modules
+│                   ├── badword/      # Bad word management tests
+│                   ├── user/         # User management tests
+│                   ├── dict/         # Dictionary management tests
+│                   └── ...           # Other admin feature tests
+├── compose.yaml                      # Base test container configuration
+├── compose-fess15.yaml               # Fess 15 configuration
+├── compose-fessx.yaml                # Fess snapshot configuration
+├── compose-opensearch2.yaml          # OpenSearch 2 configuration
+├── compose-opensearch3.yaml          # OpenSearch 3 configuration
+├── run_test.sh                       # Test execution script
+├── Dockerfile                        # Test container image
+└── requirements.txt                  # Python dependencies
 ```
 
 ## Test Development
@@ -202,6 +266,43 @@ def destroy(context: FessContext) -> None:
 3. Use Japanese UI selectors (e.g., `text=新規作成`, `text=作成`)
 4. Add assertions using `assert_equal` and `assert_not_equal`
 5. Update module `__init__.py` to include new test
+
+### Using Coverage Analysis to Improve Tests
+
+The coverage analysis feature helps identify untested UI elements:
+
+1. **Run tests with HTML capture**:
+   ```bash
+   HTML_CAPTURE=true ./run_test.sh fess15 opensearch2
+   ```
+
+2. **Analyze coverage**:
+   ```bash
+   COVERAGE_ANALYSIS=true COVERAGE_REPORT_FORMAT=html ./run_test.sh fess15 opensearch2
+   ```
+
+3. **Generate test stubs for untested elements**:
+   ```bash
+   COVERAGE_GENERATE_STUBS=true ./run_test.sh fess15 opensearch2
+   ```
+
+4. **Review generated files**:
+   - `coverage_reports/coverage_report.html` - Interactive coverage report
+   - `generated_tests/test_coverage_gaps.py` - Test stubs for untested elements
+
+### Test Output Directories
+
+| Directory | Description |
+|-----------|-------------|
+| `test_results.json` | Test execution results |
+| `test_metrics_history.json` | Historical performance metrics |
+| `screenshots/` | Failure screenshots |
+| `traces/` | Playwright trace files |
+| `logs/` | Test execution logs |
+| `html_snapshots/` | Captured HTML pages |
+| `coverage_reports/` | Coverage analysis reports |
+| `coverage_data/` | Element inventory data |
+| `generated_tests/` | Auto-generated test stubs |
 
 ## Troubleshooting
 
