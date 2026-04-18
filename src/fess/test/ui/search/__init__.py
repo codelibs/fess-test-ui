@@ -1,3 +1,3 @@
-from fess.test.ui.search import seed
+from fess.test.ui.search import facet, no_results, pagination, query, related, seed, sort, suggest, thumbnail, top
 
-__all__ = ["seed"]
+__all__ = ["facet", "no_results", "pagination", "query", "related", "seed", "sort", "suggest", "thumbnail", "top"]

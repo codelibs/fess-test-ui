@@ -32,12 +32,25 @@ from fess.test.ui.admin import (accesstoken,
                                 webconfig,
                                 fileconfig)
 
+from fess.test.ui.admin.general import popularWord
+
 from fess.test.ui.admin.dict import (kuromoji,
                                      protwords,
                                      mapping,
                                      stemmeroverride)
 
-from fess.test.ui.search import seed as search_seed
+from fess.test.ui.search import (
+    facet as search_facet,
+    no_results as search_no_results,
+    pagination as search_pagination,
+    query as search_query,
+    related as search_related,
+    seed as search_seed,
+    sort as search_sort,
+    suggest as search_suggest,
+    thumbnail as search_thumbnail,
+    top as search_top,
+)
 
 # Integration tests are available but not run by default
 # Uncomment the following line to include integration tests in test runs
@@ -74,6 +87,16 @@ def get_modules_to_run() -> List[Any]:
         'webconfig': webconfig,
         'fileconfig': fileconfig,
         'search_seed': search_seed,
+        'search_top': search_top,
+        'search_query': search_query,
+        'search_no_results': search_no_results,
+        'search_pagination': search_pagination,
+        'search_facet': search_facet,
+        'search_sort': search_sort,
+        'search_thumbnail': search_thumbnail,
+        'search_suggest': search_suggest,
+        'search_related': search_related,
+        'popularWord': popularWord,
         # 'integration': integration,  # Uncomment to enable
     }
 
@@ -88,6 +111,10 @@ def get_modules_to_run() -> List[Any]:
             role, kuromoji, protwords, mapping, stemmeroverride,
             webconfig, fileconfig,
             search_seed,
+            search_top, search_query, search_no_results,
+            search_pagination, search_facet, search_sort,
+            search_thumbnail, search_suggest, search_related,
+            popularWord,
         ]
     else:
         # Parse comma-separated list of module names
