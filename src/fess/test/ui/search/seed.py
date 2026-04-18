@@ -103,6 +103,29 @@ def _create_webconfig(page, context: FessContext) -> None:
                 f"webconfig {WEBCONFIG_NAME} not in list after create")
 
 
+def _start_default_crawler(page, context: FessContext) -> None:
+    """Start the 'Default Crawler' scheduler job via the admin UI."""
+    logger.info("Starting Default Crawler job")
+    page.goto(context.url("/admin/scheduler/"))
+    page.wait_for_load_state("domcontentloaded")
+
+    # Open the Default Crawler details page by clicking its name in the table
+    page.click("text=Default Crawler")
+    page.wait_for_load_state("domcontentloaded")
+    assert_true("/admin/scheduler/details/" in page.url,
+                f"expected scheduler details URL, got {page.url}")
+
+    # Click the start button. Fess uses a submit button typically with name="start"
+    # or a link/button labelled 起動. Try name="start" first, then the Japanese text.
+    try:
+        page.click("button[name=\"start\"]", timeout=3000)
+    except Exception as e:
+        logger.info(f"button[name=\"start\"] not found ({e}); trying text=起動")
+        page.click("text=起動")
+    page.wait_for_load_state("domcontentloaded")
+    logger.info("Default Crawler start clicked")
+
+
 def run(context: FessContext) -> None:
     logger.info("Starting search/seed")
     page = context.get_admin_page()
@@ -112,11 +135,11 @@ def run(context: FessContext) -> None:
     _create_label(page, context, LABEL_B_NAME,
                   "http://sampledata01/docs/labels/b/.*")
     _create_webconfig(page, context)
+    _start_default_crawler(page, context)
 
-    # TODO(Task 10): start Default Crawler
     # TODO(Task 11): poll for SEED_MIN_DOCS readiness
 
-    logger.info("search/seed partial (labels+webconfig) completed")
+    logger.info("search/seed partial (crawler started) completed")
 
 
 def destroy(context: FessContext) -> None:
