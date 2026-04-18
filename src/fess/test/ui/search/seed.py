@@ -126,6 +126,46 @@ def _start_default_crawler(page, context: FessContext) -> None:
     logger.info("Default Crawler start clicked")
 
 
+def _poll_until_indexed(context: FessContext) -> int:
+    """Poll /api/v1/documents until at least SEED_MIN_DOCS are indexed.
+    Returns the final doc count. Raises AssertionError on timeout."""
+    deadline = time.time() + SEED_READY_TIMEOUT
+    last_total = -1
+    first_iter = True
+    while time.time() < deadline:
+        try:
+            body = context.api_get("/api/v1/documents?q=*&size=0")
+        except Exception as e:
+            logger.debug(f"api_get failed during poll: {e}")
+            time.sleep(SEED_POLL_INTERVAL)
+            continue
+
+        if first_iter:
+            logger.info(f"api body keys: {list(body.keys())}")
+            first_iter = False
+
+        # Fess /api/v1/documents response shape varies by version:
+        #   Fess 15+ : top-level flat with "record_count" or "total_count"
+        #   older    : nested under "response"
+        # Accept multiple keys to be defensive.
+        total = (body.get("record_count")
+                 or body.get("total_count")
+                 or body.get("total")
+                 or (body.get("response", {}) or {}).get("record_count")
+                 or (body.get("response", {}) or {}).get("total_count")
+                 or 0)
+        if total != last_total:
+            logger.info(f"Indexed doc count: {total}")
+            last_total = total
+        if total >= SEED_MIN_DOCS:
+            return total
+        time.sleep(SEED_POLL_INTERVAL)
+
+    raise AssertionError(
+        f"Seed readiness timeout: only {last_total} docs after "
+        f"{SEED_READY_TIMEOUT}s (wanted >= {SEED_MIN_DOCS})")
+
+
 def run(context: FessContext) -> None:
     logger.info("Starting search/seed")
     page = context.get_admin_page()
@@ -137,9 +177,8 @@ def run(context: FessContext) -> None:
     _create_webconfig(page, context)
     _start_default_crawler(page, context)
 
-    # TODO(Task 11): poll for SEED_MIN_DOCS readiness
-
-    logger.info("search/seed partial (crawler started) completed")
+    total = _poll_until_indexed(context)
+    logger.info(f"search/seed completed: {total} docs indexed")
 
 
 def destroy(context: FessContext) -> None:
