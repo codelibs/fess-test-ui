@@ -1,3 +1,3 @@
-from fess.test.ui.search import seed, top
+from fess.test.ui.search import query, seed, top
 
-__all__ = ["seed", "top"]
+__all__ = ["query", "seed", "top"]
