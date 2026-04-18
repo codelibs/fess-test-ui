@@ -181,9 +181,61 @@ def run(context: FessContext) -> None:
     logger.info(f"search/seed completed: {total} docs indexed")
 
 
+def _delete_webconfig(page, context: FessContext) -> None:
+    """Delete the sampledata webconfig if it exists. Swallows errors so that
+    one cleanup failure doesn't block subsequent cleanups."""
+    logger.info(f"Deleting webconfig: {WEBCONFIG_NAME}")
+    try:
+        page.goto(context.url("/admin/webconfig/"))
+        page.wait_for_load_state("domcontentloaded")
+        table_el = page.query_selector("table")
+        table_text = table_el.inner_text() if table_el else ""
+        if table_text.find(WEBCONFIG_NAME) == -1:
+            logger.info(f"Webconfig {WEBCONFIG_NAME} not present; skipping delete")
+            return
+        page.click(f"text={WEBCONFIG_NAME}")
+        page.wait_for_load_state("domcontentloaded")
+        page.click("text=削除")
+        page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+        page.wait_for_load_state("domcontentloaded")
+        logger.info(f"Webconfig {WEBCONFIG_NAME} deleted")
+    except Exception as e:
+        logger.warning(f"webconfig delete failed (continuing): {e}")
+
+
+def _delete_label(page, context: FessContext, name: str) -> None:
+    """Delete a label if it exists. Swallows errors."""
+    logger.info(f"Deleting label: {name}")
+    try:
+        page.goto(context.url("/admin/labeltype/"))
+        page.wait_for_load_state("domcontentloaded")
+        table_el = page.query_selector("table")
+        table_text = table_el.inner_text() if table_el else ""
+        if table_text.find(name) == -1:
+            logger.info(f"Label {name} not present; skipping delete")
+            return
+        page.click(f"text={name}")
+        page.wait_for_load_state("domcontentloaded")
+        page.click("text=削除")
+        page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+        page.wait_for_load_state("domcontentloaded")
+        logger.info(f"Label {name} deleted")
+    except Exception as e:
+        logger.warning(f"label {name} delete failed (continuing): {e}")
+
+
 def destroy(context: FessContext) -> None:
-    # TODO(Task 12): delete webconfig + labels
-    context.close()
+    logger.info("search/seed: cleanup starting")
+    try:
+        # Prefer the wrapped page the login() flow established
+        page = context.get_wrapped_page() or context.get_admin_page()
+        _delete_webconfig(page, context)
+        _delete_label(page, context, LABEL_A_NAME)
+        _delete_label(page, context, LABEL_B_NAME)
+    except Exception as e:
+        logger.warning(f"destroy preamble failed: {e}")
+    finally:
+        context.close()
 
 
 if __name__ == "__main__":
