@@ -43,7 +43,8 @@ from fess.test.ui.admin.dict import (kuromoji,
                                      protwords,
                                      mapping,
                                      stemmeroverride,
-                                     stopwords)
+                                     stopwords,
+                                     synonym)
 
 from fess.test.ui.search import (
     facet as search_facet,
@@ -92,6 +93,7 @@ def get_modules_to_run() -> List[Any]:
         'mapping': mapping,
         'stemmeroverride': stemmeroverride,
         'stopwords': stopwords,
+        'synonym': synonym,
         'fileauth': fileauth,
         'reqheader': reqheader,
         'scheduler': scheduler,
@@ -120,7 +122,7 @@ def get_modules_to_run() -> List[Any]:
         return [
             accesstoken, badword, boostdoc, duplicatehost, elevateword,
             keymatch, label, pathmap, relatedcontent, relatedquery, user, group,
-            role, kuromoji, protwords, mapping, stemmeroverride, stopwords,
+            role, kuromoji, protwords, mapping, stemmeroverride, stopwords, synonym,
             fileauth, reqheader, scheduler, webauth, webconfig, fileconfig,
             search_seed,
             search_top, search_query, search_no_results,
