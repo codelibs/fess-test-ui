@@ -9,7 +9,12 @@ services:
     networks:
       - searchtestnet
 
+  sampledata01:
+    build: ./sampledata
+    container_name: sampledata01
+    networks:
+      - searchtestnet
+
 networks:
   searchtestnet:
     driver: bridge
-
