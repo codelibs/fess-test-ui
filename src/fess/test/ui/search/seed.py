@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 SAMPLEDATA_URL = os.environ.get("SAMPLEDATA_URL", "http://sampledata01/")
 SEED_MIN_DOCS = int(os.environ.get("SEED_MIN_DOCS", "20"))
-SEED_READY_TIMEOUT = int(os.environ.get("SEED_READY_TIMEOUT", "180"))
+SEED_READY_TIMEOUT = int(os.environ.get("SEED_READY_TIMEOUT", "300"))
 SEED_POLL_INTERVAL = int(os.environ.get("SEED_POLL_INTERVAL", "2"))
 
 WEBCONFIG_NAME = "sampledata-e2e"
@@ -83,7 +83,7 @@ def _create_webconfig(page, context: FessContext) -> None:
     page.fill("textarea[name=\"excludedUrls\"]",
               "(?i).*(css|js|jpeg|jpg|gif|png|bmp|wmv|xml|ico)")
     page.fill("input[name=\"maxAccessCount\"]", "100")
-    page.fill("input[name=\"numOfThread\"]", "2")
+    page.fill("input[name=\"numOfThread\"]", "5")
     page.fill("textarea[name=\"description\"]", "E2E sampledata (managed by search/seed)")
 
     # Attach both labels. The labelTypeIds select is hidden by display:none in

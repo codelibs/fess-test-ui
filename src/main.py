@@ -39,7 +39,20 @@ from fess.test.ui.admin import (accesstoken,
                                 webconfig,
                                 fileconfig)
 
-from fess.test.ui.admin.general import popularWord
+from fess.test.ui.admin.general import (popularWord,
+                                        pagedesign,
+                                        storage,
+                                        plugin)
+
+from fess.test.ui.admin.sysinfo import (backup,
+                                        configinfo,
+                                        crawlinfo,
+                                        failureurl,
+                                        joblog,
+                                        logfile,
+                                        maintenance,
+                                        searchlist,
+                                        searchlog)
 
 from fess.test.ui.admin.dict import (kuromoji,
                                      protwords,
@@ -115,6 +128,20 @@ def get_modules_to_run() -> List[Any]:
         'search_suggest': search_suggest,
         'search_related': search_related,
         'popularWord': popularWord,
+        # Admin read-only: general sub-pages
+        'pagedesign': pagedesign,
+        'storage': storage,
+        'plugin': plugin,
+        # Admin read-only: system info
+        'searchlog': searchlog,
+        'joblog': joblog,
+        'searchlist': searchlist,
+        'crawlinfo': crawlinfo,
+        'failureurl': failureurl,
+        'logfile': logfile,
+        'backup': backup,
+        'maintenance': maintenance,
+        'configinfo': configinfo,
         # 'integration': integration,  # Uncomment to enable
     }
 
@@ -134,6 +161,13 @@ def get_modules_to_run() -> List[Any]:
             search_pagination, search_facet, search_sort,
             search_thumbnail, search_suggest, search_related,
             popularWord,
+            # Admin read-only: general
+            pagedesign, storage, plugin,
+            # Admin read-only: system info (data-independent structural first)
+            configinfo, logfile,
+            crawlinfo, joblog, failureurl,
+            searchlog, searchlist,
+            backup, maintenance,
         ]
     else:
         # Parse comma-separated list of module names
