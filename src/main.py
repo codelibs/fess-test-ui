@@ -37,6 +37,8 @@ from fess.test.ui.admin.dict import (kuromoji,
                                      mapping,
                                      stemmeroverride)
 
+from fess.test.ui.search import seed as search_seed
+
 # Integration tests are available but not run by default
 # Uncomment the following line to include integration tests in test runs
 # from fess.test.ui import integration
@@ -71,6 +73,7 @@ def get_modules_to_run() -> List[Any]:
         'stemmeroverride': stemmeroverride,
         'webconfig': webconfig,
         'fileconfig': fileconfig,
+        'search_seed': search_seed,
         # 'integration': integration,  # Uncomment to enable
     }
 
@@ -83,7 +86,8 @@ def get_modules_to_run() -> List[Any]:
             accesstoken, badword, boostdoc, duplicatehost, elevateword,
             keymatch, label, relatedcontent, relatedquery, user, group,
             role, kuromoji, protwords, mapping, stemmeroverride,
-            webconfig, fileconfig
+            webconfig, fileconfig,
+            search_seed,
         ]
     else:
         # Parse comma-separated list of module names
