@@ -34,13 +34,49 @@ def setup(playwright: Playwright) -> FessContext:
     return context
 
 
+def _create_label(page, context: FessContext, name: str, included_paths: str) -> None:
+    """Create a label with an included-URL pattern via the admin UI.
+    Idempotent: if a label with the same name already exists, navigates
+    to it and returns without error (the list-page assertion still holds)."""
+    logger.info(f"Creating label: {name}")
+    page.goto(context.url("/admin/labeltype/"))
+    page.wait_for_load_state("domcontentloaded")
+
+    # If already present, skip creation (table absent when list is empty)
+    table_el = page.query_selector("table")
+    table_text = table_el.inner_text() if table_el else ""
+    if table_text.find(name) != -1:
+        logger.info(f"Label {name} already exists; skipping creation")
+        return
+
+    page.click("text=新規作成")
+    page.wait_for_load_state("domcontentloaded")
+    page.fill("input[name=\"name\"]", name)
+    page.fill("input[name=\"value\"]", name.lower().replace("-", "_"))
+    page.fill("textarea[name=\"includedPaths\"]", included_paths)
+    page.fill("input[name=\"sortOrder\"]", "1")
+    page.click("button:has-text(\"作成\")")
+    page.wait_for_load_state("domcontentloaded")
+    assert_true(page.url.endswith("/admin/labeltype/"),
+                f"after create, expected labeltype list URL, got {page.url}")
+    assert_true(page.inner_text("table").find(name) != -1,
+                f"label {name} not in list after create")
+
+
 def run(context: FessContext) -> None:
-    logger.info("Starting search/seed (skeleton; no-op)")
-    # TODO(Task 8): create labels
+    logger.info("Starting search/seed")
+    page = context.get_admin_page()
+
+    _create_label(page, context, LABEL_A_NAME,
+                  "http://sampledata01/docs/labels/a/.*")
+    _create_label(page, context, LABEL_B_NAME,
+                  "http://sampledata01/docs/labels/b/.*")
+
     # TODO(Task 9): create webconfig
     # TODO(Task 10): start Default Crawler
     # TODO(Task 11): poll for SEED_MIN_DOCS readiness
-    logger.info("search/seed skeleton completed")
+
+    logger.info("search/seed partial (labels only) completed")
 
 
 def destroy(context: FessContext) -> None:
