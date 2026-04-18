@@ -63,6 +63,46 @@ def _create_label(page, context: FessContext, name: str, included_paths: str) ->
                 f"label {name} not in list after create")
 
 
+def _create_webconfig(page, context: FessContext) -> None:
+    """Create the sampledata webconfig. Idempotent on name collision."""
+    logger.info(f"Creating webconfig: {WEBCONFIG_NAME}")
+    page.goto(context.url("/admin/webconfig/"))
+    page.wait_for_load_state("domcontentloaded")
+
+    table_el = page.query_selector("table")
+    table_text = table_el.inner_text() if table_el else ""
+    if table_text.find(WEBCONFIG_NAME) != -1:
+        logger.info(f"Webconfig {WEBCONFIG_NAME} already exists; skipping")
+        return
+
+    page.click("text=新規作成")
+    page.wait_for_load_state("domcontentloaded")
+    page.fill("input[name=\"name\"]", WEBCONFIG_NAME)
+    page.fill("textarea[name=\"urls\"]", SAMPLEDATA_URL)
+    page.fill("textarea[name=\"includedUrls\"]", f"{SAMPLEDATA_URL}.*")
+    page.fill("textarea[name=\"excludedUrls\"]",
+              "(?i).*(css|js|jpeg|jpg|gif|png|bmp|wmv|xml|ico)")
+    page.fill("input[name=\"maxAccessCount\"]", "100")
+    page.fill("input[name=\"numOfThread\"]", "2")
+    page.fill("textarea[name=\"description\"]", "E2E sampledata (managed by search/seed)")
+
+    # Attach both labels. The labelTypeIds select is hidden by display:none in
+    # Fess 15 — make the parent div visible first, then select by display text.
+    page.evaluate(
+        "document.querySelector('select[name=\"labelTypeIds\"]')"
+        ".closest('.form-group').style.display = 'block'"
+    )
+    page.select_option("select[name=\"labelTypeIds\"]",
+                       label=[LABEL_A_NAME, LABEL_B_NAME])
+
+    page.click("button:has-text(\"作成\")")
+    page.wait_for_load_state("domcontentloaded")
+    assert_true(page.url.endswith("/admin/webconfig/"),
+                f"after create, expected webconfig list URL, got {page.url}")
+    assert_true(page.inner_text("table").find(WEBCONFIG_NAME) != -1,
+                f"webconfig {WEBCONFIG_NAME} not in list after create")
+
+
 def run(context: FessContext) -> None:
     logger.info("Starting search/seed")
     page = context.get_admin_page()
@@ -71,12 +111,12 @@ def run(context: FessContext) -> None:
                   "http://sampledata01/docs/labels/a/.*")
     _create_label(page, context, LABEL_B_NAME,
                   "http://sampledata01/docs/labels/b/.*")
+    _create_webconfig(page, context)
 
-    # TODO(Task 9): create webconfig
     # TODO(Task 10): start Default Crawler
     # TODO(Task 11): poll for SEED_MIN_DOCS readiness
 
-    logger.info("search/seed partial (labels only) completed")
+    logger.info("search/seed partial (labels+webconfig) completed")
 
 
 def destroy(context: FessContext) -> None:
