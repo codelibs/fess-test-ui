@@ -37,29 +37,28 @@ def run(context: FessContext) -> None:
     page.click("text=en/stopwords.txt")
     assert_equal(page.url, context.url("/admin/dict/stopwords/?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="))
 
-    # Click on page 2 to find the entry updated by update test
-    logger.info("Step 4: Navigate to page 2")
-    page.click("a:has-text(\"2\")")
-    assert_equal(page.url, context.url("/admin/dict/stopwords/list/2?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="))
-
-    # Click on the first entry on page 2
-    logger.info("Step 5: Click on existing entry to view details")
-    page.click("table tbody tr:first-child td:first-child a")
+    # Navigate to next page to find the entry created/updated by previous tests
+    # (pre-existing entries fill page 1; our entry is appended to end)
+    logger.info("Step 4: Navigate to next page and click on existing entry")
+    label_name: str = context.create_label_name()
+    page.goto(context.url("/admin/dict/stopwords/list/2?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="))
+    page.wait_for_load_state("domcontentloaded")
+    page.click(f"text={label_name}")
 
     # Click text=削除
-    logger.info("Step 6: Click delete button")
+    logger.info("Step 5: Click delete button")
     page.click("text=削除")
 
     # Click text=キャンセル (test cancel button)
-    logger.info("Step 7: Test cancel button in confirmation dialog")
+    logger.info("Step 6: Test cancel button in confirmation dialog")
     page.click("text=キャンセル")
 
     # Click text=削除 again
-    logger.info("Step 8: Click delete button again")
+    logger.info("Step 7: Click delete button again")
     page.click("text=削除")
 
     # Click button[name="delete"] to confirm deletion
-    logger.info("Step 9: Confirm deletion")
+    logger.info("Step 8: Confirm deletion")
     page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
     assert_equal(page.url, context.url("/admin/dict/stopwords/list/1?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="))
 

@@ -37,9 +37,10 @@ def run(context: FessContext) -> None:
     page.click("text=synonym.txt")
     assert_equal(page.url, context.url("/admin/dict/synonym/?dictId=c3lub255bS50eHQ="))
 
-    # Click on the first entry (assuming it was created/updated by previous tests)
+    # Click on the entry created/updated by previous tests (find by label name)
     logger.info("Step 4: Click on existing entry to view details")
-    page.click("table tbody tr:first-child td:first-child a")
+    label_name: str = context.create_label_name()
+    page.click(f"text={label_name}")
 
     # Click text=削除
     logger.info("Step 5: Click delete button")
