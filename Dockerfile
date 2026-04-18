@@ -11,8 +11,9 @@ RUN apt-get update && \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+COPY requirements.txt /tmp/requirements.txt
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir playwright==1.56.0
+    pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY src /app
 WORKDIR /app

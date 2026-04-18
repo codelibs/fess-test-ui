@@ -6,6 +6,7 @@ import time
 from datetime import datetime
 from typing import Callable, Any, Optional, TYPE_CHECKING
 
+import requests
 from playwright.sync_api import Playwright
 
 from fess.test.capture import HTMLCapture
@@ -307,6 +308,34 @@ class FessContext:
 
     def url(self, path: str) -> str:
         return self._base_url+path
+
+    def _session_cookies(self) -> dict:
+        """Extract cookies from the Playwright browser context so that
+        authenticated HTTP calls can reuse the same session as the UI.
+        Must be called after login()."""
+        jar: dict = {}
+        for c in self._context.cookies():
+            jar[c["name"]] = c["value"]
+        return jar
+
+    def api_get(self, path: str, timeout: int = 10) -> dict:
+        """GET a Fess JSON endpoint using the logged-in session.
+        path is relative (e.g. '/api/v1/documents?q=*&size=0').
+        Returns parsed JSON; raises on non-2xx or non-JSON responses."""
+        full_url: str = self.url(path)
+        logger.debug(f"[API_GET] {full_url}")
+        resp = requests.get(full_url, cookies=self._session_cookies(), timeout=timeout)
+        resp.raise_for_status()
+        return resp.json()
+
+    def api_post(self, path: str, json_body: dict, timeout: int = 30) -> dict:
+        """POST JSON to a Fess endpoint using the logged-in session."""
+        full_url: str = self.url(path)
+        logger.debug(f"[API_POST] {full_url}")
+        resp = requests.post(full_url, json=json_body,
+                              cookies=self._session_cookies(), timeout=timeout)
+        resp.raise_for_status()
+        return resp.json()
 
     def retry_on_failure(self, func: Callable[[], Any], max_attempts: int = 3,
                         delay: float = 1.0, context_name: str = "operation") -> Any:

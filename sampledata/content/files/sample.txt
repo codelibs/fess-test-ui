@@ -1,0 +1,1 @@
+Sample plain text document for Fess E2E tests. Contains the word sample.
