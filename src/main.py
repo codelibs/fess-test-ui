@@ -73,6 +73,11 @@ from fess.test.ui.search import (
     suggest as search_suggest,
     thumbnail as search_thumbnail,
     top as search_top,
+    i18n_smoke as search_i18n_smoke,
+    multibyte_query as search_multibyte_query,
+    layout_overflow as search_layout_overflow,
+    console_errors as search_console_errors,
+    multibyte_admin_input as search_multibyte_admin_input,
 )
 
 # Integration tests are available but not run by default
@@ -157,6 +162,11 @@ def get_modules_to_run() -> List[Any]:
         'search_thumbnail': search_thumbnail,
         'search_suggest': search_suggest,
         'search_related': search_related,
+        'search_i18n_smoke': search_i18n_smoke,
+        'search_multibyte_query': search_multibyte_query,
+        'search_layout_overflow': search_layout_overflow,
+        'search_console_errors': search_console_errors,
+        'search_multibyte_admin_input': search_multibyte_admin_input,
         'popularWord': popularWord,
         # Admin read-only: general sub-pages
         'pagedesign': pagedesign,
@@ -190,6 +200,9 @@ def get_modules_to_run() -> List[Any]:
             search_top, search_query, search_no_results,
             search_pagination, search_facet, search_sort,
             search_thumbnail, search_suggest, search_related,
+            search_i18n_smoke, search_multibyte_query,
+            search_layout_overflow, search_console_errors,
+            search_multibyte_admin_input,
             popularWord,
             # Admin read-only: general
             pagedesign, storage, plugin,
