@@ -39,3 +39,44 @@ def select_language(env_value: Optional[str] = None,
             f"unsupported TEST_LANG={env_value!r}; "
             f"must be one of {SUPPORTED_LANGS} or 'random'")
     return env_value
+
+
+# Fess locale -> canonical BCP47 mapping for Playwright BROWSER_LOCALE.
+# Region picks for language-only Fess codes are documented choices in the spec.
+_BROWSER_LOCALE_MAP = {
+    "de": "de-DE",
+    "en": "en-US",
+    "es": "es-ES",
+    "fr": "fr-FR",
+    "hi": "hi-IN",
+    "id": "id-ID",
+    "it": "it-IT",
+    "ja": "ja-JP",
+    "ko": "ko-KR",
+    "nl": "nl-NL",
+    "pl": "pl-PL",
+    "pt_BR": "pt-BR",
+    "ru": "ru-RU",
+    "tr": "tr-TR",
+    "zh_CN": "zh-CN",
+    "zh_TW": "zh-TW",
+}
+
+
+def to_browser_locale(fess_lang: str) -> str:
+    """Convert Fess locale (e.g. 'pt_BR') to BCP47 (e.g. 'pt-BR').
+
+    Args:
+        fess_lang: locale code as used by fess_label_<x>.properties
+
+    Returns:
+        BCP47 locale string suitable for Playwright BROWSER_LOCALE
+
+    Raises:
+        ValueError: if fess_lang is not in SUPPORTED_LANGS
+    """
+    if fess_lang not in _BROWSER_LOCALE_MAP:
+        raise ValueError(
+            f"unsupported fess_lang={fess_lang!r}; "
+            f"must be one of {sorted(_BROWSER_LOCALE_MAP.keys())}")
+    return _BROWSER_LOCALE_MAP[fess_lang]
