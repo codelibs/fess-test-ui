@@ -5,6 +5,8 @@ the test is idempotent and leaves no trace."""
 import logging
 
 from fess.test import assert_contains, assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -38,7 +40,7 @@ def run(context: FessContext) -> None:
     try:
         new_value = (original + "\n" if original else "") + TEST_RULE
         page.fill(f"textarea[name=\"{FIELD_NAME}\"]", new_value)
-        page.click("button:has-text(\"更新\")")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
         page.wait_for_load_state("domcontentloaded")
 
         # Re-open and verify persistence
@@ -53,7 +55,7 @@ def run(context: FessContext) -> None:
             page.goto(context.url("/admin/general/"))
             page.wait_for_load_state("domcontentloaded")
             page.fill(f"textarea[name=\"{FIELD_NAME}\"]", original)
-            page.click("button:has-text(\"更新\")")
+            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
             page.wait_for_load_state("domcontentloaded")
             logger.info("virtualhost value restored")
         except Exception as e:
