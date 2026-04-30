@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,11 +28,11 @@ def run(context: FessContext) -> None:
 
     # Click text=クローラー
     logger.info("Step 1: Navigate to Crawler menu")
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=重複ホスト
     logger.info("Step 2: Navigate to Duplicate Host page")
-    page.click("text=重複ホスト")
+    page.click(f"text={t(Labels.MENU_DUPLICATE_HOST)}")
     assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
     # Click text=fess.codelibs.org
@@ -40,17 +42,17 @@ def run(context: FessContext) -> None:
 
     # Click text=編集
     logger.info("Step 4: Click edit button")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
     # Click text=戻る
     logger.info("Step 5: Test back button")
-    page.click("text=戻る")
+    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
     assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
     # Click text=編集
     logger.info("Step 6: Click edit button again")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
     # Fill input[name="regularName"]
@@ -62,7 +64,7 @@ def run(context: FessContext) -> None:
 
     # Click text=更新
     logger.info("Step 8: Submit update")
-    page.click("text=更新")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
     assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
     logger.info("Duplicatehost update test completed successfully")

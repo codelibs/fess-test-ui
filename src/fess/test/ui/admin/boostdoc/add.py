@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -27,13 +29,13 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to boostdoc page
     logger.info("Step 1: Navigating to boostdoc page")
-    page.click("text=クローラー")
-    page.click("text=ドキュメントブースト")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
+    page.click(f"text={t(Labels.MENU_BOOST_DOCUMENT_RULE)}")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Step 2: Open new boostdoc creation form
     logger.info("Step 2: Opening new boostdoc creation form")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/boostdoc/createnew/"))
 
     # Step 3: Fill in boostdoc details
@@ -44,7 +46,7 @@ def run(context: FessContext) -> None:
 
     # Step 4: Create boostdoc
     logger.info("Step 4: Creating boostdoc")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Step 5: Verify boostdoc was created

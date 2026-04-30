@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,8 +28,8 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to boostdoc page
     logger.info("Step 1: Navigating to boostdoc page")
-    page.click("text=クローラー")
-    page.click("text=ドキュメントブースト")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
+    page.click(f"text={t(Labels.MENU_BOOST_DOCUMENT_RULE)}")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Step 2: Open boostdoc details
@@ -38,13 +40,13 @@ def run(context: FessContext) -> None:
 
     # Step 3: Test delete button and cancel
     logger.info("Step 3: Testing delete button and cancel")
-    page.click("text=削除")
-    page.click("text=キャンセル")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_CANCEL)}")
 
     # Step 4: Delete boostdoc
     logger.info("Step 4: Deleting boostdoc")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+    page.click('div.modal-footer button[name="delete"]')
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Step 5: Verify boostdoc was deleted

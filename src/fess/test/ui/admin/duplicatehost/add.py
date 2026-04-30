@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,16 +28,16 @@ def run(context: FessContext) -> None:
 
     # Click text=クローラー
     logger.info("Step 1: Navigate to Crawler menu")
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=重複ホスト
     logger.info("Step 2: Navigate to Duplicate Host page")
-    page.click("text=重複ホスト")
+    page.click(f"text={t(Labels.MENU_DUPLICATE_HOST)}")
     assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
     # Click text=新規作成
     logger.info("Step 3: Click create new button")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/duplicatehost/createnew/"))
 
     # Fill input[name="regularName"]
@@ -47,7 +49,7 @@ def run(context: FessContext) -> None:
 
     # Click button:has-text("作成")
     logger.info("Step 5: Submit form to create duplicate host")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/duplicatehost/"))
 
     logger.info("Step 6: Verify duplicate host was created")
