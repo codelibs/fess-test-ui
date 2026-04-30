@@ -262,7 +262,7 @@ class FessContext:
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 trace_path = os.path.join(
                     self._trace_dir,
-                    f"trace_{self._current_module_name}_{status}_{timestamp}.zip"
+                    f"trace_{self._current_module_name}_{self._lang}_{status}_{timestamp}.zip"
                 )
                 self._context.tracing.stop_chunk(path=trace_path)
                 logger.info(f"[TRACE] Saved: {trace_path}")
