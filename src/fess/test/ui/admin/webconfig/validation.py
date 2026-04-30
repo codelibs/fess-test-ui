@@ -56,7 +56,7 @@ def run(context: FessContext) -> None:
     logger.info("Test 2 passed: Name only validation working")
 
     # Navigate back to list
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     # Test 3: Special characters in name

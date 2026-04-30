@@ -52,7 +52,7 @@ def run(context: FessContext) -> None:
 
     # Click text=戻る
     logger.info("Step 6: Test cancel button")
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/dict/protwords/"))
 
     # Click text=編集

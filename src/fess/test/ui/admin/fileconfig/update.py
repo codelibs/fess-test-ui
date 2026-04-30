@@ -46,7 +46,7 @@ def run(context: FessContext) -> None:
     assert_equal(page.url, context.url("/admin/fileconfig/"))
 
     # Click text=戻る
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/fileconfig/"))
 
     logger.info("Step 4: Update configuration description")

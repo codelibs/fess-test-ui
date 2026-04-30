@@ -43,7 +43,7 @@ def run(context: FessContext) -> None:
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Click text=戻る (test cancel button)
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Click text=編集 again

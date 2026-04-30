@@ -51,7 +51,7 @@ def run(context: FessContext) -> None:
 
     # Click text=戻る (test cancel button)
     logger.info("Step 6: Test cancel button")
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
 
     # Click text=編集 again
     logger.info("Step 7: Click edit button again")

@@ -41,7 +41,7 @@ def run(context: FessContext) -> None:
     logger.info("Step 3: Testing edit button and back button")
     page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
     # Step 4: Edit accesstoken details

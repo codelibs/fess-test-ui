@@ -42,7 +42,7 @@ def run(context: FessContext) -> None:
     logger.info("Step 3: Testing edit and cancel")
     page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/group/"))
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/group/"))
 
     # Step 4: Open edit form

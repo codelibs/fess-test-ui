@@ -48,7 +48,7 @@ def run(context: FessContext) -> None:
 
     # Click text=戻る
     logger.info("Step 5: Click back button to test navigation")
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
     # Click text=編集

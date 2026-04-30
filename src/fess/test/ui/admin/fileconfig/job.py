@@ -48,7 +48,7 @@ def run(context: FessContext) -> None:
         page.url, context.url("/admin/scheduler/createnewjob/file_crawling/"))
 
     # Click text=戻る
-    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
     logger.info("Step 4: Navigate back to configuration and create job")
