@@ -130,3 +130,6 @@ dmypy.json
 
 .vscode/
 .serena/
+
+# Extracted Fess labels (regenerated each run by run_test.sh)
+/labels/
