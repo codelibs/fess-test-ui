@@ -67,6 +67,11 @@ class ResultCollector:
     def __init__(self):
         self.results: List[TestResult] = []
         self.start_time = time.time()
+        self._environment_extra: dict = {}
+
+    def set_environment_extra(self, extra: dict) -> None:
+        """Merge additional fields into the environment block of the summary."""
+        self._environment_extra.update(extra)
 
     def add_result(self, result: TestResult):
         """Add a test result to the collection"""
@@ -85,8 +90,9 @@ class ResultCollector:
             'fess_url': os.environ.get('FESS_URL', 'unknown'),
             'browser_locale': os.environ.get('BROWSER_LOCALE', 'unknown'),
             'headless': os.environ.get('HEADLESS', 'unknown'),
-            'test_label': os.environ.get('TEST_LABEL', 'unknown')
+            'test_label': os.environ.get('TEST_LABEL', 'unknown'),
         }
+        environment.update(self._environment_extra)
 
         return TestSummary(
             total_modules=len(self.results),
