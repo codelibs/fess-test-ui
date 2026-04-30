@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -25,11 +27,11 @@ def run(context: FessContext) -> None:
 
     # Click text=システム
     logger.info("Step 1: Navigate to System menu")
-    page.click("text=システム")
+    page.click(f"text={t(Labels.MENU_SYSTEM)}")
 
     # Click text=辞書
     logger.info("Step 2: Navigate to Dictionary page")
-    page.click("text=辞書")
+    page.click(f"text={t(Labels.MENU_DICT)}")
     assert_equal(page.url, context.url("/admin/dict/"))
 
     # Click text=en/stopwords.txt
@@ -47,19 +49,19 @@ def run(context: FessContext) -> None:
 
     # Click text=削除
     logger.info("Step 5: Click delete button")
-    page.click("text=削除")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
 
     # Click text=キャンセル (test cancel button)
     logger.info("Step 6: Test cancel button in confirmation dialog")
-    page.click("text=キャンセル")
+    page.click(f"text={t(Labels.CRUD_BUTTON_CANCEL)}")
 
     # Click text=削除 again
     logger.info("Step 7: Click delete button again")
-    page.click("text=削除")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
 
     # Click button[name="delete"] to confirm deletion
     logger.info("Step 8: Confirm deletion")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click('div.modal-footer button[name="delete"]')
     assert_equal(page.url, context.url("/admin/dict/stopwords/list/1?dictId=ZW4vc3RvcHdvcmRzLnR4dA=="))
 
     logger.info("Stopwords dictionary delete test completed successfully")
