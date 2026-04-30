@@ -80,3 +80,19 @@ class Labels:
     # JP: "<b>{0}</b> に一致する情報は見つかりませんでした。"
     # EN: "Your search - <b>{0}</b> - did not match any documents."
     SEARCH_DID_NOT_MATCH = "labels.did_not_match"
+
+    # ---- Crawler-config job creation ---------------------------------
+    # Three keys with identical rendering ("新しいジョブの作成"); kept distinct
+    # because they live on different pages.
+    WEB_CRAWLING_BUTTON_CREATE_JOB = "labels.web_crawling_button_create_job"
+    FILE_CRAWLING_BUTTON_CREATE_JOB = "labels.file_crawling_button_create_job"
+    DATA_CRAWLING_BUTTON_CREATE_JOB = "labels.data_crawling_button_create_job"
+
+    # ---- Read-only page markers (for body-content assertions) --------
+    DESIGN_TITLE_FILE = "labels.design_title_file"
+    SYSTEM_INFO_FESS_PROP_TITLE = "labels.system_info_fess_prop_title"
+    LIST_COULD_NOT_FIND_CRUD_TABLE = "labels.list_could_not_find_crud_table"
+    SEARCHLOG_QUERY_ID = "labels.searchlog_queryid"
+    SEARCHLOG_ACCESS_TYPE = "labels.searchlog_accesstype"
+    FAILURE_URL_ERROR_COUNT = "labels.failure_url_search_error_count"
+    FAILURE_URL_ERROR_NAME = "labels.failure_url_search_error_name"
