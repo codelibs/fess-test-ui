@@ -29,6 +29,11 @@ PAGES_TO_VISIT = [
 _NOISE_PATTERNS = [
     "favicon",
     "ResizeObserver loop limit exceeded",
+    # Fess UI emits a Content-Security-Policy header containing a directive
+    # the latest Chromium doesn't recognize (logged at console.error level).
+    # Treat as known noise so this test stays focused on real JS regressions.
+    # TODO: file upstream Fess issue to refresh the CSP directive set.
+    "Unrecognized Content-Security-Policy directive",
 ]
 
 
