@@ -76,4 +76,7 @@ class Labels:
     SCHEDULER_BUTTON_START = "labels.scheduledjob_button_start"
 
     # ---- Search results ----------------------------------------------
-    SEARCH_DID_NOT_MATCH = "labels.process_time_is"  # TBV during search/no_results migration
+    # Renders as a message containing "{0}" placeholder for the query, e.g.
+    # JP: "<b>{0}</b> に一致する情報は見つかりませんでした。"
+    # EN: "Your search - <b>{0}</b> - did not match any documents."
+    SEARCH_DID_NOT_MATCH = "labels.did_not_match"
