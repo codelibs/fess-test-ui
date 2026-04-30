@@ -29,7 +29,7 @@ def run(context: FessContext) -> None:
 
     # Click text=クローラー
     logger.info("Step 1: Navigate to Crawler menu")
-    page.click(f"text={t(Labels.MENU_SUGGEST)}")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=関連コンテンツ
     logger.info("Step 2: Navigate to Related Content page")

@@ -28,7 +28,7 @@ def run(context: FessContext) -> None:
 
     # Click text=クローラー
     logger.info("Step 1: Navigate to Suggest menu")
-    page.click(f"text={t(Labels.MENU_SUGGEST)}")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=キーマッチ
     logger.info("Step 2: Navigate to Key Match page")
