@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,8 +28,8 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to group page
     logger.info("Step 1: Navigating to group page")
-    page.click("text=ユーザー")
-    page.click("text=グループ")
+    page.click(f"text={t(Labels.MENU_USER)}")
+    page.click(f"text={t(Labels.MENU_GROUP)}")
     assert_equal(page.url, context.url("/admin/group/"))
 
     # Step 2: Open group details
@@ -38,14 +40,14 @@ def run(context: FessContext) -> None:
 
     # Step 3: Test edit and cancel
     logger.info("Step 3: Testing edit and cancel")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/group/"))
-    page.click("text=戻る")
+    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
     assert_equal(page.url, context.url("/admin/group/"))
 
     # Step 4: Open edit form
     logger.info("Step 4: Opening edit form")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/group/"))
 
     # Step 5: Update group attributes
@@ -54,7 +56,7 @@ def run(context: FessContext) -> None:
 
     # Step 6: Submit update
     logger.info("Step 6: Submitting update")
-    page.click("text=更新")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
     assert_equal(page.url, context.url("/admin/group/"))
 
     logger.info("Group update test completed successfully")

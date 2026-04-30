@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -27,15 +29,15 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 1: Navigate to file system configuration page")
     # Click text=クローラー
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=ファイルシステム
-    page.click("text=ファイルシステム")
+    page.click(f"text={t(Labels.MENU_FILE_SYSTEM)}")
     assert_equal(page.url, context.url("/admin/fileconfig/"))
 
     logger.info("Step 2: Open create new configuration form")
     # Click text=新規作成
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/fileconfig/createnew/"))
 
     logger.info("Step 3: Fill in file configuration details")
@@ -53,7 +55,7 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 4: Submit new file configuration")
     # Click button:has-text("作成")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/fileconfig/"))
 
     logger.info("Step 5: Verify configuration appears in list")

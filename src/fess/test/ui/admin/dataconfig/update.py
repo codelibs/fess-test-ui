@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_contains, assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from fess.test.ui.admin.dataconfig.add import HANDLER_NAME, _inject_handler
 from playwright.sync_api import Playwright, sync_playwright
@@ -34,7 +36,7 @@ def run(context: FessContext) -> None:
                     f"expected details URL, got {page.url}")
 
     logger.info("Step 3: Enter edit mode")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     page.wait_for_load_state("domcontentloaded")
 
     logger.info("Step 4: Re-inject handler and modify boost")
@@ -42,7 +44,7 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"boost\"]", "2.5")
 
     logger.info("Step 5: Submit update")
-    page.click("button:has-text(\"更新\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/dataconfig/"),
                  f"expected list URL after update, got {page.url}")

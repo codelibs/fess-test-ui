@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_contains, assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -47,7 +49,7 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
 
     logger.info("Step 2: Open create form")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/dataconfig/createnew/"),
                  f"expected createnew URL, got {page.url}")
@@ -59,7 +61,7 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"boost\"]", "1.0")
 
     logger.info("Step 4: Submit")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/dataconfig/"),
                  f"expected list URL after create, got {page.url}")

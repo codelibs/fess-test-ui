@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_contains, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from fess.test.ui.admin.fileauth._const import FILECONFIG_NAME
 from playwright.sync_api import Playwright, sync_playwright
@@ -27,13 +29,13 @@ def _ensure_fileconfig(page, context: FessContext) -> None:
         logger.info(f"fileconfig {FILECONFIG_NAME} already exists; skipping")
         return
     logger.info(f"Creating fileconfig: {FILECONFIG_NAME}")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.wait_for_load_state("domcontentloaded")
     page.fill("input[name=\"name\"]", FILECONFIG_NAME)
     page.fill("textarea[name=\"paths\"]", "smb://example.invalid/share/")
     page.fill("input[name=\"maxAccessCount\"]", "10")
     page.fill("input[name=\"numOfThread\"]", "1")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
     assert_contains(page.inner_text("section.content"), FILECONFIG_NAME,
                     "fileconfig not in list after create")
@@ -53,7 +55,7 @@ def run(context: FessContext) -> None:
     assert_equal(page.url, context.url("/admin/fileauth/"))
 
     logger.info("Step 2: Open create form")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/fileauth/createnew/"))
 
@@ -66,7 +68,7 @@ def run(context: FessContext) -> None:
     page.select_option("select[name=\"fileConfigId\"]", label=FILECONFIG_NAME)
 
     logger.info("Step 4: Submit")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/fileauth/"))
 
