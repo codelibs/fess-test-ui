@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -27,13 +29,13 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to role page
     logger.info("Step 1: Navigating to role page")
-    page.click("text=ユーザー")
-    page.click("text=ロール")
+    page.click(f"text={t(Labels.MENU_USER)}")
+    page.click(f"text={t(Labels.MENU_ROLE)}")
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Step 2: Open create form
     logger.info("Step 2: Opening create form")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/role/createnew/"))
 
     # Step 3: Fill role information
@@ -42,7 +44,7 @@ def run(context: FessContext) -> None:
 
     # Step 4: Submit form
     logger.info("Step 4: Submitting form")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Step 5: Verify role was created

@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -25,10 +27,10 @@ def run(context: FessContext) -> None:
     label_name: str = context.create_label_name()
 
     # Click text=ユーザー
-    page.click("text=ユーザー")
+    page.click(f"text={t(Labels.MENU_USER)}")
 
     # Click text=ロール
-    page.click("text=ロール")
+    page.click(f"text={t(Labels.MENU_ROLE)}")
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Click the role created in add test
@@ -37,22 +39,22 @@ def run(context: FessContext) -> None:
         page.url, context.url("/admin/role/details/4/"))
 
     # Click text=編集
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Click text=戻る (test cancel button)
-    page.click("text=戻る")
+    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Click text=編集 again
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Note: We don't actually change any field values here, just test the edit workflow
     # This is consistent with other modules like user which only changes password
 
     # Click text=更新
-    page.click("text=更新")
+    page.click(f"text={t(Labels.CRUD_BUTTON_UPDATE)}")
     assert_equal(page.url, context.url("/admin/role/"))
 
     page.wait_for_load_state("domcontentloaded")

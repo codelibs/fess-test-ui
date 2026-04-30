@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,8 +28,8 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to role page
     logger.info("Step 1: Navigating to role page")
-    page.click("text=ユーザー")
-    page.click("text=ロール")
+    page.click(f"text={t(Labels.MENU_USER)}")
+    page.click(f"text={t(Labels.MENU_ROLE)}")
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Step 2: Open role details
@@ -38,13 +40,13 @@ def run(context: FessContext) -> None:
 
     # Step 3: Test delete with cancel
     logger.info("Step 3: Testing delete with cancel")
-    page.click("text=削除")
-    page.click("text=キャンセル")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CANCEL)}")')
 
     # Step 4: Execute delete
     logger.info("Step 4: Executing delete")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+    page.click('div.modal-footer button[name="delete"]')
     assert_equal(page.url, context.url("/admin/role/"))
 
     # Step 5: Verify role was deleted

@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -27,10 +29,10 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 1: Navigate to file system configuration page")
     # Click text=クローラー
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=ファイルシステム
-    page.click("text=ファイルシステム")
+    page.click(f"text={t(Labels.MENU_FILE_SYSTEM)}")
     assert_equal(page.url, context.url("/admin/fileconfig/"))
 
     logger.info("Step 2: Open configuration details")
@@ -41,20 +43,20 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 3: Test create new job button and cancel")
     # Click text=新しいジョブの作成
-    page.click("text=新しいジョブの作成")
+    page.click(f'button:has-text("{t(Labels.FILE_CRAWLING_BUTTON_CREATE_JOB)}")')
     assert_startswith(
         page.url, context.url("/admin/scheduler/createnewjob/file_crawling/"))
 
     # Click text=戻る
-    page.click("text=戻る")
+    page.click(f'a:has-text("{t(Labels.CRUD_BUTTON_BACK)}")')
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
     logger.info("Step 4: Navigate back to configuration and create job")
     # Click text=クローラー
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=ファイルシステム
-    page.click("text=ファイルシステム")
+    page.click(f"text={t(Labels.MENU_FILE_SYSTEM)}")
     assert_equal(page.url, context.url("/admin/fileconfig/"))
 
     # Click text=N2SM
@@ -63,13 +65,13 @@ def run(context: FessContext) -> None:
         page.url, context.url("/admin/fileconfig/details/4/"))
 
     # Click text=新しいジョブの作成
-    page.click("text=新しいジョブの作成")
+    page.click(f'button:has-text("{t(Labels.FILE_CRAWLING_BUTTON_CREATE_JOB)}")')
     assert_startswith(
         page.url, context.url("/admin/scheduler/createnewjob/file_crawling/"))
 
     logger.info("Step 5: Submit new job creation")
     # Click button:has-text("作成")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
     logger.info("Step 6: Verify job appears in scheduler list")
@@ -85,17 +87,17 @@ def run(context: FessContext) -> None:
         page.url, context.url("/admin/scheduler/details/4/"))
 
     # Click text=削除
-    page.click("text=削除")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
 
     # Click text=キャンセル
-    page.click("text=キャンセル")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CANCEL)}")')
 
     logger.info("Step 8: Confirm job deletion")
     # Click text=削除
-    page.click("text=削除")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
 
     # Click text=キャンセル 削除 >> button[name="delete"]
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click('div.modal-footer button[name="delete"]')
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
     logger.info("Step 9: Verify job is removed from scheduler list")
