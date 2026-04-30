@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -24,17 +26,17 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to group
-    page.click("text=ユーザー")
-    page.click("text=グループ")
+    page.click(f"text={t(Labels.MENU_USER)}")
+    page.click(f"text={t(Labels.MENU_GROUP)}")
     assert_equal(page.url, context.url("/admin/group/"))
 
     # Test 1: Required field validation - empty name
     logger.info("Test 1: Required field validation - empty name")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/group/createnew/"))
 
     # Try to create without filling required fields
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/group/createnew/"),
@@ -44,7 +46,7 @@ def run(context: FessContext) -> None:
     # Test 2: Special characters in group name (XSS prevention)
     logger.info("Test 2: XSS prevention in group name")
     page.fill("input[name=\"name\"]", f"<script>alert('xss')</script>{context.generate_str(5)}")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/group/"):
@@ -52,9 +54,9 @@ def run(context: FessContext) -> None:
 
     # Test 3: Maximum length validation
     logger.info("Test 3: Maximum length validation")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.fill("input[name=\"name\"]", context.generate_str(300))
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     logger.info("Test 3 passed: Long input handled")
@@ -68,16 +70,16 @@ def run(context: FessContext) -> None:
     duplicate_group = f"TestGroup_{context.generate_str(5)}"
 
     # Create first group
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.fill("input[name=\"name\"]", duplicate_group)
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
 
     if page.url == context.url("/admin/group/"):
         # Try to create duplicate
-        page.click("text=新規作成")
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
         page.fill("input[name=\"name\"]", duplicate_group)
-        page.click("button:has-text(\"作成\")")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
         page.wait_for_load_state("domcontentloaded")
 
         # Should reject duplicate
@@ -90,8 +92,8 @@ def run(context: FessContext) -> None:
         if table_content.find(duplicate_group) != -1:
             page.click(f"text={duplicate_group}")
             page.wait_for_load_state("domcontentloaded")
-            page.click("text=削除")
-            page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+            page.click('div.modal-footer button[name="delete"]')
             page.wait_for_load_state("domcontentloaded")
 
     logger.info("Group validation test completed successfully")
