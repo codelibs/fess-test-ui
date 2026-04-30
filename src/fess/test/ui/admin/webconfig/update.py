@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,10 +28,10 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 1: Navigate to web crawler configuration page")
     # Click text=クローラー
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=ウェブ
-    page.click("text=ウェブ")
+    page.click(f"text={t(Labels.MENU_WEB)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     logger.info("Step 2: Open configuration details")
@@ -40,16 +42,16 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 3: Test edit button and cancel functionality")
     # Click text=編集
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     # Click text=戻る
-    page.click("text=戻る")
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     logger.info("Step 4: Update configuration description")
     # Click text=編集
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     # Fill text=N2SMのサイト
@@ -57,7 +59,7 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 5: Submit configuration update")
     # Click text=更新
-    page.click("text=更新")
+    page.click(f"text={t(Labels.CRUD_BUTTON_UPDATE)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     logger.info("Step 6: Verify updated configuration")
