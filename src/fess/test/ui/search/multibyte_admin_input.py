@@ -58,19 +58,27 @@ def run(context: FessContext) -> None:
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
 
-    # Verify round-trip: name appears verbatim in the list table
-    table_text = page.inner_text("table")
-    assert_contains(
-        table_text, name,
-        f"multibyte label name corrupted: expected {name!r} in table")
-
-    # Cleanup: open the row, click delete, confirm in modal
-    page.click(f"text={name}")
-    page.wait_for_load_state("domcontentloaded")
-    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
-    # Modal confirm button has name="delete" (locale-neutral)
-    page.click('div.modal-footer button[name="delete"]')
-    page.wait_for_load_state("domcontentloaded")
+    try:
+        # Verify round-trip: name appears verbatim in the list table
+        table_text = page.inner_text("table")
+        assert_contains(
+            table_text, name,
+            f"multibyte label name corrupted: expected {name!r} in table")
+    finally:
+        # Cleanup runs even on assertion failure to avoid leaking
+        # multibyte test data into subsequent runs.
+        try:
+            page.goto(context.url("/admin/labeltype/"))
+            page.wait_for_load_state("domcontentloaded")
+            page.click(f"text={name}")
+            page.wait_for_load_state("domcontentloaded")
+            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+            # Modal confirm button has name="delete" (locale-neutral)
+            page.click('div.modal-footer button[name="delete"]')
+            page.wait_for_load_state("domcontentloaded")
+        except Exception as cleanup_err:
+            logger.warning(
+                f"multibyte_admin_input cleanup failed for {name!r}: {cleanup_err}")
 
     logger.info("search/multibyte_admin_input completed")
 
