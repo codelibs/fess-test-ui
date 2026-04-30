@@ -8,6 +8,7 @@ services:
       - "HEADLESS=true"
       - "TEST_LANG=${TEST_LANG:-random}"
       - "TEST_LANG_SEED=${TEST_LANG_SEED:-}"
+      - "TEST_MODULES=${TEST_MODULES:-all}"
       - "FESS_LABEL_DIR=/labels"
     volumes:
       - "./labels:/labels:ro"
