@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -30,8 +32,8 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
 
     logger.info("Step 2: Delete")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click(f"text={t(Labels.CRUD_BUTTON_DELETE)}")
+    page.click('div.modal-footer button[name="delete"]')
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/scheduler/"),
                  f"expected list URL after delete, got {page.url}")

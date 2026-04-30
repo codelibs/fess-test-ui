@@ -73,7 +73,7 @@ class Labels:
     CRUD_BUTTON_EDIT = "labels.crud_button_edit"
 
     # ---- Scheduler ---------------------------------------------------
-    SCHEDULER_BUTTON_START = "labels.scheduler_button_start"  # TBV during scheduler migration
+    SCHEDULER_BUTTON_START = "labels.scheduledjob_button_start"
 
     # ---- Search results ----------------------------------------------
     SEARCH_DID_NOT_MATCH = "labels.process_time_is"  # TBV during search/no_results migration
