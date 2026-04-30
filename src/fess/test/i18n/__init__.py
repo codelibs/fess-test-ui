@@ -80,3 +80,64 @@ def to_browser_locale(fess_lang: str) -> str:
             f"unsupported fess_lang={fess_lang!r}; "
             f"must be one of {sorted(_BROWSER_LOCALE_MAP.keys())}")
     return _BROWSER_LOCALE_MAP[fess_lang]
+
+
+from typing import Optional as _Optional
+from .labels import LabelStrings as _LabelStrings
+
+# Singleton state
+_state = {
+    "lang": None,        # type: _Optional[str]
+    "browser_locale": None,
+    "labels": None,      # type: _Optional[_LabelStrings]
+    "label_dir": None,
+}
+
+
+def init(lang: str, label_dir: str) -> None:
+    """Initialize the i18n singleton. Call once at app startup.
+
+    Idempotent only when called with the same args. A second call with
+    different args overwrites the state (use _reset_for_tests in tests).
+    """
+    if lang not in SUPPORTED_LANGS:
+        raise ValueError(f"unsupported lang={lang!r}")
+    _state["lang"] = lang
+    _state["browser_locale"] = to_browser_locale(lang)
+    _state["labels"] = _LabelStrings(lang, label_dir)
+    _state["label_dir"] = label_dir
+
+
+def t(key: str, default: _Optional[str] = None) -> str:
+    """Get localized label by key. Requires init() first."""
+    if _state["labels"] is None:
+        raise RuntimeError(
+            "fess.test.i18n not initialized; call init(lang, label_dir) first")
+    return _state["labels"].get(key, default=default)
+
+
+def selected_lang() -> str:
+    if _state["lang"] is None:
+        raise RuntimeError("fess.test.i18n not initialized")
+    return _state["lang"]
+
+
+def selected_browser_locale() -> str:
+    if _state["browser_locale"] is None:
+        raise RuntimeError("fess.test.i18n not initialized")
+    return _state["browser_locale"]
+
+
+def label_sizes() -> dict:
+    """For startup banner: how many keys were loaded."""
+    if _state["labels"] is None:
+        raise RuntimeError("fess.test.i18n not initialized")
+    return _state["labels"].sizes()
+
+
+def _reset_for_tests() -> None:
+    """Test-only: clear singleton state."""
+    _state["lang"] = None
+    _state["browser_locale"] = None
+    _state["labels"] = None
+    _state["label_dir"] = None
