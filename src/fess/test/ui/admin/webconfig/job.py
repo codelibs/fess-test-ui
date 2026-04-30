@@ -43,7 +43,7 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 3: Test create new job button and cancel")
     # Click text=新しいジョブの作成
-    page.click(f'button:has-text("{t(Labels.WEB_CRAWLING_BUTTON_CREATE_JOB)}")')
+    page.click(f"text={t(Labels.WEB_CRAWLING_BUTTON_CREATE_JOB)}")
     # assert_equal(page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
     assert_startswith(
         page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
@@ -66,7 +66,7 @@ def run(context: FessContext) -> None:
         page.url, context.url("/admin/webconfig/details/4/"))
 
     # Click text=新しいジョブの作成
-    page.click(f'button:has-text("{t(Labels.WEB_CRAWLING_BUTTON_CREATE_JOB)}")')
+    page.click(f"text={t(Labels.WEB_CRAWLING_BUTTON_CREATE_JOB)}")
     #assert_equal(page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
     assert_startswith(
         page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
