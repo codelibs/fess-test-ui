@@ -59,6 +59,7 @@ class Labels:
     MENU_SEARCH_LIST = "labels.menu_search_list"
     MENU_BACKUP = "labels.menu_backup"
     MENU_MAINTENANCE = "labels.menu_maintenance"
+    MENU_ADMINISTRATION = "labels.administration"
 
     # ---- CRUD link (top of list page) --------------------------------
     CRUD_LINK_CREATE = "labels.crud_link_create"

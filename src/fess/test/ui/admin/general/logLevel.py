@@ -53,8 +53,8 @@ def run(playwright: Playwright) -> None:
     # Click text=admin
     page.click("text=admin")
 
-    # Click text=管理
-    page.click("text=管理")
+    # Click localized "Administration"
+    page.click(f"text={t(Labels.MENU_ADMINISTRATION)}")
     # assert page.url == "http://localhost:8080/admin/dashboard/"
 
     # Click a:has-text("システム")
