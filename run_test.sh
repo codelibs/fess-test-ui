@@ -47,12 +47,27 @@ fi
     echo "ERROR: label extraction failed" >&2; exit 1; }
 
 # ----- Resolve language settings ------------------------------------------
+# Resolve on the host so $GITHUB_ENV (a host file path) is writable and so
+# the container receives an explicit locale rather than 'random'.
 export TEST_LANG="${TEST_LANG:-random}"
 export TEST_LANG_SEED="${TEST_LANG_SEED:-}"
 export BROWSER_LOCALE="${BROWSER_LOCALE:-}"
 
+if ! command -v python3 >/dev/null 2>&1 ; then
+    echo "ERROR: python3 is required on the host for language resolution" >&2
+    exit 1
+fi
+
+TEST_LANG_RESOLVED=$(python3 "${base_dir}/scripts/resolve_lang.py")
+export TEST_LANG="${TEST_LANG_RESOLVED}"
+export TEST_LANG_RESOLVED
+
+if [[ -n "${GITHUB_ENV:-}" ]] ; then
+    echo "TEST_LANG_RESOLVED=${TEST_LANG_RESOLVED}" >> "${GITHUB_ENV}"
+fi
+
 echo "Fess:   ${fess_name}"
 echo "Search: ${search_engine_name}"
-echo "TEST_LANG=${TEST_LANG} TEST_LANG_SEED=${TEST_LANG_SEED:-<unset>}"
+echo "TEST_LANG=${TEST_LANG} (resolved) TEST_LANG_SEED=${TEST_LANG_SEED:-<unset>}"
 
 docker compose ${docker_compose_files} up --abort-on-container-exit --exit-code-from test01

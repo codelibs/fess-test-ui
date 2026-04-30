@@ -98,14 +98,8 @@ def _initialize_i18n() -> dict:
     i18n_mod.init(lang, label_dir)
     sizes = i18n_mod.label_sizes()
 
-    # Export resolved lang to $GITHUB_ENV for CI artifact naming
-    gh_env = os.environ.get("GITHUB_ENV")
-    if gh_env:
-        try:
-            with open(gh_env, "a", encoding="utf-8") as f:
-                f.write(f"TEST_LANG_RESOLVED={lang}\n")
-        except Exception as e:
-            logger.warning(f"Failed to export TEST_LANG_RESOLVED to GITHUB_ENV: {e}")
+    # Note: $GITHUB_ENV is written from the host in run_test.sh (the file path
+    # is host-only and unreachable from inside the runner container).
 
     return {
         "lang": lang,
