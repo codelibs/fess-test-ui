@@ -32,7 +32,7 @@ def run(playwright: Playwright) -> None:
 
     # Click a:has-text("システム")
     logger.info("Step 3: Navigate to System > General settings")
-    page.click(f'a:has-text("{t(Labels.MENU_SYSTEM)}")')
+    page.click(f"text={t(Labels.MENU_SYSTEM)}")
 
     # Click text=全般
     page.click(f"text={t(Labels.MENU_CRAWL_CONFIG)}")
@@ -58,10 +58,10 @@ def run(playwright: Playwright) -> None:
     # assert page.url == "http://localhost:8080/admin/dashboard/"
 
     # Click a:has-text("システム")
-    page.click(f'a:has-text("{t(Labels.MENU_SYSTEM)}")')
+    page.click(f"text={t(Labels.MENU_SYSTEM)}")
 
     # Click a:has-text("全般")
-    page.click(f'a:has-text("{t(Labels.MENU_CRAWL_CONFIG)}")')
+    page.click(f"text={t(Labels.MENU_CRAWL_CONFIG)}")
     # assert page.url == "http://localhost:8080/admin/general/"
 
     # Select WARN
