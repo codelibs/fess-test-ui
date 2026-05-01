@@ -42,7 +42,9 @@ def run(context: FessContext) -> None:
     # Click on the entry created/updated by previous tests (find by label name)
     logger.info("Step 4: Click on existing entry to view details")
     label_name: str = context.create_label_name()
-    page.click(f"text={label_name}")
+    # The list cell renders `data.inputs` (a List) via List.toString(), so a
+    # single input shows as `[label_name]` with literal brackets.
+    page.click(f"text=[{label_name}]")
 
     # Click text=削除
     logger.info("Step 5: Click delete button")

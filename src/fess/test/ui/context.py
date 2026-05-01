@@ -19,6 +19,34 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _normalize_text_selector(selector: str) -> str:
+    """Convert `text=X` (substring match) to `text="X"` (exact match).
+
+    Playwright's `text=Foo` does case-insensitive substring matching, so a
+    selector like `text=Back` also matches `<p>Backup</p>`. Wrapping the
+    body in double quotes forces exact match. This avoids prefix collisions
+    in English (e.g. labels.crud_button_back="Back" vs labels.menu_backup=
+    "Backup") that don't surface in Japanese because 戻る and バックアップ
+    don't overlap.
+
+    Selectors that are already quoted, regex (`text=/.../`), use a different
+    engine (`button:has-text(...)`, CSS, attribute selectors), or chain via
+    `>>` (which intentionally uses substring matching to drill into a
+    container) are returned unchanged.
+    """
+    if not selector.startswith("text="):
+        return selector
+    if " >> " in selector:
+        return selector
+    body = selector[len("text="):]
+    if not body:
+        return selector
+    if body[0] in ('"', "'", '/'):
+        return selector
+    escaped = body.replace("\\", "\\\\").replace('"', '\\"')
+    return f'text="{escaped}"'
+
+
 class PageWrapper:
     """
     Wrapper for Playwright Page that adds logging to browser operations.
@@ -38,6 +66,7 @@ class PageWrapper:
 
     def click(self, selector: str, **kwargs) -> None:
         """Click an element with logging."""
+        selector = _normalize_text_selector(selector)
         self._logger.debug(f"[CLICK] selector='{selector}'")
         try:
             self._page.click(selector, **kwargs)
@@ -48,6 +77,7 @@ class PageWrapper:
 
     def fill(self, selector: str, value: str, **kwargs) -> None:
         """Fill an input field with logging."""
+        selector = _normalize_text_selector(selector)
         display_value = '***' if self._is_sensitive_field(selector) else self._truncate_value(value)
         self._logger.debug(f"[FILL] selector='{selector}' value='{display_value}'")
         try:
@@ -76,6 +106,7 @@ class PageWrapper:
 
     def wait_for_selector(self, selector: str, **kwargs) -> "ElementHandle":
         """Wait for a selector with logging."""
+        selector = _normalize_text_selector(selector)
         self._logger.debug(f"[WAIT_SELECTOR] selector='{selector}'")
         try:
             result = self._page.wait_for_selector(selector, **kwargs)
@@ -93,6 +124,7 @@ class PageWrapper:
 
     def inner_text(self, selector: str, **kwargs) -> str:
         """Get inner text with logging."""
+        selector = _normalize_text_selector(selector)
         self._logger.debug(f"[INNER_TEXT] selector='{selector}'")
         result = self._page.inner_text(selector, **kwargs)
         self._logger.debug(f"[INNER_TEXT] length={len(result)}")
@@ -100,6 +132,7 @@ class PageWrapper:
 
     def input_value(self, selector: str, **kwargs) -> str:
         """Get input value with logging."""
+        selector = _normalize_text_selector(selector)
         self._logger.debug(f"[INPUT_VALUE] selector='{selector}'")
         result = self._page.input_value(selector, **kwargs)
         display_result = '***' if self._is_sensitive_field(selector) else self._truncate_value(result)
@@ -108,6 +141,7 @@ class PageWrapper:
 
     def select_option(self, selector: str, value=None, **kwargs):
         """Select option with logging."""
+        selector = _normalize_text_selector(selector)
         self._logger.debug(f"[SELECT_OPTION] selector='{selector}' value='{value}'")
         try:
             result = self._page.select_option(selector, value, **kwargs)
