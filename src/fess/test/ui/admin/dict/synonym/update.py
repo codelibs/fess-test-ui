@@ -43,7 +43,9 @@ def run(context: FessContext) -> None:
 
     # Click on the entry created by add test (find by label name)
     logger.info("Step 4: Click on existing entry to view details")
-    page.click(f"text={label_name}")
+    # The list cell renders `data.inputs` (a List) via List.toString(), so a
+    # single input shows as `[label_name]` with literal brackets.
+    page.click(f"text=[{label_name}]")
 
     # Click text=編集
     logger.info("Step 5: Click edit button")

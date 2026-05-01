@@ -54,7 +54,9 @@ def run(context: FessContext) -> None:
 
     # Click text=[二]
     logger.info("Step 5: Open entry details")
-    page.click(f"text={label_name}")
+    # The list cell renders `data.inputs` (a List) via List.toString(), so a
+    # single input shows as `[label_name]` with literal brackets.
+    page.click(f"text=[{label_name}]")
     assert_startswith(
         page.url, context.url("/admin/dict/mapping/details/bWFwcGluZy50eHQ%3D/4/"))
 
