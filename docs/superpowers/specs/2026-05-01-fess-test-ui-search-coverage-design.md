@@ -65,10 +65,8 @@ Verify `/login/` form rendering and basic invalid-submit handling.
 - Open `/login/` in a **new, unauthenticated browser context** (do NOT
   reuse the test-suite-wide logged-in session, or LastaFlute redirects
   to `/`).
-- Assert `input[name="username"]`, `input[name="password"]`, and the
-  login `button` exist (use the localized placeholder/text labels via
-  `t(Labels.LOGIN_PLACEHOLDER_USERNAME)` etc., matching how
-  `FessContext.login()` already locates them).
+- Assert `input[name="username"]`, `input[name="password"]`, and
+  `button[name="login"]` exist on `/login/`.
 - Submit the form **with empty username/password** (no credentials
   guessed). Assert one of:
   - URL stays on `/login/` (LastaFlute re-renders the form), OR
@@ -151,23 +149,24 @@ Update three places, mirroring the existing `search_*` pattern:
 
 ## i18n keys to add (`src/fess/test/i18n/keys.py`)
 
-Add only keys actually referenced by assertions or selectors in the
-new tests. Every key must be verified to exist in
-`repos/fess/src/main/resources/fess_label.properties` before landing.
+**No new i18n keys are needed.** Every selector in the new modules can
+be expressed with locale-independent `name=` HTML attributes:
 
-| Constant | Property key | Used by |
-|----------|--------------|---------|
-| `PROFILE_TITLE` | `labels.profile.title` | `profile_form` (sanity check the title appears on `/profile/`) |
-| `PROFILE_BUTTON_UPDATE` | `labels.profile.update` | `profile_form` (locate the form-submit button by its localized text, mirroring how login uses `t(Labels.LOGIN)`) |
+- `/login/` submit: `button[name="login"]` (already in the form)
+- `/profile/` submit: `button[name="changePassword"]` (already in
+  `profile/index.jsp`)
+- `/search/` form: `input[name="q"]`, `button[name="search"]` (existing
+  convention used by `search/top.py` etc.)
+- `/profile/` fields: `input[name="oldPassword"]`,
+  `input[name="newPassword"]`, `input[name="confirmNewPassword"]`
 
-Other potential keys (`LOGIN_TITLE`, `INDEX_FORM_SEARCH_BTN`,
-`PROFILE_PLACEHOLDER_*`) are intentionally NOT added — the corresponding
-selectors use stable HTML `name=` attributes (`input[name="username"]`,
-`button[name="search"]`, `input[name="oldPassword"]`, …) which are
-locale-independent and already the convention in existing tests.
+The existing `LOGIN`, `LOGIN_PLACEHOLDER_USERNAME`, and
+`LOGIN_PLACEHOLDER_PASSWORD` constants in `keys.py` are reused only by
+`FessContext.login()` itself; no new test references them.
 
 Help has no fixed body text — it is admin-customizable — so no help
-key is added; assertions on `/help/` use structural selectors only.
+key is added either; assertions on `/help/` use structural selectors
+only.
 
 ## Module contract (unchanged from existing pattern)
 
