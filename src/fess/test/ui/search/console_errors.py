@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 PAGES_TO_VISIT = [
+    "/",
     "/search/",
+    "/help/",
     "/admin/",
     "/admin/dashboard/",
     "/admin/badword/",

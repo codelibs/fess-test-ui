@@ -1,3 +1,35 @@
-from fess.test.ui.search import facet, no_results, pagination, query, related, seed, sort, suggest, thumbnail, top
+from fess.test.ui.search import (
+    facet,
+    form_submit,
+    help,
+    login_form,
+    no_results,
+    pagination,
+    profile_form,
+    query,
+    related,
+    root_top,
+    seed,
+    sort,
+    suggest,
+    thumbnail,
+    top,
+)
 
-__all__ = ["facet", "no_results", "pagination", "query", "related", "seed", "sort", "suggest", "thumbnail", "top"]
+__all__ = [
+    "facet",
+    "form_submit",
+    "help",
+    "login_form",
+    "no_results",
+    "pagination",
+    "profile_form",
+    "query",
+    "related",
+    "root_top",
+    "seed",
+    "sort",
+    "suggest",
+    "thumbnail",
+    "top",
+]
