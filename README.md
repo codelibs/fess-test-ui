@@ -100,10 +100,13 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 | `FESS_URL` | `http://localhost:8080` | Fess instance URL |
 | `FESS_USERNAME` | `admin` | Admin username |
 | `FESS_PASSWORD` | `admin` | Admin password |
-| `BROWSER_LOCALE` | `ja-JP` | Browser locale for Playwright |
+| `BROWSER_LOCALE` | (auto from `TEST_LANG`) | BCP47 locale for Playwright (e.g. `ja-JP`); leave unset to derive from `TEST_LANG` |
 | `HEADLESS` | `false` (CI: `true`) | Run browser in headless mode |
 | `TEST_LABEL` | (auto-generated) | Override test label generation |
 | `TEST_MODULES` | `all` | Comma-separated list of modules to run |
+| `TEST_LANG` | `random` | Fess UI locale (e.g. `ja`, `pt_BR`, `zh_CN`) or `random` |
+| `TEST_LANG_SEED` | (unset) | Seed for deterministic random language selection |
+| `FESS_LABEL_DIR` | `/labels` (in container) | Directory containing extracted `fess_label_*.properties` |
 | `FESS_DICTIONARY_PATH` | (engine-specific) | Dictionary path for Fess |
 
 #### Logging Configuration
@@ -142,6 +145,59 @@ FESS_URL=http://my-fess-instance:8080
 FESS_USERNAME=testuser
 FESS_PASSWORD=testpass
 HEADLESS=true
+```
+
+### Language Configuration
+
+Tests can run in any of Fess's 16 supported UI locales. By default a random
+locale is picked per run, so weekly CI rotates through every language and
+surfaces language-specific regressions over time.
+
+Supported locales: `de, en, es, fr, hi, id, it, ja, ko, nl, pl, pt_BR, ru, tr, zh_CN, zh_TW`
+
+#### Selecting a language
+
+```bash
+# German
+TEST_LANG=de ./run_test.sh fessx opensearch3
+
+# Brazilian Portuguese
+TEST_LANG=pt_BR ./run_test.sh fessx opensearch3
+
+# Random with seed (deterministic — for reproducing a CI failure)
+TEST_LANG_SEED=12345 ./run_test.sh fessx opensearch3
+```
+
+The chosen language is logged in the startup banner, recorded in
+`test_results.json` (`environment.selected_language`,
+`environment.lang_seed`), and embedded in CI artifact filenames
+(`test-results-<fess>-<engine>-<lang>`). Failure screenshots and
+Playwright traces also gain a `<lang>` segment in their filenames so
+weekly history is interpretable.
+
+#### Reproducing a CI failure
+
+```bash
+# If you know the exact language:
+TEST_LANG=pt_BR ./run_test.sh fessx opensearch3
+
+# If you only know the seed (e.g. seed=12345 picked pt_BR):
+TEST_LANG_SEED=12345 ./run_test.sh fessx opensearch3
+```
+
+#### Running a single module locally with a non-default language
+
+`run_test.sh` extracts label files from the chosen Fess Docker image
+into `./labels/`. For single-module local runs (without compose), use the
+helper script and point `FESS_LABEL_DIR` at the extracted directory:
+
+```bash
+# 1. Extract labels from the Fess image (one-time per Fess version)
+./scripts/extract_labels.sh ghcr.io/codelibs/fess:snapshot
+
+# 2. Run the module
+cd src && TEST_LANG=de FESS_LABEL_DIR="$(pwd)/../labels" \
+    python -m fess.test.ui.admin.badword.add
 ```
 
 ### Running with Coverage Analysis

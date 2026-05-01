@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -27,13 +29,13 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to pathmap page
     logger.info("Step 1: Navigating to pathmap page")
-    page.click("text=クローラー")
-    page.click("text=パスマッピング")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
+    page.click(f"text={t(Labels.MENU_PATH_MAPPING)}")
     assert_equal(page.url, context.url("/admin/pathmap/"))
 
     # Step 2: Open create form
     logger.info("Step 2: Opening create form")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/pathmap/createnew/"))
 
     # Step 3: Fill form fields
@@ -46,7 +48,7 @@ def run(context: FessContext) -> None:
 
     # Step 4: Submit form
     logger.info("Step 4: Submitting form")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/pathmap/"))
 

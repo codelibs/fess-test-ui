@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,8 +28,8 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to user page
     logger.info("Step 1: Navigating to user page")
-    page.click("text=ユーザー")
-    page.click("text=ユーザー ロール グループ >> p")
+    page.click(f"text={t(Labels.MENU_USER)}")
+    page.click('a[href*="/admin/user/"]')
     assert_equal(page.url, context.url("/admin/user/"))
 
     # Step 2: Open user details
@@ -38,14 +40,14 @@ def run(context: FessContext) -> None:
 
     # Step 3: Test edit and cancel
     logger.info("Step 3: Testing edit and cancel")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/user/"))
-    page.click("text=戻る")
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/user/"))
 
     # Step 4: Open edit form
     logger.info("Step 4: Opening edit form")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/user/"))
 
     # Step 5: Update password
@@ -55,7 +57,7 @@ def run(context: FessContext) -> None:
 
     # Step 6: Submit update
     logger.info("Step 6: Submitting update")
-    page.click("text=更新")
+    page.click(f"text={t(Labels.CRUD_BUTTON_UPDATE)}")
     assert_equal(page.url, context.url("/admin/user/"))
 
     logger.info("User update test completed successfully")

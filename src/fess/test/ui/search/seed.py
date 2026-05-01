@@ -14,6 +14,8 @@ import time
 from playwright.sync_api import Playwright, sync_playwright
 
 from fess.test import assert_true
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 
 logger = logging.getLogger(__name__)
@@ -49,13 +51,13 @@ def _create_label(page, context: FessContext, name: str, included_paths: str) ->
         logger.info(f"Label {name} already exists; skipping creation")
         return
 
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.wait_for_load_state("domcontentloaded")
     page.fill("input[name=\"name\"]", name)
     page.fill("input[name=\"value\"]", name.lower().replace("-", "_"))
     page.fill("textarea[name=\"includedPaths\"]", included_paths)
     page.fill("input[name=\"sortOrder\"]", "1")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
     assert_true(page.url.endswith("/admin/labeltype/"),
                 f"after create, expected labeltype list URL, got {page.url}")
@@ -75,7 +77,7 @@ def _create_webconfig(page, context: FessContext) -> None:
         logger.info(f"Webconfig {WEBCONFIG_NAME} already exists; skipping")
         return
 
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.wait_for_load_state("domcontentloaded")
     page.fill("input[name=\"name\"]", WEBCONFIG_NAME)
     page.fill("textarea[name=\"urls\"]", SAMPLEDATA_URL)
@@ -95,7 +97,7 @@ def _create_webconfig(page, context: FessContext) -> None:
     page.select_option("select[name=\"labelTypeIds\"]",
                        label=[LABEL_A_NAME, LABEL_B_NAME])
 
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
     assert_true(page.url.endswith("/admin/webconfig/"),
                 f"after create, expected webconfig list URL, got {page.url}")
@@ -115,13 +117,14 @@ def _start_default_crawler(page, context: FessContext) -> None:
     assert_true("/admin/scheduler/details/" in page.url,
                 f"expected scheduler details URL, got {page.url}")
 
-    # Click the start button. Fess uses a submit button typically with name="start"
-    # or a link/button labelled 起動. Try name="start" first, then the Japanese text.
+    # Click the start button. Fess uses a submit button typically with name="start";
+    # fall back to the localized "Start" label as a defensive measure.
     try:
         page.click("button[name=\"start\"]", timeout=3000)
     except Exception as e:
-        logger.info(f"button[name=\"start\"] not found ({e}); trying text=起動")
-        page.click("text=起動")
+        start_label = t(Labels.SCHEDULER_BUTTON_START)
+        logger.info(f"button[name=\"start\"] not found ({e}); trying text={start_label}")
+        page.click(f"text={start_label}")
     page.wait_for_load_state("domcontentloaded")
     logger.info("Default Crawler start clicked")
 
@@ -195,8 +198,8 @@ def _delete_webconfig(page, context: FessContext) -> None:
             return
         page.click(f"text={WEBCONFIG_NAME}")
         page.wait_for_load_state("domcontentloaded")
-        page.click("text=削除")
-        page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+        page.click('div.modal-footer button[name="delete"]')
         page.wait_for_load_state("domcontentloaded")
         logger.info(f"Webconfig {WEBCONFIG_NAME} deleted")
     except Exception as e:
@@ -216,8 +219,8 @@ def _delete_label(page, context: FessContext, name: str) -> None:
             return
         page.click(f"text={name}")
         page.wait_for_load_state("domcontentloaded")
-        page.click("text=削除")
-        page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+        page.click('div.modal-footer button[name="delete"]')
         page.wait_for_load_state("domcontentloaded")
         logger.info(f"Label {name} deleted")
     except Exception as e:

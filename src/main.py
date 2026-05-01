@@ -9,6 +9,7 @@ from playwright.sync_api import sync_playwright
 
 from fess.test.ui import FessContext
 from fess.test.result import ResultCollector, TestResult
+from fess.test import i18n as i18n_mod
 from fess.test.metrics import MetricsCollector
 from fess.test.logging_config import setup_logging
 from fess.test.coverage import (
@@ -72,6 +73,11 @@ from fess.test.ui.search import (
     suggest as search_suggest,
     thumbnail as search_thumbnail,
     top as search_top,
+    i18n_smoke as search_i18n_smoke,
+    multibyte_query as search_multibyte_query,
+    layout_overflow as search_layout_overflow,
+    console_errors as search_console_errors,
+    multibyte_admin_input as search_multibyte_admin_input,
 )
 
 # Integration tests are available but not run by default
@@ -79,6 +85,29 @@ from fess.test.ui.search import (
 # from fess.test.ui import integration
 
 logger = logging.getLogger(__name__)
+
+
+def _initialize_i18n() -> dict:
+    """Resolve TEST_LANG, init the i18n singleton, return banner info dict."""
+    raw_lang = os.environ.get("TEST_LANG", "").strip() or None
+    raw_seed = os.environ.get("TEST_LANG_SEED", "").strip()
+    seed = int(raw_seed) if raw_seed else None
+
+    lang = i18n_mod.select_language(raw_lang, seed=seed)
+    label_dir = os.environ.get("FESS_LABEL_DIR", "/labels")
+    i18n_mod.init(lang, label_dir)
+    sizes = i18n_mod.label_sizes()
+
+    # Note: $GITHUB_ENV is written from the host in run_test.sh (the file path
+    # is host-only and unreachable from inside the runner container).
+
+    return {
+        "lang": lang,
+        "browser_locale": i18n_mod.selected_browser_locale(),
+        "label_dir": label_dir,
+        "sizes": sizes,
+        "seed": seed,
+    }
 
 
 def get_modules_to_run() -> List[Any]:
@@ -127,6 +156,11 @@ def get_modules_to_run() -> List[Any]:
         'search_thumbnail': search_thumbnail,
         'search_suggest': search_suggest,
         'search_related': search_related,
+        'search_i18n_smoke': search_i18n_smoke,
+        'search_multibyte_query': search_multibyte_query,
+        'search_layout_overflow': search_layout_overflow,
+        'search_console_errors': search_console_errors,
+        'search_multibyte_admin_input': search_multibyte_admin_input,
         'popularWord': popularWord,
         # Admin read-only: general sub-pages
         'pagedesign': pagedesign,
@@ -160,6 +194,9 @@ def get_modules_to_run() -> List[Any]:
             search_top, search_query, search_no_results,
             search_pagination, search_facet, search_sort,
             search_thumbnail, search_suggest, search_related,
+            search_i18n_smoke, search_multibyte_query,
+            search_layout_overflow, search_console_errors,
+            search_multibyte_admin_input,
             popularWord,
             # Admin read-only: general
             pagedesign, storage, plugin,
@@ -211,7 +248,7 @@ def save_failure_screenshot(context: FessContext, module_name: str) -> str:
 
         # Generate filename with timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        screenshot_path = f'screenshots/failure_{module_name}_{timestamp}.png'
+        screenshot_path = f'screenshots/failure_{module_name}_{i18n_mod.selected_lang()}_{timestamp}.png'
 
         # Save screenshot
         page.screenshot(path=screenshot_path)
@@ -336,12 +373,29 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
 
 def main():
     """Main test execution function"""
+    i18n_info = _initialize_i18n()
+
     logger.info("="*70)
     logger.info("FESS UI TEST SUITE - Starting execution")
+    logger.info("="*70)
+    logger.info(f"Selected language : {i18n_info['lang']}")
+    logger.info(f"Browser locale    : {i18n_info['browser_locale']}")
+    logger.info(f"Label directory   : {i18n_info['label_dir']} "
+                f"({i18n_info['sizes']['lang']} keys + "
+                f"{i18n_info['sizes']['base']} fallback)")
+    if i18n_info['seed'] is not None:
+        logger.info(f"Lang seed         : {i18n_info['seed']} "
+                    f"(export TEST_LANG_SEED={i18n_info['seed']} to reproduce)")
+    logger.info(f"Fess URL          : {os.environ.get('FESS_URL', 'unknown')}")
     logger.info("="*70)
 
     # Initialize result collector and metrics collector
     collector = ResultCollector()
+    collector.set_environment_extra({
+        "selected_language": i18n_info["lang"],
+        "browser_locale_resolved": i18n_info["browser_locale"],
+        "lang_seed": i18n_info["seed"],
+    })
     metrics = MetricsCollector()
 
     # Get modules to run

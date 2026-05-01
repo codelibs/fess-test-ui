@@ -42,10 +42,10 @@ def run(context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
 
     body = page.inner_text("body")
-    # Lenient assertion: page loads and contains either the search term,
-    # a popular-word header, or the Japanese equivalent. Exact aggregation
-    # timing is out of scope — the test verifies the pipeline doesn't crash.
-    assert_true(SEARCH_TERM in body or "popular" in body.lower() or "人気" in body,
+    # Lenient assertion: page loads and contains either the search term
+    # or a popular-word header. Exact aggregation timing is out of scope —
+    # the test verifies the pipeline doesn't crash.
+    assert_true(SEARCH_TERM in body or "popular" in body.lower(),
                 f"popularword admin page did not contain expected content "
                 f"(term={SEARCH_TERM}; first 300 chars of body): {body[:300]}")
 

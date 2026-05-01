@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,8 +28,8 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to accesstoken page
     logger.info("Step 1: Navigating to accesstoken page")
-    page.click("text=システム")
-    page.click("text=アクセストークン")
+    page.click(f"text={t(Labels.MENU_SYSTEM)}")
+    page.click(f"text={t(Labels.MENU_ACCESS_TOKEN)}")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
     # Step 2: Open accesstoken details
@@ -37,20 +39,20 @@ def run(context: FessContext) -> None:
 
     # Step 3: Test edit button and back button
     logger.info("Step 3: Testing edit button and back button")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
-    page.click("text=戻る")
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
     # Step 4: Edit accesstoken details
     logger.info("Step 4: Editing accesstoken details")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
     page.fill("input[name=\"name\"]", f"{label_name}X")
 
     # Step 5: Update accesstoken
     logger.info("Step 5: Updating accesstoken")
-    page.click("text=更新")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
     logger.info("Accesstoken update test completed successfully")

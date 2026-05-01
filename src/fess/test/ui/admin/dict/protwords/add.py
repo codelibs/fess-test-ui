@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -27,11 +29,11 @@ def run(context: FessContext) -> None:
 
     # Click text=システム
     logger.info("Step 1: Navigate to System menu")
-    page.click("text=システム")
+    page.click(f"text={t(Labels.MENU_SYSTEM)}")
 
     # Click text=辞書
     logger.info("Step 2: Navigate to Dictionary page")
-    page.click("text=辞書")
+    page.click(f"text={t(Labels.MENU_DICT)}")
     assert_equal(page.url, context.url("/admin/dict/"))
 
     # Click text=en/protwords.txt
@@ -41,7 +43,7 @@ def run(context: FessContext) -> None:
 
     # Click text=新規作成
     logger.info("Step 4: Click create new button")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/dict/protwords/createnew/ZW4vcHJvdHdvcmRzLnR4dA%3D%3D/"))
 
     # Fill input[name="input"]
@@ -50,7 +52,7 @@ def run(context: FessContext) -> None:
 
     # Click button:has-text("作成")
     logger.info("Step 6: Submit form to create new entry")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/dict/protwords/list/1?dictId=ZW4vcHJvdHdvcmRzLnR4dA=="))
 
     logger.info("Step 7: Verify entry was created successfully")

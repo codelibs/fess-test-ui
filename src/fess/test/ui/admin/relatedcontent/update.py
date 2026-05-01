@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,11 +28,11 @@ def run(context: FessContext) -> None:
 
     # Click text=クローラー
     logger.info("Step 1: Navigate to Crawler menu")
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=関連コンテンツ
     logger.info("Step 2: Navigate to Related Content page")
-    page.click("text=関連コンテンツ")
+    page.click(f"text={t(Labels.MENU_RELATED_CONTENT)}")
     assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
     # Click text=fess
@@ -41,17 +43,17 @@ def run(context: FessContext) -> None:
 
     # Click text=編集
     logger.info("Step 4: Click edit button")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
     # Click text=戻る
     logger.info("Step 5: Click back button to test navigation")
-    page.click("text=戻る")
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
     # Click text=編集
     logger.info("Step 6: Click edit button again")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
     # Fill input[name="sortOrder"]
@@ -60,7 +62,7 @@ def run(context: FessContext) -> None:
 
     # Click text=更新
     logger.info("Step 8: Submit form to update related content")
-    page.click("text=更新")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
     assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
     logger.info("Relatedcontent update test completed successfully")

@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -24,17 +26,17 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to label
-    page.click("text=クローラー")
-    page.click("text=ラベル")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
+    page.click(f"text={t(Labels.MENU_LABEL_TYPE)}")
     assert_equal(page.url, context.url("/admin/labeltype/"))
 
     # Test 1: Required field validation - empty name
     logger.info("Test 1: Required field validation - empty name")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/labeltype/createnew/"))
 
     # Try to create without filling required fields
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/labeltype/createnew/"),
@@ -47,7 +49,7 @@ def run(context: FessContext) -> None:
     page.fill("input[name=\"value\"]", "testvalue")
     page.fill("textarea[name=\"includedPaths\"]", "https://example.com/.*")
     page.fill("input[name=\"sortOrder\"]", "1")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/labeltype/"):
@@ -55,12 +57,12 @@ def run(context: FessContext) -> None:
 
     # Test 3: Invalid sortOrder (non-numeric)
     logger.info("Test 3: Invalid sortOrder validation")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.fill("input[name=\"name\"]", context.generate_str(10))
     page.fill("input[name=\"value\"]", "testvalue")
     page.fill("textarea[name=\"includedPaths\"]", "https://example.com/.*")
     page.fill("input[name=\"sortOrder\"]", "not-a-number")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     # Should either reject or default to 0
@@ -72,12 +74,12 @@ def run(context: FessContext) -> None:
 
     # Test 4: Maximum length validation
     logger.info("Test 4: Maximum length validation")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.fill("input[name=\"name\"]", context.generate_str(300))
     page.fill("input[name=\"value\"]", context.generate_str(300))
     page.fill("textarea[name=\"includedPaths\"]", "https://example.com/.*")
     page.fill("input[name=\"sortOrder\"]", "1")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     logger.info("Test 4 passed: Long input handled")

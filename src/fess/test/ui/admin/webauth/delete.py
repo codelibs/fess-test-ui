@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from fess.test.ui.admin.webauth._const import WEBCONFIG_NAME
 from playwright.sync_api import Playwright, sync_playwright
@@ -27,8 +29,8 @@ def _delete_row(page, context: FessContext, list_url: str, row_text: str) -> Non
         return
     page.locator(f"tr:has-text('{row_text}')").first.click()
     page.wait_for_load_state("domcontentloaded")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+    page.click('div.modal-footer button[name="delete"]')
     page.wait_for_load_state("domcontentloaded")
 
 

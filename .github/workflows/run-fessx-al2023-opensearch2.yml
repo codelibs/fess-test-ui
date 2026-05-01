@@ -10,31 +10,58 @@ on:
   schedule:
     - cron: '0 0 * * 3'
   workflow_dispatch:
+    inputs:
+      lang:
+        description: 'Test language (e.g. ja, de, pt_BR, or "random")'
+        required: false
+        default: 'random'
+        type: string
+      lang_seed:
+        description: 'Random seed for language selection (for reproduction)'
+        required: false
+        default: ''
+        type: string
+
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      TEST_LANG: ${{ inputs.lang || 'random' }}
+      TEST_LANG_SEED: ${{ inputs.lang_seed || '' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install yq
+        run: sudo snap install yq || (sudo apt-get update && sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo chmod +x /usr/local/bin/yq)
+
       - name: run-compose
         shell: bash
         run: |
           /bin/bash ./run_test.sh fessx-al2023 opensearch2
 
+      - name: Resolve TEST_LANG_RESOLVED for artifact naming
+        if: always()
+        run: |
+          if [ -z "${TEST_LANG_RESOLVED:-}" ]; then
+            echo "TEST_LANG_RESOLVED=unknown" >> "$GITHUB_ENV"
+          fi
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-fessx-al2023-opensearch2
+          name: test-results-fessx-al2023-opensearch2-${{ env.TEST_LANG_RESOLVED }}
           path: |
             src/test_results.json
             src/screenshots/
+            src/traces/
           retention-days: 30
 
       - name: Upload failure screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: failure-screenshots-fessx-al2023-opensearch2
+          name: failure-screenshots-fessx-al2023-opensearch2-${{ env.TEST_LANG_RESOLVED }}
           path: src/screenshots/
           retention-days: 30

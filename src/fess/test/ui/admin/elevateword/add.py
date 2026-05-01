@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,16 +28,16 @@ def run(context: FessContext) -> None:
 
     # Click text=サジェスト
     logger.info("Step 1: Navigate to Suggest menu")
-    page.click("text=サジェスト")
+    page.click(f"text={t(Labels.MENU_SUGGEST)}")
 
     # Click text=追加ワード
     logger.info("Step 2: Navigate to Elevate Word page")
-    page.click("text=追加ワード")
+    page.click(f"text={t(Labels.MENU_ELEVATE_WORD)}")
     assert_equal(page.url, context.url("/admin/elevateword/"))
 
     # Click text=新規作成
     logger.info("Step 3: Click create new button")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/elevateword/createnew/"))
 
     # Fill input[name="suggestWord"]
@@ -47,7 +49,7 @@ def run(context: FessContext) -> None:
 
     # Click button:has-text("作成")
     logger.info("Step 5: Submit form to create elevate word")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/elevateword/"))
 
     logger.info("Step 6: Verify elevate word was created")

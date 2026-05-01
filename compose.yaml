@@ -4,8 +4,14 @@ services:
     container_name: test01
     environment:
       - "FESS_URL=http://fesstest01:8080"
-      - "BROWSER_LOCALE=ja-JP"
+      - "BROWSER_LOCALE=${BROWSER_LOCALE:-}"
       - "HEADLESS=true"
+      - "TEST_LANG=${TEST_LANG:-random}"
+      - "TEST_LANG_SEED=${TEST_LANG_SEED:-}"
+      - "TEST_MODULES=${TEST_MODULES:-all}"
+      - "FESS_LABEL_DIR=/labels"
+    volumes:
+      - "./labels:/labels:ro"
     networks:
       - searchtestnet
 

@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -27,13 +29,13 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to accesstoken page
     logger.info("Step 1: Navigating to accesstoken page")
-    page.click("text=システム")
-    page.click("text=アクセストークン")
+    page.click(f"text={t(Labels.MENU_SYSTEM)}")
+    page.click(f"text={t(Labels.MENU_ACCESS_TOKEN)}")
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
     # Step 2: Open new accesstoken creation form
     logger.info("Step 2: Opening new accesstoken creation form")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/accesstoken/createnew/"))
 
     # Step 3: Fill in accesstoken details
@@ -45,7 +47,7 @@ def run(context: FessContext) -> None:
 
     # Step 4: Create accesstoken
     logger.info("Step 4: Creating accesstoken")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/accesstoken/"))
 
     # Step 5: Verify accesstoken was created

@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,8 +28,8 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to label page
     logger.info("Step 1: Navigating to label page")
-    page.click("text=クローラー")
-    page.click("text=ラベル")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
+    page.click(f"text={t(Labels.MENU_LABEL_TYPE)}")
     assert_equal(page.url, context.url("/admin/labeltype/"))
 
     # Step 2: Open label details
@@ -38,13 +40,13 @@ def run(context: FessContext) -> None:
 
     # Step 3: Test cancel button
     logger.info("Step 3: Testing delete cancel button")
-    page.click("text=削除")
-    page.click("text=キャンセル")
+    page.click(f"text={t(Labels.CRUD_BUTTON_DELETE)}")
+    page.click(f"text={t(Labels.CRUD_BUTTON_CANCEL)}")
 
     # Step 4: Perform delete
     logger.info("Step 4: Performing delete")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click(f"text={t(Labels.CRUD_BUTTON_DELETE)}")
+    page.click('div.modal-footer button[name="delete"]')
     assert_equal(page.url, context.url("/admin/labeltype/"))
 
     # Step 5: Verify deletion

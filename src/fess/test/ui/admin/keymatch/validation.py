@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -24,16 +26,16 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
 
     # Navigate to keymatch
-    page.click("text=サジェスト")
-    page.click("text=キーマッチ")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
+    page.click(f"text={t(Labels.MENU_KEY_MATCH)}")
     assert_equal(page.url, context.url("/admin/keymatch/"))
 
     # Test 1: Required field validation
     logger.info("Test 1: Required field validation")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/keymatch/createnew/"))
 
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     assert_equal(page.url, context.url("/admin/keymatch/createnew/"),
@@ -44,7 +46,7 @@ def run(context: FessContext) -> None:
     logger.info("Test 2: XSS prevention in term field")
     page.fill("input[name=\"term\"]", f"<script>alert('xss')</script>")
     page.fill("input[name=\"query\"]", "test query")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     if page.url == context.url("/admin/keymatch/"):
@@ -52,10 +54,10 @@ def run(context: FessContext) -> None:
 
     # Test 3: Maximum length validation
     logger.info("Test 3: Maximum length validation")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.fill("input[name=\"term\"]", context.generate_str(300))
     page.fill("input[name=\"query\"]", context.generate_str(300))
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
     logger.info("Test 3 passed: Long input handled")

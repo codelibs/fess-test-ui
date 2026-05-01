@@ -10,6 +10,8 @@ import requests
 from playwright.sync_api import Playwright
 
 from fess.test.capture import HTMLCapture
+from fess.test import i18n
+from fess.test.i18n.keys import Labels
 
 if TYPE_CHECKING:
     from playwright.sync_api import Page, Response, ElementHandle
@@ -147,13 +149,21 @@ class PageWrapper:
 class FessContext:
     def __init__(self, playwright: Playwright) -> None:
         self._playwright = playwright
+
+        # i18n: resolve language and browser locale
+        self._lang = i18n.selected_lang()
+        self._browser_locale = i18n.selected_browser_locale()
+        # Allow explicit BROWSER_LOCALE override (overrides auto-derived)
+        explicit_locale = os.environ.get("BROWSER_LOCALE", "").strip()
+        playwright_locale = explicit_locale or self._browser_locale
+
         self._browser = self._create_browser()
-        self._context = self._browser.new_context(
-            locale=os.environ.get("BROWSER_LOCALE", "ja-JP"))
+        self._context = self._browser.new_context(locale=playwright_locale)
         self._base_url: str = os.environ.get(
             "FESS_URL", "http://localhost:8080")
         self._current_page: "Page" = None
         self._test_label_name: str = os.environ.get("TEST_LABEL")
+        self._session_lang_set = False
         random.seed(int(datetime.now().timestamp() * 1000))
 
         # Tracing configuration
@@ -178,13 +188,20 @@ class FessContext:
               password: str = os.environ.get("FESS_PASSWORD", "admin")) -> bool:
         page: "Page" = self._current_page if self._current_page is not None else self._context.new_page()
 
-        page.goto(f"{self._base_url}/login/")
+        # First navigation: include browser_lang to set the Fess session locale.
+        # LastaFlute saves the resolved locale to the HTTP session, so all
+        # subsequent navigation (without ?browser_lang) uses the same language.
+        page.goto(f"{self._base_url}/login/?browser_lang={self._lang}")
+        self._session_lang_set = True
         logger.debug(f"URL: {page.url}")
 
-        page.fill("[placeholder=\"ユーザー名\"]", username)
-        page.fill("[placeholder=\"パスワード\"]", password)
+        ph_user = i18n.t(Labels.LOGIN_PLACEHOLDER_USERNAME)
+        ph_pass = i18n.t(Labels.LOGIN_PLACEHOLDER_PASSWORD)
+        login_text = i18n.t(Labels.LOGIN)
 
-        page.click("button:has-text(\"ログイン\")")
+        page.fill(f'[placeholder="{ph_user}"]', username)
+        page.fill(f'[placeholder="{ph_pass}"]', password)
+        page.click(f'button:has-text("{login_text}")')
 
         logger.debug(f"URL: {page.url}")
         return True  # TODO
@@ -245,7 +262,7 @@ class FessContext:
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 trace_path = os.path.join(
                     self._trace_dir,
-                    f"trace_{self._current_module_name}_{status}_{timestamp}.zip"
+                    f"trace_{self._current_module_name}_{self._lang}_{status}_{timestamp}.zip"
                 )
                 self._context.tracing.stop_chunk(path=trace_path)
                 logger.info(f"[TRACE] Saved: {trace_path}")
@@ -264,7 +281,11 @@ class FessContext:
         """Get admin page with logging wrapper and HTML capture."""
         page: "Page" = self._current_page if self._current_page is not None else self._context.new_page()
         self._current_page = page
-        page.goto(f"{self._base_url}/admin/")
+        if not self._session_lang_set:
+            page.goto(f"{self._base_url}/admin/?browser_lang={self._lang}")
+            self._session_lang_set = True
+        else:
+            page.goto(f"{self._base_url}/admin/")
         logger.debug(f"URL: {page.url}")
         return PageWrapper(page, self._html_capture)
 
@@ -282,6 +303,16 @@ class FessContext:
     def html_capture(self) -> HTMLCapture:
         """Get HTML capture instance for coverage analysis."""
         return self._html_capture
+
+    @property
+    def lang(self) -> str:
+        """Selected Fess UI language code (e.g. 'ja', 'pt_BR')."""
+        return self._lang
+
+    @property
+    def browser_locale(self) -> str:
+        """Auto-derived BCP47 browser locale (e.g. 'ja-JP')."""
+        return self._browser_locale
 
     def close(self) -> None:
         """Close browser context and stop tracing."""

@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,10 +28,10 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 1: Navigate to web crawler configuration page")
     # Click text=クローラー
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=ウェブ
-    page.click("text=ウェブ")
+    page.click(f"text={t(Labels.MENU_WEB)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     logger.info("Step 2: Open configuration details")
@@ -40,17 +42,17 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 3: Test delete button and cancel functionality")
     # Click text=削除
-    page.click("text=削除")
+    page.click(f"text={t(Labels.CRUD_BUTTON_DELETE)}")
 
     # Click text=キャンセル
-    page.click("text=キャンセル")
+    page.click(f"text={t(Labels.CRUD_BUTTON_CANCEL)}")
 
     logger.info("Step 4: Confirm configuration deletion")
     # Click text=削除
-    page.click("text=削除")
+    page.click(f"text={t(Labels.CRUD_BUTTON_DELETE)}")
 
-    # Click text=キャンセル 削除 >> button[name="delete"]
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    # Click modal confirm delete button
+    page.click('div.modal-footer button[name="delete"]')
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     logger.info("Step 5: Verify configuration is removed from list")

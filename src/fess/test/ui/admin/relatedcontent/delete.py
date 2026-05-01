@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,11 +28,11 @@ def run(context: FessContext) -> None:
 
     # Click text=クローラー
     logger.info("Step 1: Navigate to Crawler menu")
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=関連コンテンツ
     logger.info("Step 2: Navigate to Related Content page")
-    page.click("text=関連コンテンツ")
+    page.click(f"text={t(Labels.MENU_RELATED_CONTENT)}")
     assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
     # Click text=fess
@@ -41,19 +43,19 @@ def run(context: FessContext) -> None:
 
     # Click text=削除
     logger.info("Step 4: Click delete button")
-    page.click("text=削除")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
 
     # Click text=キャンセル
     logger.info("Step 5: Click cancel button to test cancellation")
-    page.click("text=キャンセル")
+    page.click(f"text={t(Labels.CRUD_BUTTON_CANCEL)}")
 
     # Click text=削除
     logger.info("Step 6: Click delete button again")
-    page.click("text=削除")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
 
     # Click text=キャンセル 削除 >> button[name="delete"]
     logger.info("Step 7: Confirm deletion")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click('div.modal-footer button[name="delete"]')
     # assert page.url == "http://localhost:8080/admin/relatedcontent/"
     assert_equal(page.url, context.url("/admin/relatedcontent/"))
 

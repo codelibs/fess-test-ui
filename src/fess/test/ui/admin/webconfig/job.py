@@ -2,6 +2,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -27,10 +29,10 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 1: Navigate to web crawler configuration page")
     # Click text=クローラー
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=ウェブ
-    page.click("text=ウェブ")
+    page.click(f"text={t(Labels.MENU_WEB)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     logger.info("Step 2: Open configuration details")
@@ -41,21 +43,21 @@ def run(context: FessContext) -> None:
 
     logger.info("Step 3: Test create new job button and cancel")
     # Click text=新しいジョブの作成
-    page.click("text=新しいジョブの作成")
+    page.click(f"text={t(Labels.WEB_CRAWLING_BUTTON_CREATE_JOB)}")
     # assert_equal(page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
     assert_startswith(
         page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
 
     # Click text=戻る
-    page.click("text=戻る")
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
     logger.info("Step 4: Navigate back to configuration and create job")
     # Click text=クローラー
-    page.click("text=クローラー")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=ウェブ
-    page.click("text=ウェブ")
+    page.click(f"text={t(Labels.MENU_WEB)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
     # Click text=N2SM
@@ -64,14 +66,14 @@ def run(context: FessContext) -> None:
         page.url, context.url("/admin/webconfig/details/4/"))
 
     # Click text=新しいジョブの作成
-    page.click("text=新しいジョブの作成")
+    page.click(f"text={t(Labels.WEB_CRAWLING_BUTTON_CREATE_JOB)}")
     #assert_equal(page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
     assert_startswith(
         page.url, context.url("/admin/scheduler/createnewjob/web_crawling/"))
 
     logger.info("Step 5: Submit new job creation")
     # Click button:has-text("作成")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
     logger.info("Step 6: Verify job appears in scheduler list")
@@ -87,17 +89,17 @@ def run(context: FessContext) -> None:
         page.url, context.url("/admin/scheduler/details/4/"))
 
     # Click text=削除
-    page.click("text=削除")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
 
     # Click text=キャンセル
-    page.click("text=キャンセル")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CANCEL)}")')
 
     logger.info("Step 8: Confirm job deletion")
     # Click text=削除
-    page.click("text=削除")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
 
     # Click text=キャンセル 削除 >> button[name="delete"]
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
+    page.click('div.modal-footer button[name="delete"]')
     assert_equal(page.url, context.url("/admin/scheduler/"))
 
     logger.info("Step 9: Verify job is removed from scheduler list")

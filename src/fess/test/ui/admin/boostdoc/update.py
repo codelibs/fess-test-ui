@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -26,8 +28,8 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to boostdoc page
     logger.info("Step 1: Navigating to boostdoc page")
-    page.click("text=クローラー")
-    page.click("text=ドキュメントブースト")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
+    page.click(f"text={t(Labels.MENU_BOOST_DOCUMENT_RULE)}")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Step 2: Open boostdoc details
@@ -38,20 +40,20 @@ def run(context: FessContext) -> None:
 
     # Step 3: Test edit button and back button
     logger.info("Step 3: Testing edit button and back button")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
-    page.click("text=戻る")
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     # Step 4: Edit boostdoc details
     logger.info("Step 4: Editing boostdoc details")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/boostdoc/"))
     page.fill("input[name=\"sortOrder\"]", "1")
 
     # Step 5: Update boostdoc
     logger.info("Step 5: Updating boostdoc")
-    page.click("text=更新")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
     assert_equal(page.url, context.url("/admin/boostdoc/"))
 
     logger.info("Boostdoc update test completed successfully")

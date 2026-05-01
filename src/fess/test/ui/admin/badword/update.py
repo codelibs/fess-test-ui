@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_startswith
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -28,8 +30,8 @@ def run(context: FessContext) -> None:
 
     # Step 1: Navigate to badword page
     logger.info("Step 1: Navigating to badword page")
-    page.click("text=サジェスト")
-    page.click("text=除外ワード")
+    page.click(f"text={t(Labels.MENU_SUGGEST)}")
+    page.click(f"text={t(Labels.MENU_BAD_WORD)}")
     assert_equal(page.url, context.url("/admin/badword/"))
 
     # Step 2: Open badword details
@@ -40,20 +42,20 @@ def run(context: FessContext) -> None:
 
     # Step 3: Test edit button and back button
     logger.info("Step 3: Testing edit button and back button")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/badword/"))
-    page.click("text=戻る")
+    page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/badword/"))
 
     # Step 4: Edit badword with new name
     logger.info("Step 4: Editing badword with new name")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/badword/"))
     page.fill("input[name=\"suggestWord\"]", new_label_name)
 
     # Step 5: Update badword
     logger.info("Step 5: Updating badword")
-    page.click("text=更新")
+    page.click(f"text={t(Labels.CRUD_BUTTON_UPDATE)}")
     assert_equal(page.url, context.url("/admin/badword/"))
 
     # Step 6: Verify updated badword
@@ -64,10 +66,10 @@ def run(context: FessContext) -> None:
 
     # Step 7: Restore original name
     logger.info("Step 7: Restoring original name")
-    page.click("text=編集")
+    page.click(f"text={t(Labels.CRUD_BUTTON_EDIT)}")
     assert_equal(page.url, context.url("/admin/badword/"))
     page.fill("input[name=\"suggestWord\"]", label_name)
-    page.click("text=更新")
+    page.click(f"text={t(Labels.CRUD_BUTTON_UPDATE)}")
     assert_equal(page.url, context.url("/admin/badword/"))
 
     logger.info("Badword update test completed successfully")

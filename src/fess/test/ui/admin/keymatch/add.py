@@ -1,6 +1,8 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -25,17 +27,17 @@ def run(context: FessContext) -> None:
     logger.debug(f"Using test label: {label_name}")
 
     # Click text=クローラー
-    logger.info("Step 1: Navigate to Crawler menu")
-    page.click("text=クローラー")
+    logger.info("Step 1: Navigate to Suggest menu")
+    page.click(f"text={t(Labels.MENU_CRAWL)}")
 
     # Click text=キーマッチ
     logger.info("Step 2: Navigate to Key Match page")
-    page.click("text=キーマッチ")
+    page.click(f"text={t(Labels.MENU_KEY_MATCH)}")
     assert_equal(page.url, context.url("/admin/keymatch/"))
 
     # Click text=新規作成
     logger.info("Step 3: Click create new button")
-    page.click("text=新規作成")
+    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     assert_equal(page.url, context.url("/admin/keymatch/createnew/"))
 
     # Fill input[name="term"]
@@ -50,7 +52,7 @@ def run(context: FessContext) -> None:
 
     # Click button:has-text("作成")
     logger.info("Step 5: Submit form to create key match")
-    page.click("button:has-text(\"作成\")")
+    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     assert_equal(page.url, context.url("/admin/keymatch/"))
 
     logger.info("Step 6: Verify key match was created")
