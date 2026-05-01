@@ -1,0 +1,10 @@
+# Build context whitelist: only ship what the image actually needs.
+# Without this, transient runtime artifacts (screenshots, traces, JSON
+# results) are sent on every `docker compose up --build`, slowing the
+# build and busting layer cache for unrelated changes.
+*
+
+!Dockerfile
+!requirements.txt
+!src/
+!labels/

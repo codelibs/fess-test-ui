@@ -29,8 +29,10 @@ docker_compose_files="${docker_compose_files} -f ${base_dir}/compose-${search_en
 
 # ----- Extract Fess labels for i18n test support --------------------------
 # Resolve the Fess image referenced by the chosen compose file and copy
-# fess_label_*.properties / fess_message_*.properties into ./labels/
-# (mounted into test01 by compose.yaml as /labels:ro).
+# fess_label_*.properties / fess_message_*.properties into ./labels/.
+# These are baked into the test01 image via Dockerfile (`COPY labels`)
+# during `docker compose up --build` below; bind-mounting was removed
+# because it does not work under Jenkins Docker-in-Docker.
 if ! command -v yq >/dev/null 2>&1 ; then
     echo "ERROR: yq is required (brew install yq)" >&2
     exit 1
@@ -70,4 +72,4 @@ echo "Fess:   ${fess_name}"
 echo "Search: ${search_engine_name}"
 echo "TEST_LANG=${TEST_LANG} (resolved) TEST_LANG_SEED=${TEST_LANG_SEED:-<unset>}"
 
-docker compose ${docker_compose_files} up --build --abort-on-container-exit --exit-code-from test01
+docker compose ${docker_compose_files} up --build --abort-on-container-exit --exit-code-from test01 --attach test01
