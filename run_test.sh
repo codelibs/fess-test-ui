@@ -70,4 +70,4 @@ echo "Fess:   ${fess_name}"
 echo "Search: ${search_engine_name}"
 echo "TEST_LANG=${TEST_LANG} (resolved) TEST_LANG_SEED=${TEST_LANG_SEED:-<unset>}"
 
-docker compose ${docker_compose_files} up --abort-on-container-exit --exit-code-from test01
+docker compose ${docker_compose_files} up --build --abort-on-container-exit --exit-code-from test01
