@@ -9,9 +9,10 @@ services:
       - "TEST_LANG=${TEST_LANG:-random}"
       - "TEST_LANG_SEED=${TEST_LANG_SEED:-}"
       - "TEST_MODULES=${TEST_MODULES:-all}"
-      - "FESS_LABEL_DIR=/labels"
-    volumes:
-      - "./labels:/labels:ro"
+    # Labels are baked into the image via Dockerfile (`COPY labels`);
+    # the runner reads them at the default /labels path. Bind-mounting
+    # was removed because it does not work under Jenkins Docker-in-Docker
+    # (host daemon cannot see Jenkins workspace paths).
     networks:
       - searchtestnet
 
