@@ -72,28 +72,4 @@ echo "Fess:   ${fess_name}"
 echo "Search: ${search_engine_name}"
 echo "TEST_LANG=${TEST_LANG} (resolved) TEST_LANG_SEED=${TEST_LANG_SEED:-<unset>}"
 
-# Run the suite. --abort-on-container-exit stops (but does not remove) the
-# containers when any one exits, so the Fess container is still inspectable
-# afterwards. Capture its exit cause on failure: this is the only way to tell
-# an OOM kill (ExitCode 137 / OOMKilled=true, or a JVM OutOfMemoryError in the
-# log) from an application crash, since CI only attaches the test runner.
-compose_rc=0
-docker compose ${docker_compose_files} up --build --abort-on-container-exit --exit-code-from test01 --attach test01 || compose_rc=$?
-
-if [[ "${compose_rc}" -ne 0 ]]; then
-    echo "===== run_test.sh: run failed (exit ${compose_rc}); Fess container diagnostics ====="
-    echo "----- fesstest01 exit state -----"
-    docker inspect fesstest01 \
-        --format 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}}' 2>&1 || true
-    # Grep the FULL log for the root cause first: the per-request access logs
-    # are so verbose that a plain tail buries the actual exception/termination.
-    echo "----- fesstest01 cause lines (exceptions / fatal exit) -----"
-    docker logs fesstest01 2>&1 \
-        | grep -iE "OutOfMemoryError|Terminating due to|NoClassDefFoundError|ClassNotFound|ContainerInitFailure|Failed to initialize|SEVERE|Fatal|Fess is not available|Exception in thread|Caused by" \
-        | grep -ivE "log.level.: .(INFO|DEBUG)" | tail -40 || true
-    echo "----- fesstest01 last 200 log lines -----"
-    docker logs --tail 200 fesstest01 2>&1 || true
-    echo "===== end Fess container diagnostics ====="
-fi
-
-exit "${compose_rc}"
+docker compose ${docker_compose_files} up --build --abort-on-container-exit --exit-code-from test01 --attach test01
