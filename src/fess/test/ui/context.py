@@ -402,6 +402,60 @@ class FessContext:
         resp.raise_for_status()
         return resp.json()
 
+    def api_search(self, q: str, ex_q=None, num: int = 1,
+                   timeout: int = 10) -> dict:
+        """Query the Fess search JSON API and return a normalized result.
+
+        Prefers the v2 endpoint (``/api/v2/search``) served by snapshot/dev
+        builds and falls back to the v1 endpoint (``/api/v1/documents``)
+        served by released Fess 15.x. No version flag is plumbed to the
+        runner, so the version is detected at runtime: v2 is tried first and
+        a 404 triggers the v1 fallback. The versions differ in:
+
+          * path:        ``/api/v2/search`` vs ``/api/v1/documents``
+          * page-size:   ``num`` (v2, must be >= 1) vs ``size`` (v1)
+          * envelope:    v2 nests the payload under a top-level ``response``
+                         key; v1 returns it flat.
+
+        ``q`` is the query string and ``ex_q`` an optional extra-query filter
+        (str or list of str; repeatable). Only the total hit count is needed
+        by callers, so ``num`` defaults to 1 (v2 rejects ``num <= 0``); the
+        returned page of documents is ignored for count-only use.
+
+        Returns a dict with at least:
+          * ``record_count`` (int): total number of matching documents
+          * ``data`` (list): documents on the first page (may be empty)
+        """
+        from urllib.parse import quote
+        ex_list = [ex_q] if isinstance(ex_q, str) else list(ex_q or [])
+
+        def _query(page_param: str) -> str:
+            parts = [f"q={quote(q, safe='*')}", page_param]
+            parts += [f"ex_q={quote(e, safe=':*')}" for e in ex_list]
+            return "&".join(p for p in parts if p)
+
+        # v2 first (snapshot/dev). Only a 404 means "endpoint absent" and
+        # justifies the v1 fallback; any other error is a real failure.
+        try:
+            body = self.api_get(
+                f"/api/v2/search?{_query(f'num={max(1, num)}')}", timeout=timeout)
+        except requests.HTTPError as e:
+            if e.response is None or e.response.status_code != 404:
+                raise
+            logger.info("v2 search API not available (404); falling back to v1")
+            body = self.api_get(
+                f"/api/v1/documents?{_query('size=0')}", timeout=timeout)
+
+        # Unwrap the v2 ``response`` envelope; v1 is already flat. The total
+        # hit count is ``record_count`` in both versions (older builds also
+        # expose ``total_count`` / ``total``).
+        payload = body.get("response", body) or {}
+        record_count = int(payload.get("record_count")
+                           or payload.get("total_count")
+                           or payload.get("total")
+                           or 0)
+        return {"record_count": record_count, "data": payload.get("data") or []}
+
     def retry_on_failure(self, func: Callable[[], Any], max_attempts: int = 3,
                         delay: float = 1.0, context_name: str = "operation") -> Any:
         """
