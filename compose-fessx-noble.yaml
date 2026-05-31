@@ -5,15 +5,17 @@ services:
     environment:
       - "SEARCH_ENGINE_HTTP_URL=http://searchtest01:9200"
       - "FESS_DICTIONARY_PATH=${FESS_DICTIONARY_PATH:-/usr/share/elasticsearch/config/dictionary/}"
-      # WORKAROUND for a snapshot-image bug: the entrypoint (run.sh) health-
-      # checks GET /api/v2/health, but the v2 API is not yet shipped in the
-      # published image, so that ping always returns non-200. After PING_RETRIES
-      # (default 3) x PING_INTERVAL (default 60s) ~= 120s the entrypoint logs
-      # "Fess is not available" and exits 1, which --abort-on-container-exit
-      # turns into a full teardown — killing whichever test is mid-run (hence
-      # the "varying module" failures ~2 min in). Raise the retry budget so the
-      # broken health-check cannot tear down the suite; the tests do their own
-      # readiness/failure detection. Remove once the image serves /api/v2/health.
+      # WORKAROUND for the snapshot image's entrypoint health-check: run.sh in
+      # the published image pings ONLY GET /api/v2/health. When a snapshot build
+      # does not ship the v2 API that ping returns non-200, and after
+      # PING_RETRIES (3) x PING_INTERVAL (60s) ~= 120s the entrypoint logs
+      # "Fess is not available" and exits 1 — which --abort-on-container-exit
+      # turns into a full teardown, killing whichever test runs at the ~2 min
+      # mark. Raise the retry budget so the health-check cannot tear down the
+      # suite whether or not the current build ships v2 (the search tests
+      # already handle both API versions); the tests do their own readiness and
+      # failure detection. Remove once the image ships a run.sh that probes both
+      # /api/v1/health and /api/v2/health (codelibs/docker-fess).
       - "PING_RETRIES=1000"
 #    ports:
 #      - "8080:8080"
