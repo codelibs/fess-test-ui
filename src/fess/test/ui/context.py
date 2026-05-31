@@ -434,15 +434,20 @@ class FessContext:
             parts += [f"ex_q={quote(e, safe=':*')}" for e in ex_list]
             return "&".join(p for p in parts if p)
 
-        # v2 first (snapshot/dev). Only a 404 means "endpoint absent" and
-        # justifies the v1 fallback; any other error is a real failure.
+        # v2 first (snapshot/dev), falling back to v1 (released 15.x).
+        # 15.x has no /api/v2 route: depending on the build it answers the
+        # v2 path with a 404 *or* a non-JSON error/redirect page served as
+        # HTTP 200 (so resp.json() raises). Treat BOTH an HTTP error status
+        # and a non-JSON body (JSONDecodeError, a ValueError subclass) as
+        # "v2 unavailable" and fall back. requests.HTTPError is not a
+        # ValueError, so both must be listed.
         try:
             body = self.api_get(
                 f"/api/v2/search?{_query(f'num={max(1, num)}')}", timeout=timeout)
-        except requests.HTTPError as e:
-            if e.response is None or e.response.status_code != 404:
-                raise
-            logger.info("v2 search API not available (404); falling back to v1")
+        except (requests.HTTPError, ValueError) as e:
+            logger.info(
+                f"v2 search API unavailable ({type(e).__name__}); "
+                f"falling back to v1: {e}")
             body = self.api_get(
                 f"/api/v1/documents?{_query('size=0')}", timeout=timeout)
 
