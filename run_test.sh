@@ -85,8 +85,14 @@ if [[ "${compose_rc}" -ne 0 ]]; then
     echo "----- fesstest01 exit state -----"
     docker inspect fesstest01 \
         --format 'Status={{.State.Status}} ExitCode={{.State.ExitCode}} OOMKilled={{.State.OOMKilled}} Error={{.State.Error}}' 2>&1 || true
-    echo "----- fesstest01 last 120 log lines -----"
-    docker logs --tail 120 fesstest01 2>&1 || true
+    # Grep the FULL log for the root cause first: the per-request access logs
+    # are so verbose that a plain tail buries the actual exception/termination.
+    echo "----- fesstest01 cause lines (exceptions / fatal exit) -----"
+    docker logs fesstest01 2>&1 \
+        | grep -iE "OutOfMemoryError|Terminating due to|NoClassDefFoundError|ClassNotFound|ContainerInitFailure|Failed to initialize|SEVERE|Fatal|Fess is not available|Exception in thread|Caused by" \
+        | grep -ivE "log.level.: .(INFO|DEBUG)" | tail -40 || true
+    echo "----- fesstest01 last 200 log lines -----"
+    docker logs --tail 200 fesstest01 2>&1 || true
     echo "===== end Fess container diagnostics ====="
 fi
 

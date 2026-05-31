@@ -5,18 +5,18 @@ services:
     environment:
       - "SEARCH_ENGINE_HTTP_URL=http://searchtest01:9200"
       - "FESS_DICTIONARY_PATH=${FESS_DICTIONARY_PATH:-/usr/share/elasticsearch/config/dictionary/}"
-      # Cap the Fess heap (default -Xmx2g) so Fess + OpenSearch (1g) + the
-      # Playwright/Chromium runner fit the ~7GB GitHub runner with headroom.
-      # Without this the JVM races the kernel OOM-killer and the container can
-      # exit mid-suite (admin POSTs are write/GC-heavy), tearing down the run.
-      - "FESS_HEAP_SIZE=1g"
-      # Turn heap exhaustion into a clean, logged exit instead of GC thrash.
-      - "FESS_JAVA_OPTS=-XX:+ExitOnOutOfMemoryError"
+      # WORKAROUND for a snapshot-image bug: the entrypoint (run.sh) health-
+      # checks GET /api/v2/health, but the v2 API is not yet shipped in the
+      # published image, so that ping always returns non-200. After PING_RETRIES
+      # (default 3) x PING_INTERVAL (default 60s) ~= 120s the entrypoint logs
+      # "Fess is not available" and exits 1, which --abort-on-container-exit
+      # turns into a full teardown — killing whichever test is mid-run (hence
+      # the "varying module" failures ~2 min in). Raise the retry budget so the
+      # broken health-check cannot tear down the suite; the tests do their own
+      # readiness/failure detection. Remove once the image serves /api/v2/health.
+      - "PING_RETRIES=1000"
 #    ports:
 #      - "8080:8080"
-    # Container ceiling so an OOM is contained and reported as OOMKilled
-    # (visible via `docker inspect`) instead of silently starving neighbors.
-    mem_limit: 2g
     networks:
       - searchtestnet
     depends_on:
