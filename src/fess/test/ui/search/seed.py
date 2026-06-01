@@ -2,8 +2,9 @@
 Seed module for search UI tests.
 
 Registers a webconfig pointing at http://sampledata01/, attaches two
-labels, triggers the Default Crawler via the scheduler, and polls
-/api/v1/documents until at least SEED_MIN_DOCS documents are indexed.
+labels, triggers the Default Crawler via the scheduler, and polls the
+search API (v2 /api/v2/search, falling back to v1 /api/v1/documents)
+until at least SEED_MIN_DOCS documents are indexed.
 
 Runs once per test run, before any search/* module.
 """
@@ -130,33 +131,21 @@ def _start_default_crawler(page, context: FessContext) -> None:
 
 
 def _poll_until_indexed(context: FessContext) -> int:
-    """Poll /api/v1/documents until at least SEED_MIN_DOCS are indexed.
-    Returns the final doc count. Raises AssertionError on timeout."""
+    """Poll the search API until at least SEED_MIN_DOCS are indexed.
+    Returns the final doc count. Raises AssertionError on timeout.
+
+    Uses context.api_search(), which prefers the v2 endpoint
+    (/api/v2/search) and falls back to v1 (/api/v1/documents)."""
     deadline = time.time() + SEED_READY_TIMEOUT
     last_total = -1
-    first_iter = True
     while time.time() < deadline:
         try:
-            body = context.api_get("/api/v1/documents?q=*&size=0")
+            total = context.api_search("*")["record_count"]
         except Exception as e:
-            logger.debug(f"api_get failed during poll: {e}")
+            logger.debug(f"api_search failed during poll: {e}")
             time.sleep(SEED_POLL_INTERVAL)
             continue
 
-        if first_iter:
-            logger.info(f"api body keys: {list(body.keys())}")
-            first_iter = False
-
-        # Fess /api/v1/documents response shape varies by version:
-        #   Fess 15+ : top-level flat with "record_count" or "total_count"
-        #   older    : nested under "response"
-        # Accept multiple keys to be defensive.
-        total = (body.get("record_count")
-                 or body.get("total_count")
-                 or body.get("total")
-                 or (body.get("response", {}) or {}).get("record_count")
-                 or (body.get("response", {}) or {}).get("total_count")
-                 or 0)
         if total != last_total:
             logger.info(f"Indexed doc count: {total}")
             last_total = total

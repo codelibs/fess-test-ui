@@ -13,15 +13,11 @@ LABEL_A_VALUE = "e2e_label_a"  # stored value from PR-1 seed (underscores)
 
 
 def _count_hits(context: FessContext, q: str, ex_q: str = None) -> int:
-    """Use the JSON API for an authoritative hit count."""
-    path = f"/api/v1/documents?q={q}&size=0"
-    if ex_q:
-        path += f"&ex_q={ex_q}"
-    body = context.api_get(path)
-    return int(body.get("record_count")
-               or body.get("total_count")
-               or body.get("total")
-               or 0)
+    """Use the JSON API for an authoritative hit count.
+
+    context.api_search() prefers the v2 endpoint (/api/v2/search) and
+    falls back to v1 (/api/v1/documents)."""
+    return context.api_search(q, ex_q=ex_q)["record_count"]
 
 
 def setup(playwright: Playwright) -> FessContext:

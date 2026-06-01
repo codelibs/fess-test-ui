@@ -27,8 +27,7 @@ def setup(playwright: Playwright) -> FessContext:
 def run(context: FessContext) -> None:
     logger.info("Starting search/pagination")
 
-    body = context.api_get(f"/api/v1/documents?q={QUERY}&size=0")
-    total = int(body.get("record_count") or body.get("total_count") or 0)
+    total = context.api_search(QUERY)["record_count"]
     logger.info(f"total hits for q={QUERY}: {total}")
     assert_true(total >= MIN_HITS,
                 f"need >={MIN_HITS} hits for pagination test, got {total}")
