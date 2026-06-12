@@ -17,7 +17,7 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 - **Testing Framework**: [Playwright](https://playwright.dev/) 1.56.0 with Python
 - **HTML Analysis**: [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/) for DOM parsing
 - **Containerization**: Docker & Docker Compose
-- **Search Engines**: OpenSearch 2.19.1, OpenSearch 3.3.0
+- **Search Engines**: OpenSearch 2.19.1, OpenSearch 3.7.0
 - **Fess Versions**: 15.3.2 (stable), snapshot builds
 - **Base Images**: Microsoft Playwright (Ubuntu Noble), CodeLibs Fess & OpenSearch
 
@@ -87,7 +87,7 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 
 ### Search Engines
 - `opensearch2` - OpenSearch 2.19.1
-- `opensearch3` - OpenSearch 3.3.0
+- `opensearch3` - OpenSearch 3.7.0
 
 ## Configuration
 
