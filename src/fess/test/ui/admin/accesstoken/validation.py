@@ -26,11 +26,20 @@ def _cleanup_by_name(context: FessContext, page: "Page", list_path: str, name: s
     (see the duplicate-name test in sibling modules), so a leaked name can
     appear more than once. Swallows and logs its own failures so a cleanup
     problem never masks the real test outcome in the enclosing try/finally."""
+    max_iterations = 10
     try:
         page.goto(context.url(list_path))
         page.wait_for_load_state("domcontentloaded")
+        iterations = 0
         while page.locator(f'table tr:has-text("{name}")').count() > 0:
-            page.locator(f'a:has-text("{name}")').first.click()
+            iterations += 1
+            if iterations > max_iterations:
+                logger.error(f"CLEANUP FAILED for name={name!r} at {list_path} -- gave up "
+                             f"after {max_iterations} iterations without making progress; "
+                             f"this record has LEAKED and will pollute later modules on "
+                             f"this shared instance")
+                break
+            page.locator(f'table tr:has-text("{name}")').first.click()
             page.wait_for_load_state("domcontentloaded")
             page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
             page.click('div.modal-footer button[name="delete"]')
@@ -38,7 +47,8 @@ def _cleanup_by_name(context: FessContext, page: "Page", list_path: str, name: s
             page.goto(context.url(list_path))
             page.wait_for_load_state("domcontentloaded")
     except Exception as e:
-        logger.warning(f"cleanup failed for name={name!r} at {list_path}: {e}")
+        logger.error(f"CLEANUP FAILED for name={name!r} at {list_path} -- this record has "
+                     f"LEAKED and will pollute later modules on this shared instance: {e}")
 
 
 def run(context: FessContext) -> None:
