@@ -1,7 +1,10 @@
 
 import logging
+import re
 
 from fess.test import assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -30,101 +33,129 @@ def run(context: FessContext) -> None:
     page: "Page" = context.get_admin_page()
     test_word = f"TestWord_{context.generate_str(5)}"
 
-    # Step 1: Navigate to dictionary management
-    logger.info("Step 1: Navigating to dictionary management")
-    page.click("text=システム")
-    page.click("text=辞書")
-    assert_equal(page.url, context.url("/admin/dict/"))
+    created: list = []
+    try:
+        # Step 1: Navigate to dictionary management
+        logger.info("Step 1: Navigating to dictionary management")
+        page.click(f"text={t(Labels.MENU_SYSTEM)}")
+        page.click(f"text={t(Labels.MENU_DICT)}")
+        assert_equal(page.url, context.url("/admin/dict/"))
 
-    # Step 2: Add kuromoji entry
-    logger.info("Step 2: Adding kuromoji dictionary entry")
-    page.click("text=ja/kuromoji_user.txt")
-    page.wait_for_load_state("domcontentloaded")
+        # Step 2: Add kuromoji entry
+        logger.info("Step 2: Adding kuromoji dictionary entry")
+        page.click("text=ja/kuromoji.txt")
+        page.wait_for_load_state("domcontentloaded")
 
-    page.click("text=新規作成")
-    page.wait_for_load_state("domcontentloaded")
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
+        page.wait_for_load_state("domcontentloaded")
 
-    page.fill("input[name=\"token\"]", test_word)
-    page.fill("input[name=\"reading\"]", "test")
-    page.fill("input[name=\"pos\"]", "名詞")
-    page.click("button:has-text(\"作成\")")
-    page.wait_for_load_state("domcontentloaded")
+        page.fill("input[name=\"token\"]", test_word)
+        page.fill("input[name=\"reading\"]", "test")
+        page.fill("input[name=\"pos\"]", "名詞")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        page.wait_for_load_state("domcontentloaded")
 
-    logger.info(f"✓ Kuromoji entry '{test_word}' created")
+        created.append("kuromoji")
+        logger.info(f"✓ Kuromoji entry '{test_word}' created")
 
-    # Step 3: Add protwords entry
-    logger.info("Step 3: Adding protwords dictionary entry")
-    page.goto(context.url("/admin/dict/"))
-    page.click("text=protwords.txt")
-    page.wait_for_load_state("domcontentloaded")
+        # Step 3: Add protwords entry
+        logger.info("Step 3: Adding protwords dictionary entry")
+        page.goto(context.url("/admin/dict/"))
+        page.click("text=en/protwords.txt")
+        page.wait_for_load_state("domcontentloaded")
 
-    page.click("text=新規作成")
-    page.wait_for_load_state("domcontentloaded")
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
+        page.wait_for_load_state("domcontentloaded")
 
-    page.fill("input[name=\"input\"]", test_word)
-    page.click("button:has-text(\"作成\")")
-    page.wait_for_load_state("domcontentloaded")
+        page.fill("input[name=\"input\"]", test_word)
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        page.wait_for_load_state("domcontentloaded")
 
-    logger.info(f"✓ Protwords entry '{test_word}' created")
+        created.append("protwords")
+        logger.info(f"✓ Protwords entry '{test_word}' created")
 
-    # Step 4: Add mapping entry
-    logger.info("Step 4: Adding mapping dictionary entry")
-    page.goto(context.url("/admin/dict/"))
-    page.click("text=mapping.txt")
-    page.wait_for_load_state("domcontentloaded")
+        # Step 4: Add mapping entry
+        logger.info("Step 4: Adding mapping dictionary entry")
+        page.goto(context.url("/admin/dict/"))
+        page.click(":nth-match(:text(\"mapping.txt\"), 3)")
+        page.wait_for_load_state("domcontentloaded")
 
-    page.click("text=新規作成")
-    page.wait_for_load_state("domcontentloaded")
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
+        page.wait_for_load_state("domcontentloaded")
 
-    page.fill("textarea[name=\"inputs\"]", test_word)
-    page.fill("textarea[name=\"output\"]", "mapped_value")
-    page.click("button:has-text(\"作成\")")
-    page.wait_for_load_state("domcontentloaded")
+        page.fill("textarea[name=\"inputs\"]", test_word)
+        page.fill("textarea[name=\"output\"]", "mapped_value")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        page.wait_for_load_state("domcontentloaded")
 
-    logger.info(f"✓ Mapping entry '{test_word}' created")
+        created.append("mapping")
+        logger.info(f"✓ Mapping entry '{test_word}' created")
 
-    # Step 5: Verify all entries exist
-    logger.info("Step 5: Verifying all dictionary entries")
-    # (Verification is implicit - if creation succeeded, entries exist)
+        # Step 5: Verify all entries exist
+        logger.info("Step 5: Verifying all dictionary entries")
+        # (Verification is implicit - if creation succeeded, entries exist)
+    finally:
+        # Step 6: Cleanup - Delete mapping entry
+        if "mapping" in created:
+            try:
+                logger.info("Step 6: Cleanup - deleting mapping entry")
+                page.goto(context.url("/admin/dict/"))
+                page.click(":nth-match(:text(\"mapping.txt\"), 3)")
+                page.wait_for_load_state("domcontentloaded")
 
-    # Step 6: Cleanup - Delete mapping entry
-    logger.info("Step 6: Cleanup - deleting mapping entry")
-    page.goto(context.url("/admin/dict/"))
-    page.click("text=mapping.txt")
-    page.wait_for_load_state("domcontentloaded")
+                # New entries are appended at the end of the list; jump to
+                # the last page to find the one just created.
+                page_info: str = page.inner_text("div.col-sm-2")
+                match = re.search(r'(\d+)/(\d+)', page_info)
+                last_page = int(match.group(2)) if match else 1
+                page.goto(page.url.replace("/admin/dict/mapping/?dictId=",
+                                            f"/admin/dict/mapping/list/{last_page}?dictId="))
+                page.wait_for_load_state("domcontentloaded")
 
-    page.click(f"text={test_word}")
-    page.wait_for_load_state("domcontentloaded")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
-    page.wait_for_load_state("domcontentloaded")
-    logger.info("✓ Mapping entry deleted")
+                # The list cell renders data.inputs (a List) via
+                # List.toString(), so a single input shows as [test_word].
+                page.click(f"text=[{test_word}]")
+                page.wait_for_load_state("domcontentloaded")
+                page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+                page.click('div.modal-footer button[name="delete"]')
+                page.wait_for_load_state("domcontentloaded")
+                logger.info("✓ Mapping entry deleted")
+            except Exception as e:
+                logger.error(f"LEAKED mapping dictionary entry '{test_word}' (global analyzer config) — will pollute later modules: {e}")
 
-    # Step 7: Delete protwords entry
-    logger.info("Step 7: Deleting protwords entry")
-    page.goto(context.url("/admin/dict/"))
-    page.click("text=protwords.txt")
-    page.wait_for_load_state("domcontentloaded")
+        # Step 7: Delete protwords entry
+        if "protwords" in created:
+            try:
+                logger.info("Step 7: Deleting protwords entry")
+                page.goto(context.url("/admin/dict/"))
+                page.click("text=en/protwords.txt")
+                page.wait_for_load_state("domcontentloaded")
 
-    page.click(f"text={test_word}")
-    page.wait_for_load_state("domcontentloaded")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
-    page.wait_for_load_state("domcontentloaded")
-    logger.info("✓ Protwords entry deleted")
+                page.click(f"text={test_word}")
+                page.wait_for_load_state("domcontentloaded")
+                page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+                page.click('div.modal-footer button[name="delete"]')
+                page.wait_for_load_state("domcontentloaded")
+                logger.info("✓ Protwords entry deleted")
+            except Exception as e:
+                logger.error(f"LEAKED protwords dictionary entry '{test_word}' (global analyzer config) — will pollute later modules: {e}")
 
-    # Step 8: Delete kuromoji entry
-    logger.info("Step 8: Deleting kuromoji entry")
-    page.goto(context.url("/admin/dict/"))
-    page.click("text=ja/kuromoji_user.txt")
-    page.wait_for_load_state("domcontentloaded")
+        # Step 8: Delete kuromoji entry
+        if "kuromoji" in created:
+            try:
+                logger.info("Step 8: Deleting kuromoji entry")
+                page.goto(context.url("/admin/dict/"))
+                page.click("text=ja/kuromoji.txt")
+                page.wait_for_load_state("domcontentloaded")
 
-    page.click(f"text={test_word}")
-    page.wait_for_load_state("domcontentloaded")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
-    page.wait_for_load_state("domcontentloaded")
-    logger.info("✓ Kuromoji entry deleted")
+                page.click(f"text={test_word}")
+                page.wait_for_load_state("domcontentloaded")
+                page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+                page.click('div.modal-footer button[name="delete"]')
+                page.wait_for_load_state("domcontentloaded")
+                logger.info("✓ Kuromoji entry deleted")
+            except Exception as e:
+                logger.error(f"LEAKED kuromoji dictionary entry '{test_word}' (global analyzer config) — will pollute later modules: {e}")
 
     logger.info("✓ Dictionary workflow integration test completed successfully")
 
