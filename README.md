@@ -7,15 +7,13 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 - **Multi-Version Testing**: Supports Fess 15.x and snapshot builds across different OS distributions (Debian, AL2023, Noble)
 - **Multi-Engine Support**: Tests against OpenSearch 2.x and 3.x configurations
 - **Comprehensive Admin UI Coverage**: Tests all major admin functionality including search configurations, dictionaries, user management, and content management
-- **Coverage Analysis**: HTML capture and DOM analysis to identify untested UI elements with automatic test stub generation
 - **Docker-Based**: Fully containerized test environment with dynamic compose file selection
-- **Japanese UI Support**: Native testing of Japanese Fess interface elements
+- **Multi-Language UI Testing**: Runs against all 16 supported Fess UI locales, defaulting to a random pick per run
 - **Enhanced Logging**: Comprehensive logging with configurable levels and browser interaction tracking
 
 ## Tech Stack
 
 - **Testing Framework**: [Playwright](https://playwright.dev/) 1.56.0 with Python
-- **HTML Analysis**: [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/) for DOM parsing
 - **Containerization**: Docker & Docker Compose
 - **Search Engines**: OpenSearch 2.19.1, OpenSearch 3.7.0
 - **Fess Versions**: 15.3.2 (stable), snapshot builds
@@ -125,17 +123,12 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 | `TRACE_ALL` | `false` | Save traces for all tests |
 | `TRACE_DIR` | `traces` | Directory for trace files |
 
-#### HTML Capture & Coverage Analysis
+#### HTML Capture
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HTML_CAPTURE` | `false` | Enable HTML capture (`true`, `false`, `on_failure`) |
 | `HTML_CAPTURE_DIR` | `html_snapshots` | Directory for HTML snapshots |
-| `COVERAGE_ANALYSIS` | `false` | Run coverage analysis after tests |
-| `COVERAGE_REPORT_FORMAT` | `json` | Report format (`json`, `html`, `md`, `all`) |
-| `COVERAGE_REPORT_DIR` | `coverage_reports` | Directory for coverage reports |
-| `COVERAGE_GENERATE_STUBS` | `false` | Generate test stubs for untested elements |
-| `COVERAGE_STUB_DIR` | `generated_tests` | Directory for generated test stubs |
 
 ### Custom Configuration
 
@@ -200,22 +193,6 @@ cd src && TEST_LANG=de FESS_LABEL_DIR="$(pwd)/../labels" \
     python -m fess.test.ui.admin.badword.add
 ```
 
-### Running with Coverage Analysis
-
-To capture HTML and analyze test coverage:
-```bash
-HTML_CAPTURE=true \
-COVERAGE_ANALYSIS=true \
-COVERAGE_REPORT_FORMAT=all \
-COVERAGE_GENERATE_STUBS=true \
-./run_test.sh fess15 opensearch2
-```
-
-This generates:
-- `html_snapshots/` - Captured HTML files with metadata
-- `coverage_reports/` - Coverage reports in JSON, HTML, and Markdown formats
-- `generated_tests/` - Auto-generated test stubs for untested elements
-
 ## Testing Features
 
 The test suite covers the following Fess admin functionality:
@@ -262,13 +239,6 @@ fess-test-ui/
 │           ├── capture/              # HTML capture module
 │           │   ├── __init__.py
 │           │   └── html_capture.py   # HTML snapshot capture
-│           ├── coverage/             # Coverage analysis module
-│           │   ├── __init__.py
-│           │   ├── models.py         # Data models (DOMElement, PageInventory, etc.)
-│           │   ├── analyzer.py       # DOM analysis engine
-│           │   ├── inventory.py      # Element inventory management
-│           │   ├── reporter.py       # Coverage report generation
-│           │   └── generator.py      # Test stub generation
 │           └── ui/
 │               ├── context.py        # FessContext class for browser management
 │               ├── testdata.py       # Test data builders and patterns
@@ -319,32 +289,20 @@ def destroy(context: FessContext) -> None:
 
 1. Create test module in appropriate `src/fess/test/ui/admin/` subdirectory
 2. Implement `run(context)` function with Playwright interactions
-3. Use Japanese UI selectors (e.g., `text=新規作成`, `text=作成`)
+3. Use localized selectors via `t(Labels.X)` (e.g., `f"text={t(Labels.MENU_SUGGEST)}"`), never hardcoded Japanese — the default run picks a random locale from all 16 supported UI locales
 4. Add assertions using `assert_equal` and `assert_not_equal`
 5. Update module `__init__.py` to include new test
 
-### Using Coverage Analysis to Improve Tests
+### Running Unit Tests
 
-The coverage analysis feature helps identify untested UI elements:
-
-1. **Run tests with HTML capture**:
-   ```bash
-   HTML_CAPTURE=true ./run_test.sh fess15 opensearch2
-   ```
-
-2. **Analyze coverage**:
-   ```bash
-   COVERAGE_ANALYSIS=true COVERAGE_REPORT_FORMAT=html ./run_test.sh fess15 opensearch2
-   ```
-
-3. **Generate test stubs for untested elements**:
-   ```bash
-   COVERAGE_GENERATE_STUBS=true ./run_test.sh fess15 opensearch2
-   ```
-
-4. **Review generated files**:
-   - `coverage_reports/coverage_report.html` - Interactive coverage report
-   - `generated_tests/test_coverage_gaps.py` - Test stubs for untested elements
+Unit tests cover the i18n layer and `_normalize_text_selector`; they need no Docker
+or browser:
+```bash
+python -m pytest tests/ -q
+```
+`tests/conftest.py` puts `src/` on `sys.path`. CI runs the same command via
+`.github/workflows/unit-tests.yml` on push/PR to main (a push to a feature
+branch alone does not trigger it).
 
 ### Test Output Directories
 
@@ -356,9 +314,6 @@ The coverage analysis feature helps identify untested UI elements:
 | `traces/` | Playwright trace files |
 | `logs/` | Test execution logs |
 | `html_snapshots/` | Captured HTML pages |
-| `coverage_reports/` | Coverage analysis reports |
-| `coverage_data/` | Element inventory data |
-| `generated_tests/` | Auto-generated test stubs |
 
 ## Troubleshooting
 
@@ -373,7 +328,8 @@ The coverage analysis feature helps identify untested UI elements:
 - Check Playwright installation in container
 
 **Assertion failures**
-- Verify Japanese text selectors match current Fess UI
+- Verify the label key still resolves and the Fess label text for the selected locale (`TEST_LANG`) still matches current Fess UI
+- Check that the selector isn't longer than the element's text — `_normalize_text_selector` forces exact match, so a longer selector can never match
 - Check if test data cleanup completed properly
 
 ### Debug Mode
