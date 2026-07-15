@@ -335,7 +335,7 @@ class FessContext:
 
     @property
     def html_capture(self) -> HTMLCapture:
-        """Get HTML capture instance for coverage analysis."""
+        """Get HTML capture instance for failure diagnosis."""
         return self._html_capture
 
     @property

@@ -1,8 +1,8 @@
 """
-HTML Capture Module for Test Coverage Analysis.
+HTML Capture Module for Failure Diagnosis.
 
-Captures HTML snapshots during test execution for later analysis
-to identify untested UI elements and improve test coverage.
+Captures HTML snapshots during test execution to aid debugging
+when a test fails.
 """
 
 import json

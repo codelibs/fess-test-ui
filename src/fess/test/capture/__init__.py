@@ -1,4 +1,4 @@
-"""HTML capture module for test coverage analysis."""
+"""HTML snapshot capture for failure diagnosis."""
 
 from .html_capture import HTMLCapture
 
