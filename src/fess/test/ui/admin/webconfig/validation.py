@@ -1,7 +1,7 @@
 
 import logging
 
-from fess.test import assert_equal, assert_not_equal
+from fess.test import assert_equal, assert_not_equal, assert_true
 from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
@@ -18,6 +18,27 @@ def setup(playwright: Playwright) -> FessContext:
 
 def destroy(context: FessContext) -> None:
     context.close()
+
+
+def _cleanup_by_name(context: FessContext, page: "Page", list_path: str, name: str) -> None:
+    """Delete every row matching `name` on an admin list page. Loops rather
+    than assuming a single match because Fess never rejects duplicate names
+    (see the duplicate-name test below), so a leaked name can appear more
+    than once. Swallows and logs its own failures so a cleanup problem never
+    masks the real test outcome in the enclosing try/finally."""
+    try:
+        page.goto(context.url(list_path))
+        page.wait_for_load_state("domcontentloaded")
+        while page.locator(f'table tr:has-text("{name}")').count() > 0:
+            page.locator(f'a:has-text("{name}")').first.click()
+            page.wait_for_load_state("domcontentloaded")
+            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+            page.click('div.modal-footer button[name="delete"]')
+            page.wait_for_load_state("domcontentloaded")
+            page.goto(context.url(list_path))
+            page.wait_for_load_state("domcontentloaded")
+    except Exception as e:
+        logger.warning(f"cleanup failed for name={name!r} at {list_path}: {e}")
 
 
 def run(context: FessContext) -> None:
@@ -38,61 +59,75 @@ def run(context: FessContext) -> None:
     # Try to create without filling required fields
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
-    # Should still be on the create page (not redirected)
     page.wait_for_load_state("domcontentloaded")
-    assert_equal(page.url, context.url("/admin/webconfig/createnew/"),
-                "Should stay on create page when required fields are empty")
-    logger.info("Test 1 passed: Required field validation working")
+    # A POST lands on the list URL whether validation passed or failed
+    # (LastaFlute re-renders createnew.jsp under /admin/webconfig/ on error
+    # and redirects to the same URL on success); ul.has-error is the real
+    # discriminator between the two outcomes.
+    assert_equal(page.url, context.url("/admin/webconfig/"))
+    assert_true(page.locator("ul.has-error").count() > 0,
+                "empty required fields must be rejected")
+    logger.info("Test 1 passed: required field validation working")
 
-    # Test 2: Required field validation - name only
+    # Test 2: Required field validation - name only, missing urls
+    # (continues filling the same error-rendered form, not a fresh page -
+    # resubmitting here is safe because verifyToken() runs after validate(),
+    # so a validation failure never consumes the double-submit token)
     logger.info("Test 2: Required field validation - name only, missing URLs")
     page.fill("input[name=\"name\"]", context.generate_str(10))
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
-    # Should still be on create page
     page.wait_for_load_state("domcontentloaded")
-    assert_equal(page.url, context.url("/admin/webconfig/createnew/"),
-                "Should stay on create page when URL fields are empty")
-    logger.info("Test 2 passed: Name only validation working")
+    assert_equal(page.url, context.url("/admin/webconfig/"))
+    assert_true(page.locator("ul.has-error").count() > 0,
+                "urls is @Required; missing it must be rejected")
+    logger.info("Test 2 passed: name-only submission rejected")
 
-    # Navigate back to list
+    # Navigate back to the real list page
     page.click(f"text={t(Labels.CRUD_BUTTON_BACK)}")
     assert_equal(page.url, context.url("/admin/webconfig/"))
 
-    # Test 3: Special characters in name
+    # Test 3: Special characters in name (XSS prevention)
     logger.info("Test 3: Special characters in name")
     page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     special_char_name = f"Test<script>alert('xss')</script>{context.generate_str(5)}"
-    page.fill("input[name=\"name\"]", special_char_name)
-    page.fill("textarea[name=\"urls\"]", "https://example.com/")
-    page.fill("textarea[name=\"includedUrls\"]", "https://example.com/.*")
-    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+    try:
+        page.fill("input[name=\"name\"]", special_char_name)
+        page.fill("textarea[name=\"urls\"]", "https://example.com/")
+        page.fill("textarea[name=\"includedUrls\"]", "https://example.com/.*")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
-    page.wait_for_load_state("domcontentloaded")
-    # Check if created successfully (XSS should be escaped)
-    if page.url == context.url("/admin/webconfig/"):
-        table_content = page.inner_text("table")
-        # The script tag should not execute - verify it's displayed as text
-        assert_not_equal(table_content.find("script"), -1,
-                        "XSS attempt should be visible as text, not executed")
+        page.wait_for_load_state("domcontentloaded")
+        assert_equal(page.locator("ul.has-error").count(), 0,
+                     f"XSS-named record should have been created; url={page.url}")
+        # The payload must render as escaped TEXT, never as live markup.
+        assert_true(page.query_selector("script:has-text(\"alert('xss')\")") is None,
+                    "XSS payload was injected as a live script element")
+        assert_not_equal(page.inner_text("table").find("script"), -1,
+                         "XSS attempt should be visible as text, not executed")
         logger.info("Test 3 passed: XSS prevention working - script tag displayed as text")
+    finally:
+        _cleanup_by_name(context, page, "/admin/webconfig/", special_char_name)
 
     # Test 4: Maximum length validation for name
     logger.info("Test 4: Maximum length validation")
     page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
-    very_long_name = context.generate_str(300)  # Very long string
+    very_long_name = context.generate_str(300)  # name has @Size(max=200)
     page.fill("input[name=\"name\"]", very_long_name)
     page.fill("textarea[name=\"urls\"]", "https://example.com/")
     page.fill("textarea[name=\"includedUrls\"]", "https://example.com/.*")
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
-    # Should either reject or truncate
-    logger.info("Test 4 passed: Long input handled (either rejected or truncated)")
+    assert_true(page.locator("ul.has-error").count() > 0,
+                "over-long name must be rejected")
+    logger.info("Test 4 passed: over-long name rejected")
 
-    # Navigate back to list for cleanup
-    if page.url != context.url("/admin/webconfig/"):
-        page.goto(context.url("/admin/webconfig/"))
+    # Test 4 rejected, so the page is still the create form re-rendered
+    # under the list URL (no "Create New" link there); get back to the
+    # real list page before Test 5 clicks it.
+    page.goto(context.url("/admin/webconfig/"))
+    page.wait_for_load_state("domcontentloaded")
 
     # Test 5: Invalid URL format
     logger.info("Test 5: Invalid URL format")
@@ -103,27 +138,36 @@ def run(context: FessContext) -> None:
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
-    # Should stay on create page or show error
-    logger.info("Test 5 passed: Invalid URL format handled")
+    # urls has @UriType(protocolType = WEB): every non-blank line must start
+    # with an allowed web protocol (http/https). "not-a-valid-url" does not,
+    # so this must be rejected. includedUrls has no such format check (it is
+    # a regex pattern, not a URL), so it is not what triggers the rejection.
+    assert_true(page.locator("ul.has-error").count() > 0,
+                "urls not matching an allowed protocol (http/https) must be rejected")
+    logger.info("Test 5 passed: non-URL value in urls field rejected")
 
-    # Navigate back to list
-    if page.url != context.url("/admin/webconfig/"):
-        page.goto(context.url("/admin/webconfig/"))
+    # Test 5 rejected, so the page is still the create form re-rendered
+    # under the list URL (no "Create New" link there); get back to the
+    # real list page before Test 6 clicks it.
+    page.goto(context.url("/admin/webconfig/"))
+    page.wait_for_load_state("domcontentloaded")
 
     # Test 6: Duplicate name prevention
     logger.info("Test 6: Duplicate name prevention")
     duplicate_test_name = f"DuplicateTest_{context.generate_str(5)}"
 
-    # Create first entry
-    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
-    page.fill("input[name=\"name\"]", duplicate_test_name)
-    page.fill("textarea[name=\"urls\"]", "https://example1.com/")
-    page.fill("textarea[name=\"includedUrls\"]", "https://example1.com/.*")
-    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
-    page.wait_for_load_state("domcontentloaded")
+    try:
+        # Create first entry
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
+        page.fill("input[name=\"name\"]", duplicate_test_name)
+        page.fill("textarea[name=\"urls\"]", "https://example1.com/")
+        page.fill("textarea[name=\"includedUrls\"]", "https://example1.com/.*")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        page.wait_for_load_state("domcontentloaded")
 
-    if page.url == context.url("/admin/webconfig/"):
-        # Try to create duplicate
+        # Try to create a duplicate. Fess has no duplicate check for
+        # webconfig names; the id is auto-generated (not derived from the
+        # name), so this creates a second, independent row.
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
         page.fill("input[name=\"name\"]", duplicate_test_name)
         page.fill("textarea[name=\"urls\"]", "https://example2.com/")
@@ -131,19 +175,13 @@ def run(context: FessContext) -> None:
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
         page.wait_for_load_state("domcontentloaded")
 
-        # Should either reject or allow (depending on Fess behavior)
-        logger.info("Test 6 passed: Duplicate name test completed")
-
-        # Cleanup: delete the test entry
-        page.goto(context.url("/admin/webconfig/"))
-        page.wait_for_load_state("domcontentloaded")
-        table_content = page.inner_text("table")
-        if table_content.find(duplicate_test_name) != -1:
-            page.click(f"text={duplicate_test_name}")
-            page.wait_for_load_state("domcontentloaded")
-            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
-            page.click('div.modal-footer button[name="delete"]')
-            page.wait_for_load_state("domcontentloaded")
+        assert_equal(page.locator("ul.has-error").count(), 0,
+                     "Fess does not reject duplicate names")
+        assert_equal(page.locator(f'table tr:has-text("{duplicate_test_name}")').count(), 2,
+                     "duplicate webconfig create gets an auto-generated id -> two independent rows")
+        logger.info("Test 6 passed: duplicate name creates two independent rows")
+    finally:
+        _cleanup_by_name(context, page, "/admin/webconfig/", duplicate_test_name)
 
     logger.info("Web config validation test completed successfully")
 
