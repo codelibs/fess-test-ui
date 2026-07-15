@@ -90,7 +90,8 @@ def run(context: FessContext) -> None:
     # Test 3: Special characters in name (XSS prevention)
     logger.info("Test 3: Special characters in name")
     page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
-    special_char_name = f"Test<script>alert('xss')</script>{context.generate_str(5)}"
+    special_char_marker = f"x{context.generate_str(10)}"
+    special_char_name = f"Test<script>alert('xss')</script>{special_char_marker}"
     try:
         page.fill("input[name=\"name\"]", special_char_name)
         page.fill("textarea[name=\"urls\"]", "https://example.com/")
@@ -101,13 +102,16 @@ def run(context: FessContext) -> None:
         assert_equal(page.locator("ul.has-error").count(), 0,
                      f"XSS-named record should have been created; url={page.url}")
         # The payload must render as escaped TEXT, never as live markup.
-        assert_true(page.query_selector("script:has-text(\"alert('xss')\")") is None,
-                    "XSS payload was injected as a live script element")
+        payload_is_live = page.evaluate(
+            "() => Array.from(document.querySelectorAll('script'))"
+            ".some(s => (s.textContent || '').includes(\"alert('xss')\"))")
+        assert_true(not payload_is_live,
+                    "XSS payload was parsed into a live script element")
         assert_not_equal(page.inner_text("table").find("script"), -1,
                          "XSS attempt should be visible as text, not executed")
         logger.info("Test 3 passed: XSS prevention working - script tag displayed as text")
     finally:
-        _cleanup_by_name(context, page, "/admin/webconfig/", special_char_name)
+        _cleanup_by_name(context, page, "/admin/webconfig/", special_char_marker)
 
     # Test 4: Maximum length validation for name
     logger.info("Test 4: Maximum length validation")

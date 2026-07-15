@@ -71,7 +71,8 @@ def run(context: FessContext) -> None:
 
     # Test 2: Special characters in name (XSS prevention)
     logger.info("Test 2: XSS prevention in name field")
-    xss_name = f"<script>alert('xss')</script>{context.generate_str(5)}"
+    xss_marker = f"x{context.generate_str(10)}"
+    xss_name = f"<script>alert('xss')</script>{xss_marker}"
     try:
         page.fill("input[name=\"name\"]", xss_name)
         page.fill("input[name=\"value\"]", "testvalue")
@@ -83,13 +84,16 @@ def run(context: FessContext) -> None:
         assert_equal(page.locator("ul.has-error").count(), 0,
                      f"XSS-named record should have been created; url={page.url}")
         # The payload must render as escaped TEXT, never as live markup.
-        assert_true(page.query_selector("script:has-text(\"alert('xss')\")") is None,
-                    "XSS payload was injected as a live script element")
+        payload_is_live = page.evaluate(
+            "() => Array.from(document.querySelectorAll('script'))"
+            ".some(s => (s.textContent || '').includes(\"alert('xss')\"))")
+        assert_true(not payload_is_live,
+                    "XSS payload was parsed into a live script element")
         assert_not_equal(page.inner_text("table").find("script"), -1,
                          "XSS attempt should be visible as text, not executed")
         logger.info("Test 2 passed: XSS prevention working - payload escaped, not executed")
     finally:
-        _cleanup_by_name(context, page, "/admin/labeltype/", xss_name)
+        _cleanup_by_name(context, page, "/admin/labeltype/", xss_marker)
 
     # Test 3: Invalid sortOrder (non-numeric)
     # sortOrder is <input type="number">, so Playwright's fill() throws when

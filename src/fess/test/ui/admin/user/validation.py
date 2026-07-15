@@ -84,7 +84,8 @@ def run(context: FessContext) -> None:
 
     # Test 3: Special characters in username (XSS prevention)
     logger.info("Test 3: XSS prevention in username")
-    xss_username = f"<script>alert('xss')</script>{context.generate_str(5)}"
+    xss_marker = f"x{context.generate_str(10)}"
+    xss_username = f"<script>alert('xss')</script>{xss_marker}"
     try:
         page.fill("input[name=\"name\"]", xss_username)
         page.fill("input[name=\"password\"]", "password123")
@@ -95,13 +96,16 @@ def run(context: FessContext) -> None:
         assert_equal(page.locator("ul.has-error").count(), 0,
                      f"XSS-named record should have been created; url={page.url}")
         # The payload must render as escaped TEXT, never as live markup.
-        assert_true(page.query_selector("script:has-text(\"alert('xss')\")") is None,
-                    "XSS payload was injected as a live script element")
+        payload_is_live = page.evaluate(
+            "() => Array.from(document.querySelectorAll('script'))"
+            ".some(s => (s.textContent || '').includes(\"alert('xss')\"))")
+        assert_true(not payload_is_live,
+                    "XSS payload was parsed into a live script element")
         assert_not_equal(page.inner_text("table").find("script"), -1,
                          "XSS attempt should be visible as text, not executed")
         logger.info("Test 3 passed: XSS prevention working - payload escaped, not executed")
     finally:
-        _cleanup_by_name(context, page, "/admin/user/", xss_username)
+        _cleanup_by_name(context, page, "/admin/user/", xss_marker)
 
     # Test 4: Invalid password (below password.min.length=8)
     logger.info("Test 4: Weak password validation")
