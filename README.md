@@ -241,7 +241,6 @@ fess-test-ui/
 │           │   └── html_capture.py   # HTML snapshot capture
 │           └── ui/
 │               ├── context.py        # FessContext class for browser management
-│               ├── testdata.py       # Test data builders and patterns
 │               └── admin/            # Admin UI test modules
 │                   ├── badword/      # Bad word management tests
 │                   ├── user/         # User management tests
