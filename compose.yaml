@@ -9,6 +9,19 @@ services:
       - "TEST_LANG=${TEST_LANG:-random}"
       - "TEST_LANG_SEED=${TEST_LANG_SEED:-}"
       - "TEST_MODULES=${TEST_MODULES:-all}"
+      # Diagnostics. These are read inside the container (html_capture.py,
+      # context.py, logging_config.py) but compose enumerates env explicitly,
+      # so without these lines they are silently dropped at the container
+      # boundary and the features can never be switched on. Same bug 9f7004c
+      # fixed for TEST_MODULES.
+      - "HTML_CAPTURE=${HTML_CAPTURE:-false}"
+      - "HTML_CAPTURE_DIR=${HTML_CAPTURE_DIR:-html_snapshots}"
+      - "TRACE_ON_FAILURE=${TRACE_ON_FAILURE:-false}"
+      - "TRACE_ALL=${TRACE_ALL:-false}"
+      - "TRACE_DIR=${TRACE_DIR:-traces}"
+      - "LOG_LEVEL=${LOG_LEVEL:-INFO}"
+      - "LOG_FILE=${LOG_FILE:-false}"
+      - "LOG_DIR=${LOG_DIR:-logs}"
     # Labels are baked into the image via Dockerfile (`COPY labels`);
     # the runner reads them at the default /labels path. Bind-mounting
     # was removed because it does not work under Jenkins Docker-in-Docker

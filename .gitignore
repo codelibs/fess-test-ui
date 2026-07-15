@@ -133,3 +133,15 @@ dmypy.json
 
 # Extracted Fess labels (regenerated each run by run_test.sh)
 /labels/
+
+# Test outputs copied off the runner container by run_test.sh
+/src/test_results.json
+/src/test_metrics_history.json
+/src/screenshots/
+/src/traces/
+/src/logs/
+/src/html_snapshots/
+
+# Local-only scratch: specs, plans, and orchestration state
+/docs/superpowers/
+/.superpowers/
