@@ -325,6 +325,9 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
         page = context.get_current_page()
         url = page.url if page else None
 
+        if page:
+            context.html_capture.capture_on_failure(page, error_msg)
+
         result = TestResult(
             module=module_name,
             status='failed',
@@ -357,6 +360,9 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
 
         page = context.get_current_page()
         url = page.url if page else None
+
+        if page:
+            context.html_capture.capture_on_failure(page, error_msg)
 
         result = TestResult(
             module=module_name,
