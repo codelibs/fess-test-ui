@@ -21,3 +21,12 @@ class Messages:
     # takes the offending sort field as {0}.
     ERRORS_INVALID_QUERY_UNSUPPORTED_SORT_FIELD = (
         "errors.invalid_query_unsupported_sort_field")
+
+    # ---- Document lookup (GoAction / CacheAction) ---------------------
+    # Saved when a docId resolves to no document. Takes the offending docId
+    # as {0}. GoAction (:86) redirects to /error/, whose error.jsp renders
+    # it through <la:errors>; CacheAction (:95) redirects to
+    # /error/notfound/?message_key=errors.docid_not_found instead, and
+    # error/notFound.jsp renders neither <la:errors> nor the message_key
+    # parameter -- so this text is assertable on the Go path only.
+    ERRORS_DOCID_NOT_FOUND = "errors.docid_not_found"

@@ -99,9 +99,23 @@ class Labels:
     BUSY_TITLE = "labels.busy_title"                          # error/busy.jsp
     REQUEST_ERROR_TITLE = "labels.request_error_title"        # error/badRequest.jsp
 
+    # The <h2> of error/error.jsp. Unlike the four above it is reached two
+    # ways: /error/ (where GoAction redirects a bad docId) and an in-place
+    # render of the same view when an Action's validate() fallback fires.
+    ERROR_TITLE = "labels.error_title"                        # error/error.jsp
+
     # ---- OpenSearch description (OSDD) -------------------------------
     # title= of the <link rel="search"> that index.jsp:8-12 emits.
     INDEX_OSDD_TITLE = "labels.index_osdd_title"
+
+    # ---- Cached copy (CacheAction / cache.hbs) -----------------------
+    # Text of the per-result cache link (searchResults.jsp:141-148). Only
+    # rendered for documents whose has_cache field is 'true'.
+    SEARCH_RESULT_CACHE = "labels.search_result_cache"
+    # The banner cache.hbs renders above the snapshot. ViewHelper fills
+    # {0} with the document URL and {1} with the crawl timestamp, so only
+    # the {0} half is predictable from a test.
+    SEARCH_CACHE_MSG = "labels.search_cache_msg"
 
     # ---- Read-only page markers (for body-content assertions) --------
     DESIGN_TITLE_FILE = "labels.design_title_file"
