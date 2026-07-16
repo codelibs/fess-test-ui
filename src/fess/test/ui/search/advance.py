@@ -80,8 +80,11 @@ def _assert_words_are_assembled(page, context: FessContext) -> None:
     page.fill('input[name="as.nq"]', NONE_WORDS)
     _submit(page)
 
-    assert_true("/search/" in page.url,
-                f"expected /search/ after submit, got {page.url}")
+    # Parsed path, not a substring: see _open_advance. A substring test would
+    # also be satisfied by a URL that merely mentions /search/ in a query
+    # parameter -- which is exactly what the 404 handler produces.
+    assert_equal(urlparse(page.url).path.rstrip("/") or "/", "/search",
+                 f"expected /search/ after submit, got {page.url}")
     # Exact, not a substring check: this pins the quoting of as.epq and the
     # NOT prefixing of as.nq, either of which could regress independently
     # while every loose `in` assertion stayed green.
