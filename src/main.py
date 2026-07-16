@@ -45,8 +45,10 @@ from fess.test.ui.admin.dict import (kuromoji,
 
 from fess.test.ui.search import (
     advance as search_advance,
+    cache as search_cache,
     error_pages as search_error_pages,
     facet as search_facet,
+    go_click as search_go_click,
     form_submit as search_form_submit,
     help as search_help,
     login_form as search_login_form,
@@ -113,6 +115,7 @@ def _initialize_i18n() -> dict:
     label_dir = os.environ.get("FESS_LABEL_DIR", "/labels")
     i18n_mod.init(lang, label_dir)
     sizes = i18n_mod.label_sizes()
+    message_sizes = i18n_mod.message_sizes()
 
     # Note: $GITHUB_ENV is written from the host in run_test.sh (the file path
     # is host-only and unreachable from inside the runner container).
@@ -122,6 +125,7 @@ def _initialize_i18n() -> dict:
         "browser_locale": i18n_mod.selected_browser_locale(),
         "label_dir": label_dir,
         "sizes": sizes,
+        "message_sizes": message_sizes,
         "seed": seed,
     }
 
@@ -173,6 +177,8 @@ def get_modules_to_run() -> List[Any]:
         'search_advance': search_advance,
         'search_no_results': search_no_results,
         'search_query_errors': search_query_errors,
+        'search_go_click': search_go_click,
+        'search_cache': search_cache,
         'search_error_pages': search_error_pages,
         'search_osdd': search_osdd,
         'search_logout': search_logout,
@@ -236,6 +242,9 @@ def get_modules_to_run() -> List[Any]:
             search_query_errors,
             search_pagination, search_facet, search_sort,
             search_thumbnail, search_suggest, search_related,
+            # Both drive a real result: they need search_seed's index, and
+            # go_click's click writes a ClickLog for the document it opens.
+            search_go_click, search_cache,
             search_i18n_smoke, search_multibyte_query,
             search_layout_overflow, search_console_errors,
             search_multibyte_admin_input,
@@ -435,6 +444,8 @@ def main():
     logger.info(f"Label directory   : {i18n_info['label_dir']} "
                 f"({i18n_info['sizes']['lang']} keys + "
                 f"{i18n_info['sizes']['base']} fallback)")
+    logger.info(f"Message keys      : {i18n_info['message_sizes']['lang']} keys + "
+                f"{i18n_info['message_sizes']['base']} fallback")
     if i18n_info['seed'] is not None:
         logger.info(f"Lang seed         : {i18n_info['seed']} "
                     f"(export TEST_LANG_SEED={i18n_info['seed']} to reproduce)")
