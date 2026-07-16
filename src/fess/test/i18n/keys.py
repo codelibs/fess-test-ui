@@ -93,7 +93,9 @@ class Labels:
     # One marker per error view, each rendered only by its own page, so a
     # body-text assertion proves which error page was served. All four live
     # in <body>; labels.system_error_title is also the <title> of the other
-    # views, but inner_text("body") does not see <head>.
+    # views, but inner_text("body") does not see <head>. These four
+    # genuinely do not collide with one another or with ERROR_TITLE below --
+    # only ERROR_TITLE has the problem documented there.
     PAGE_NOT_FOUND_TITLE = "labels.page_not_found_title"      # error/notFound.jsp
     SYSTEM_ERROR_TITLE = "labels.system_error_title"          # error/system.jsp
     BUSY_TITLE = "labels.busy_title"                          # error/busy.jsp
@@ -102,6 +104,16 @@ class Labels:
     # The <h2> of error/error.jsp. Unlike the four above it is reached two
     # ways: /error/ (where GoAction redirects a bad docId) and an in-place
     # render of the same view when an Action's validate() fallback fires.
+    #
+    # DO NOT body-text-assert this key: labels.error_title is a SUBSTRING of
+    # labels.system_error_title in 12 of the 16 supported locales (en, es,
+    # fr, hi, it, ja, ko, pl, pt_BR, tr, zh_CN, zh_TW -- plus the ROOT
+    # fallback bundle; de, id, nl, ru are the only locales where the two
+    # strings do not overlap). A body-text `in` check on this key therefore
+    # cannot distinguish error.jsp from error/system.jsp in most locales --
+    # verified empirically against ./labels/. Assert exact equality on a
+    # selector scoped to error.jsp's own <h2> (e.g. "main h2") instead; see
+    # search/go_click.py and search/cache.py for the pattern.
     ERROR_TITLE = "labels.error_title"                        # error/error.jsp
 
     # ---- OpenSearch description (OSDD) -------------------------------

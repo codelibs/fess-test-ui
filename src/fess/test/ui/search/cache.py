@@ -9,18 +9,18 @@ FessXpathTransformer:521-533 sets when crawler.document.cache.enabled is on
 sample.txt does not. The query below is chosen to hit HTML.
 
 Unlike a result's title link, the cache link is not touched by search.js's
-mousedown rewrite: that handler is delegated on "a.link" (search.js:110) and
+mousedown rewrite: that handler is delegated on "a.link" (search.js:111) and
 this link's class is "cache d-print-none", so a plain click is the real user
 path and there is no /go/ hop to account for.
 
 CacheAction responds with text/html inline rather than an attachment
-(CacheAction:88 headerContentDispositionInline), so the browser renders the
+(CacheAction:92 headerContentDispositionInline), so the browser renders the
 snapshot and its DOM is readable here.
 
   *** The not-found path differs from GoAction's. Do not copy one to the
       other: ***
-    GoAction:87    -> redirect(ErrorAction.class)          -> /error/
-    CacheAction:95 -> redirect2ErrorWithMessageKey(...)    ->
+    GoAction:107   -> redirect(ErrorAction.class)          -> /error/
+    CacheAction:80 -> redirect2ErrorWithMessageKey(...)    ->
                       /error/notfound/?message_key=errors.docid_not_found
 
   and the message itself is assertable on the Go path only. error/error.jsp
@@ -48,9 +48,12 @@ from fess.test.ui import FessContext
 
 logger = logging.getLogger(__name__)
 
-# Matches sampledata's docs/ja/intro.html and docs/en/intro.html. Both are
-# text/html, so both carry a cache; both contain the term in lower case in
-# their body text, which the highlight assertion below depends on.
+# Matches three sampledata documents, not two: docs/ja/intro.html,
+# docs/en/intro.html, and index.html itself (which links both under "JA
+# Intro"/"EN Intro"). Harmless -- every expected value below is read off
+# whichever document ranks #result0 rather than assumed, and all three are
+# text/html with the term in lower case in their body text, which the
+# highlight assertion depends on.
 QUERY = "intro"
 
 TITLE_LINK = "#result0 h3.title a.link"
@@ -91,8 +94,8 @@ def _cache_link(page):
 
 def _first_result_doc_url(page) -> str:
     """The document URL of the top result, read off the element rather than
-    assumed: which of the two 'intro' pages ranks first does not matter, but
-    every later assertion must be about the same one."""
+    assumed: which of the three 'intro'-matching documents ranks first does
+    not matter, but every later assertion must be about the same one."""
     title_link = page.query_selector(TITLE_LINK)
     assert_true(title_link is not None,
                 f"no result at {TITLE_LINK} for q={QUERY}; is the index "
@@ -152,7 +155,7 @@ def _assert_snapshot_renders(page, context: FessContext) -> None:
                  f"cache.hbs should <base href> the original document "
                  f"{doc_url}, got {base.get_attribute('href')}")
 
-    # ViewHelper:742 fills {0} with the document URL and {1} with the crawl
+    # ViewHelper:749 fills {0} with the document URL and {1} with the crawl
     # timestamp. Only the {0} half is predictable, so assert up to {1}.
     banner = t(Labels.SEARCH_CACHE_MSG).split("{1}")[0].replace("{0}", doc_url)
     assert_contains(_normalize_ws(page.inner_text("body")),
@@ -170,7 +173,7 @@ def _assert_snapshot_renders(page, context: FessContext) -> None:
 
 
 def _assert_unknown_docid_lands_on_notfound(page, context: FessContext) -> None:
-    """CacheAction:95-97 sends an unresolvable docId to
+    """CacheAction:79-80 sends an unresolvable docId to
     /error/notfound/?message_key=errors.docid_not_found -- a different target
     from GoAction's /error/ (see the module docstring).
 
@@ -195,8 +198,8 @@ def _assert_unknown_docid_lands_on_notfound(page, context: FessContext) -> None:
 
 
 def _assert_missing_docid_renders_the_error_view(page, context: FessContext) -> None:
-    """CacheAction:70 validates the form with an asHtml(error.jsp) fallback,
-    which renders in place -- so a request with no docId (CacheForm:29
+    """CacheAction:67 validates the form with an asHtml(error.jsp) fallback,
+    which renders in place -- so a request with no docId (CacheForm:32
     @Required) stays at /cache/ and never reaches the lookup.
 
     The URL is what separates this from the unknown-docId case above:
@@ -209,9 +212,9 @@ def _assert_missing_docid_renders_the_error_view(page, context: FessContext) -> 
     assert_equal(urlparse(page.url).path, "/cache/",
                  f"a validation failure should render error.jsp in place at "
                  f"/cache/, got {page.url}")
-    assert_contains(page.inner_text("body"), t(Labels.ERROR_TITLE),
-                    f"/cache/ without a docId did not render error.jsp "
-                    f"(no {t(Labels.ERROR_TITLE)!r} in the body)")
+    assert_equal(page.inner_text("main h2").strip(), t(Labels.ERROR_TITLE),
+                 f"/cache/ without a docId did not render error.jsp; "
+                 f"main h2 was {page.inner_text('main h2').strip()!r}")
 
 
 def run(context: FessContext) -> None:

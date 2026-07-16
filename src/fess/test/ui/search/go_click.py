@@ -4,7 +4,7 @@ where GoAction's two failure paths land.
 /go/ is the redirect-and-click-log hop behind every search-result click, and
 nothing else in the suite touches it.
 
-The trap this module is built around: js/search.js:110-126 rewrites a result
+The trap this module is built around: js/search.js:111-127 rewrites a result
 link's href to /go/?rt=..&docId=..&queryId=..&order=.. on **mousedown**, not
 on click. A synthetic dispatch_event("click") never fires mousedown, so it
 would follow the un-rewritten href straight to the document and bypass /go/
@@ -12,7 +12,7 @@ entirely -- green, and testing nothing.
 
 Worse, no assertion on the landing URL can catch that, because both routes
 end at the same place: the raw href goes to the document directly, and /go/
-redirects to that same document (GoAction:143). The landing URL is identical
+redirects to that same document (GoAction:162). The landing URL is identical
 either way. So the click path is pinned two ways that do not share the
 failure mode:
 
@@ -27,7 +27,7 @@ The thumbnail is a second a.link inside the same result (searchResults.jsp:
 106-107), so every lookup is scoped to h3.title (searchResults.jsp:99-102).
 
 rt and queryId are read from the hidden inputs the results page renders
-(searchResults.jsp:94-95), never fabricated: GoAction:105 calls
+(searchResults.jsp:94-95), never fabricated: GoAction:123 calls
 Long.parseLong(form.rt) with no guard, so an invented rt would be a 500
 rather than the behaviour under test.
 
@@ -49,8 +49,9 @@ from fess.test.ui import FessContext
 
 logger = logging.getLogger(__name__)
 
-# Matches sampledata's docs/ja/intro.html and docs/en/intro.html, both of
-# which search/seed crawls. Which of the two lands at #result0 does not
+# Matches three sampledata documents that search/seed crawls: docs/ja/
+# intro.html, docs/en/intro.html, and index.html itself (which links both
+# under "JA Intro"/"EN Intro"). Which one lands at #result0 does not
 # matter: every expected value is read off the element itself.
 QUERY = "intro"
 
@@ -61,7 +62,7 @@ TITLE_LINK = "#result0 h3.title a.link"
 #
 # NOT div.alert.alert-warning -- that is index.jsp's box, and it only looks
 # that way because index.jsp:126-129 passes prefix="errors.front_prefix"
-# explicitly. error.jsp:23 writes <la:errors styleClass="list-unstyled"/>
+# explicitly. error.jsp:26 writes <la:errors styleClass="list-unstyled"/>
 # with no prefix override, so HtmlErrorsTag falls back to the defaults:
 # styleClass replaces the header with <ul class="list-unstyled">
 # (HtmlErrorsTag.setupHeader), and each message is wrapped in
@@ -92,7 +93,7 @@ def _first_result_link(page):
 
 
 def _assert_mousedown_rewrites_the_href(page, context: FessContext) -> None:
-    """search.js:110-126 swaps the raw document href for a /go/ URL on
+    """search.js:111-127 swaps the raw document href for a /go/ URL on
     mousedown. Pin the result exactly, mirroring search.js:118."""
     _search(page, context)
     link = _first_result_link(page)
@@ -134,6 +135,13 @@ def _assert_a_real_click_travels_through_go(page, context: FessContext) -> None:
     network is the only witness. Deleting the mousedown handler from
     search.js turns this red while leaving the landing assertion green,
     which is exactly the blind spot it exists to cover.
+
+    This click also causes GoAction (:130) to write a ClickLog, but that is
+    a deliberate omission here, not a gap: addClickLog (SearchLogHelper:314-
+    322) only enqueues to an in-memory ConcurrentLinkedQueue: the queue is
+    drained to the persistent store by AggregateLogJob, a scheduled job, not
+    by this request. Asserting a ClickLog synchronously after the click
+    would be racing that job and would be flaky by construction.
     """
     _search(page, context)
     link = _first_result_link(page)
@@ -167,15 +175,15 @@ def _assert_a_real_click_travels_through_go(page, context: FessContext) -> None:
 
 
 def _assert_unknown_docid_lands_on_the_error_view(page, context: FessContext) -> None:
-    """GoAction:85-88: a docId that resolves to no document saves
+    """GoAction:105-107: a docId that resolves to no document saves
     errors.docid_not_found and redirects to /error/, whose error.jsp renders
     it through <la:errors>. This is where GoAction and CacheAction diverge --
     CacheAction sends the same condition to /error/notfound/ instead, and
     that view renders no message at all (see search/cache.py).
 
     rt and queryId are real values from the results page even though this
-    path returns before the click log reads them (GoAction:98 returns while
-    Long.parseLong(form.rt) is at :105) -- the point is to vary only the
+    path returns before the click log reads them (GoAction:107 returns while
+    Long.parseLong(form.rt) is at :123) -- the point is to vary only the
     docId, so a failure here can only mean the docId lookup.
     """
     _search(page, context)
@@ -200,9 +208,9 @@ def _assert_unknown_docid_lands_on_the_error_view(page, context: FessContext) ->
 
 def _assert_missing_required_params_render_the_error_view(
         page, context: FessContext) -> None:
-    """GoAction:83 validates the form with an asHtml(error.jsp) fallback,
+    """GoAction:91 validates the form with an asHtml(error.jsp) fallback,
     which renders in place -- so a request missing the required rt and
-    queryId (GoForm:52,:65) stays at /go/ and never reaches the docId
+    queryId (GoForm:53,:66) stays at /go/ and never reaches the docId
     lookup.
 
     The URL is what separates this from the unknown-docId case above, which
@@ -215,9 +223,9 @@ def _assert_missing_required_params_render_the_error_view(
     assert_equal(urlparse(page.url).path, "/go/",
                  f"a validation failure should render error.jsp in place at "
                  f"/go/, got {page.url}")
-    assert_contains(page.inner_text("body"), t(Labels.ERROR_TITLE),
-                    f"/go/ without rt/queryId did not render error.jsp "
-                    f"(no {t(Labels.ERROR_TITLE)!r} in the body)")
+    assert_equal(page.inner_text("main h2").strip(), t(Labels.ERROR_TITLE),
+                 f"/go/ without rt/queryId did not render error.jsp; "
+                 f"main h2 was {page.inner_text('main h2').strip()!r}")
 
 
 def run(context: FessContext) -> None:

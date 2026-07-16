@@ -24,8 +24,8 @@ class Messages:
 
     # ---- Document lookup (GoAction / CacheAction) ---------------------
     # Saved when a docId resolves to no document. Takes the offending docId
-    # as {0}. GoAction (:86) redirects to /error/, whose error.jsp renders
-    # it through <la:errors>; CacheAction (:95) redirects to
+    # as {0}. GoAction (:106-107) redirects to /error/, whose error.jsp
+    # renders it through <la:errors>; CacheAction (:79-80) redirects to
     # /error/notfound/?message_key=errors.docid_not_found instead, and
     # error/notFound.jsp renders neither <la:errors> nor the message_key
     # parameter -- so this text is assertable on the Go path only.
