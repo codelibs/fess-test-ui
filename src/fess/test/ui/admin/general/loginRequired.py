@@ -43,6 +43,11 @@ SAVE_BUTTON = 'button[name="update"]'
 
 HTTP_TIMEOUT = 15
 
+# index.jsp's own search box. It is the only view in Fess carrying this id, so
+# it is what tells the restored top page apart from an error page: an error page
+# is not the login page either, so the URL check below cannot see it.
+TOP_PAGE_MARKER = 'id="contentQuery"'
+
 
 def setup(playwright: Playwright) -> FessContext:
     context: FessContext = FessContext(playwright)
@@ -119,12 +124,13 @@ def run(context: FessContext) -> None:
         _set_login_required(context, page, False)
 
         public = requests.get(context.url(TOP_PATH), timeout=HTTP_TIMEOUT)
-        assert_equal(public.status_code, 200,
-                     f"loginRequired=false but an anonymous GET {TOP_PATH} "
-                     f"answered HTTP {public.status_code}")
         assert_true("/login" not in public.url,
                     f"loginRequired=false but an anonymous GET {TOP_PATH} was "
                     f"still redirected to {public.url}")
+        assert_true(TOP_PAGE_MARKER in public.text,
+                    f"loginRequired=false but an anonymous GET {TOP_PATH} landed "
+                    f"on {public.url} without the top page's search box; public "
+                    f"access is not actually restored")
     finally:
         cleanup = Cleanup()
         with cleanup.guard("loginRequired possibly left ON — every later module "

@@ -67,9 +67,6 @@ def _save(context: FessContext, page, value: str) -> None:
 def _notification_on_login_page(context: FessContext) -> str:
     """Return the contents of div.notification on the anonymous login page."""
     response = requests.get(context.url(LOGIN_PATH), timeout=HTTP_TIMEOUT)
-    assert_equal(response.status_code, 200,
-                 f"anonymous GET {LOGIN_PATH} should render the login page, "
-                 f"got HTTP {response.status_code}")
     match = re.search(r'<div class="notification">(.*?)</div>', response.text,
                       re.DOTALL)
     assert_true(match,

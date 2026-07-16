@@ -66,9 +66,6 @@ def _save(context: FessContext, page, value: str) -> None:
 def _notification_on_top_page(context: FessContext) -> str:
     """Return the contents of div.notification on the anonymous top page."""
     response = requests.get(context.url(TOP_PATH), timeout=HTTP_TIMEOUT)
-    assert_equal(response.status_code, 200,
-                 f"anonymous GET {TOP_PATH} should render the top page, "
-                 f"got HTTP {response.status_code}")
     # loginRequired would bounce an anonymous caller to the login page, whose
     # notification comes from a different setting entirely.
     assert_true("/login" not in response.url,

@@ -39,6 +39,12 @@ HTTP_TIMEOUT = 15
 # <a ... href="/login/" ...> — tolerant of a servlet context path prefix.
 LOGIN_ANCHOR = re.compile(r'<a[^>]*\shref="[^"]*/login/"', re.IGNORECASE)
 
+# index.jsp's own search box. It is the only view in Fess carrying this id, so
+# it is what tells the top page apart from an error page -- which matters here
+# because every error page includes header.jsp, and header.jsp renders a
+# /login/ anchor under the same pageLoginLink flag index.jsp uses.
+TOP_PAGE_MARKER = 'id="contentQuery"'
+
 
 def setup(playwright: Playwright) -> FessContext:
     context: FessContext = FessContext(playwright)
@@ -67,15 +73,18 @@ def _set_login_link(context: FessContext, page, enabled: bool) -> None:
 def _anonymous_top(context: FessContext) -> str:
     """Fetch the search top page with no session cookie, and return its HTML."""
     response = requests.get(context.url(TOP_PATH), timeout=HTTP_TIMEOUT)
-    assert_equal(response.status_code, 200,
-                 f"anonymous GET {TOP_PATH} should render the top page, "
-                 f"got HTTP {response.status_code}")
     # loginRequired would bounce an anonymous caller to the login page, and the
     # login page has no login link either way — that would make the assertions
     # below meaningless rather than failing honestly.
     assert_true("/login" not in response.url,
                 f"anonymous GET {TOP_PATH} was redirected to {response.url}; "
                 f"loginRequired must be off for this test to observe anything")
+    # An error page would satisfy BOTH legs of this test -- it inherits the same
+    # pageLoginLink-gated anchor -- so without this the module could pass green
+    # having never seen the top page.
+    assert_true(TOP_PAGE_MARKER in response.text,
+                f"anonymous GET {TOP_PATH} landed on {response.url} without the "
+                f"top page's search box; this is an error page, not the top page")
     return response.text
 
 
