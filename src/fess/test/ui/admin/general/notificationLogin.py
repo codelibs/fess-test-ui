@@ -23,6 +23,8 @@ import requests
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
+
+from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -88,8 +90,7 @@ def run(context: FessContext) -> None:
 
     try:
         _save(context, page, test_value)
-        assert_equal(page.url, context.url(GENERAL_PATH),
-                     f"save did not redirect back to {GENERAL_PATH}; landed on {page.url}")
+        assert_saved(page)
 
         page.goto(context.url(GENERAL_PATH))
         page.wait_for_load_state("domcontentloaded")

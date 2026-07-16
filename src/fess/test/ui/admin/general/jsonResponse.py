@@ -17,6 +17,8 @@ import logging
 
 from fess.test import assert_contains, assert_equal
 from fess.test.ui import FessContext
+
+from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -74,8 +76,7 @@ def run(context: FessContext) -> None:
 
     try:
         _set_web_api_json(context, page, False)
-        assert_equal(page.url, context.url(GENERAL_PATH),
-                     f"save did not redirect back to {GENERAL_PATH}; landed on {page.url}")
+        assert_saved(page)
 
         page.goto(context.url(GENERAL_PATH))
         page.wait_for_load_state("domcontentloaded")
@@ -101,9 +102,14 @@ def run(context: FessContext) -> None:
                      "webApiJson checkbox did not stay checked after save")
 
         enabled_response = page.request.get(context.url(API_PATH))
-        assert_equal(enabled_response.status, 200,
-                     f"webApiJson=true should make {API_PATH} answer 200, "
-                     f"got {enabled_response.status}")
+        # Assert the landing URL, not the status: the not-found page is itself
+        # served as 200 (see the disabled case above), so a status check would
+        # pass even if the API were still gated off. Staying on the API path is
+        # what distinguishes "answered" from "laundered into /error/notfound/".
+        assert_contains(enabled_response.url, "/api/v2/search",
+                        f"webApiJson=true should leave {API_PATH} routed, but the "
+                        f"request ended at {enabled_response.url} "
+                        f"(HTTP {enabled_response.status})")
         content_type = enabled_response.headers.get("content-type", "")
         assert_contains(content_type, "application/json",
                         f"{API_PATH} should answer JSON; content-type was {content_type!r}")

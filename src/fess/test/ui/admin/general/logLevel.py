@@ -17,6 +17,8 @@ import logging
 
 from fess.test import assert_equal
 from fess.test.ui import FessContext
+
+from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -60,11 +62,7 @@ def run(context: FessContext) -> None:
         page.select_option(FIELD, target)
         page.click(SAVE_BUTTON)
         page.wait_for_load_state("domcontentloaded")
-        # update() ends in redirect(getClass()); a validation failure instead
-        # re-renders the form at the POST target (/admin/general/update), so
-        # landing anywhere else means the save was rejected.
-        assert_equal(page.url, context.url(GENERAL_PATH),
-                     f"save did not redirect back to {GENERAL_PATH}; landed on {page.url}")
+        assert_saved(page)
 
         page.goto(context.url(GENERAL_PATH))
         page.wait_for_load_state("domcontentloaded")

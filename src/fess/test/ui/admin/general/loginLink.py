@@ -20,6 +20,8 @@ import requests
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
+
+from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -90,8 +92,7 @@ def run(context: FessContext) -> None:
 
     try:
         _set_login_link(context, page, True)
-        assert_equal(page.url, context.url(GENERAL_PATH),
-                     f"save did not redirect back to {GENERAL_PATH}; landed on {page.url}")
+        assert_saved(page)
         enabled_body = _anonymous_top(context)
         assert_true(LOGIN_ANCHOR.search(enabled_body),
                     "loginLink=true but the anonymous top page carries no anchor to /login/")
