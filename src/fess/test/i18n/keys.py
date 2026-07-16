@@ -135,5 +135,13 @@ class Labels:
     LIST_COULD_NOT_FIND_CRUD_TABLE = "labels.list_could_not_find_crud_table"
     SEARCHLOG_QUERY_ID = "labels.searchlog_queryid"
     SEARCHLOG_ACCESS_TYPE = "labels.searchlog_accesstype"
+
+    # The per-row job-status badge on admin_joblog.jsp:88-90, rendered only
+    # while jobStatus == Constants.RUNNING. deleteall.py polls for its
+    # ABSENCE: AdminJoblogAction.deleteall() removes only ok/fail rows and
+    # AdminCrawlinginfoAction.deleteall() skips sessions still running, so
+    # asserting either list empties out is only sound once no job is in
+    # flight. The seed crawl outlives search_seed's doc-count wait.
+    JOBLOG_STATUS_RUNNING = "labels.joblog_status_running"
     FAILURE_URL_ERROR_COUNT = "labels.failure_url_search_error_count"
     FAILURE_URL_ERROR_NAME = "labels.failure_url_search_error_name"

@@ -34,6 +34,7 @@ from fess.test.ui.admin import (accesstoken,
                                 virtualhost,
                                 webauth,
                                 webconfig,
+                                wizard,
                                 fileconfig)
 
 from fess.test.ui.admin.dict import (kuromoji,
@@ -92,14 +93,19 @@ from fess.test.ui.admin.general import (
 )
 from fess.test.ui.admin.sysinfo import (
     backup as sysinfo_backup,
+    backup_download as sysinfo_backup_download,
     configinfo as sysinfo_configinfo,
     crawlinfo as sysinfo_crawlinfo,
+    deleteall as sysinfo_deleteall,
     failureurl as sysinfo_failureurl,
     joblog as sysinfo_joblog,
     logfile as sysinfo_logfile,
     maintenance as sysinfo_maintenance,
     searchlist as sysinfo_searchlist,
     searchlog as sysinfo_searchlog,
+)
+from fess.test.ui.admin.wizard import (
+    crawling_config as wizard_crawling_config,
 )
 
 logger = logging.getLogger(__name__)
@@ -200,6 +206,7 @@ def get_modules_to_run() -> List[Any]:
         'general': general,
         'sysinfo': sysinfo,
         'integration': integration,
+        'wizard': wizard,
         # The same leaves, addressable individually so TEST_MODULES can still
         # name one while debugging (TEST_MODULES=storage). Filtering only --
         # they are absent from the default order above by design.
@@ -214,14 +221,17 @@ def get_modules_to_run() -> List[Any]:
         'popularWord': general_popularWord,
         'storage': general_storage,
         'backup': sysinfo_backup,
+        'backup_download': sysinfo_backup_download,
         'configinfo': sysinfo_configinfo,
         'crawlinfo': sysinfo_crawlinfo,
+        'deleteall': sysinfo_deleteall,
         'failureurl': sysinfo_failureurl,
         'joblog': sysinfo_joblog,
         'logfile': sysinfo_logfile,
         'maintenance': sysinfo_maintenance,
         'searchlist': sysinfo_searchlist,
         'searchlog': sysinfo_searchlog,
+        'crawling_config': wizard_crawling_config,
     }
 
     # Check for TEST_MODULES environment variable
@@ -255,6 +265,14 @@ def get_modules_to_run() -> List[Any]:
             # edits the morphological analyser's dictionaries, and changed tokenisation
             # would change what the search assertions above see.
             integration,
+            # After the search modules because it creates real, persistent
+            # crawl configs. It never starts a crawl -- the wizard's
+            # startCrawling button relaunches every crawler job, which would
+            # rewrite the index the modules above assert against -- so it
+            # deletes the configs it made and leaves the index alone.
+            wizard,
+            # sysinfo ends in deleteall, which empties the job-log and
+            # crawling-info indices. Nothing after it reads them.
             sysinfo,
             # Last: general's final module (loginRequired) briefly closes the
             # public UI to anonymous visitors. It restores the setting itself,

@@ -9,8 +9,8 @@ structural pages first, then the ones that read crawl/search data.
 """
 from fess.test.ui import FessContext
 
-from . import (backup, configinfo, crawlinfo, failureurl, joblog, logfile,
-               maintenance, searchlist, searchlog)
+from . import (backup, backup_download, configinfo, crawlinfo, deleteall,
+               failureurl, joblog, logfile, maintenance, searchlist, searchlog)
 
 
 def run(context: FessContext) -> None:
@@ -22,4 +22,11 @@ def run(context: FessContext) -> None:
     searchlog.run(context)
     searchlist.run(context)
     backup.run(context)
+    # Downloads the logs, so it has to run while they still exist -- i.e.
+    # before deleteall below, and before the read-only pages above would
+    # start reporting an empty list.
+    backup_download.run(context)
     maintenance.run(context)
+    # Last, and last for a reason: it empties the job-log and crawling-info
+    # indices that every module above reads.
+    deleteall.run(context)

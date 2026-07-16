@@ -30,3 +30,22 @@ class Messages:
     # error/notFound.jsp renders neither <la:errors> nor the message_key
     # parameter -- so this text is assertable on the Go path only.
     ERRORS_DOCID_NOT_FOUND = "errors.docid_not_found"
+
+    # ---- Admin wizard (AdminWizardAction) -----------------------------
+    # saveInfo()'d by BOTH crawlingConfig() and crawlingConfigNext() with
+    # the created config's name as {0}, and it survives the redirect in the
+    # session. It is the only discriminator between a wizard save that was
+    # accepted and one rejected by validation or the double-submit token:
+    # both render admin_wizard_config.jsp at the same URL. Carrying {0}
+    # makes it stronger than a bare success check -- it names which config
+    # the wizard claims to have created.
+    SUCCESS_CREATE_CRAWLING_CONFIG_AT_WIZARD = (
+        "success.create_crawling_config_at_wizard")
+
+    # ---- Confirm-modal delete-all (sysinfo list pages) ----------------
+    # saveInfo()'d by the deleteall() of each action, then read off the
+    # redirected list page. Distinct keys per page, so asserting the right
+    # one proves the modal's submit button dispatched to that page's own
+    # action rather than merely reloading the list.
+    SUCCESS_JOB_LOG_DELETE_ALL = "success.job_log_delete_all"
+    SUCCESS_CRAWLING_INFO_DELETE_ALL = "success.crawling_info_delete_all"
