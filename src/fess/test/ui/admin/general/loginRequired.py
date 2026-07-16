@@ -27,6 +27,7 @@ import requests
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup
 
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
@@ -80,19 +81,18 @@ def _set_login_required(context: FessContext, page, enabled: bool) -> None:
 def _restore(context: FessContext, page, original: bool) -> None:
     """Put loginRequired back and confirm it actually went back.
 
-    A silent failure here locks every later module out of the suite, so the
-    restored value is read back and a mismatch is escalated rather than logged
-    at debug level.
+    A failure here locks every later module out of the suite, so the restored
+    value is read back and a mismatch is raised, not logged: this is the leak
+    with the largest blast radius in the suite, and a log alone would surface
+    it as a wall of unrelated login-screen failures in other modules.
     """
     _set_login_required(context, page, original)
     _open_general(context, page)
     restored = page.is_checked(FIELD)
-    if restored != original:
-        logger.error(
-            f"loginRequired NOT restored (wanted {original}, got {restored}); "
-            f"later modules may be locked out of Fess")
-    else:
-        logger.info(f"loginRequired restored to {original}")
+    assert_equal(restored, original,
+                 f"loginRequired NOT restored (wanted {original}, got "
+                 f"{restored}); every later module would be locked out of Fess")
+    logger.info(f"loginRequired restored to {original}")
 
 
 def run(context: FessContext) -> None:
@@ -126,10 +126,11 @@ def run(context: FessContext) -> None:
                     f"loginRequired=false but an anonymous GET {TOP_PATH} was "
                     f"still redirected to {public.url}")
     finally:
-        try:
+        cleanup = Cleanup()
+        with cleanup.guard("loginRequired possibly left ON — every later module "
+                           "would be sent to the login screen"):
             _restore(context, page, original)
-        except Exception as e:
-            logger.error(f"loginRequired restore failed: {e}")
+        cleanup.escalate()
 
     logger.info("loginRequired test completed")
 
