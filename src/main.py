@@ -45,11 +45,15 @@ from fess.test.ui.admin.dict import (kuromoji,
 
 from fess.test.ui.search import (
     advance as search_advance,
+    error_pages as search_error_pages,
     facet as search_facet,
     form_submit as search_form_submit,
     help as search_help,
     login_form as search_login_form,
+    logout as search_logout,
     no_results as search_no_results,
+    osdd as search_osdd,
+    query_errors as search_query_errors,
     pagination as search_pagination,
     profile_form as search_profile_form,
     query as search_query,
@@ -168,6 +172,10 @@ def get_modules_to_run() -> List[Any]:
         'search_query': search_query,
         'search_advance': search_advance,
         'search_no_results': search_no_results,
+        'search_query_errors': search_query_errors,
+        'search_error_pages': search_error_pages,
+        'search_osdd': search_osdd,
+        'search_logout': search_logout,
         'search_pagination': search_pagination,
         'search_facet': search_facet,
         'search_sort': search_sort,
@@ -225,11 +233,15 @@ def get_modules_to_run() -> List[Any]:
             search_root_top, search_top, search_help, search_login_form,
             search_profile_form, search_form_submit,
             search_query, search_advance, search_no_results,
+            search_query_errors,
             search_pagination, search_facet, search_sort,
             search_thumbnail, search_suggest, search_related,
             search_i18n_smoke, search_multibyte_query,
             search_layout_overflow, search_console_errors,
             search_multibyte_admin_input,
+            # search_osdd must precede general: /osdd is behind the
+            # loginRequired gate, which general's last module toggles.
+            search_error_pages, search_osdd, search_logout,
             # Cross-resource workflows. After the search modules: dictionary_workflow
             # edits the morphological analyser's dictionaries, and changed tokenisation
             # would change what the search assertions above see.

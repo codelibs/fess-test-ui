@@ -89,6 +89,20 @@ class Labels:
     FILE_CRAWLING_BUTTON_CREATE_JOB = "labels.file_crawling_button_create_job"
     DATA_CRAWLING_BUTTON_CREATE_JOB = "labels.data_crawling_button_create_job"
 
+    # ---- Error pages -------------------------------------------------
+    # One marker per error view, each rendered only by its own page, so a
+    # body-text assertion proves which error page was served. All four live
+    # in <body>; labels.system_error_title is also the <title> of the other
+    # views, but inner_text("body") does not see <head>.
+    PAGE_NOT_FOUND_TITLE = "labels.page_not_found_title"      # error/notFound.jsp
+    SYSTEM_ERROR_TITLE = "labels.system_error_title"          # error/system.jsp
+    BUSY_TITLE = "labels.busy_title"                          # error/busy.jsp
+    REQUEST_ERROR_TITLE = "labels.request_error_title"        # error/badRequest.jsp
+
+    # ---- OpenSearch description (OSDD) -------------------------------
+    # title= of the <link rel="search"> that index.jsp:8-12 emits.
+    INDEX_OSDD_TITLE = "labels.index_osdd_title"
+
     # ---- Read-only page markers (for body-content assertions) --------
     DESIGN_TITLE_FILE = "labels.design_title_file"
     SYSTEM_INFO_FESS_PROP_TITLE = "labels.system_info_fess_prop_title"
