@@ -87,8 +87,7 @@ def run(context: FessContext) -> None:
 
         # Step 3: Verify job exists in scheduler
         logger.info("Step 3: Verifying job in scheduler")
-        page.click(f"text={t(Labels.MENU_SYSTEM)}")
-        page.click(f"text={t(Labels.MENU_SCHEDULER_CONFIG)}")
+        page.goto(context.url("/admin/scheduler/"))
         page.wait_for_load_state("domcontentloaded")
 
         scheduler_content = page.inner_text("table")

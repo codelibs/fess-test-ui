@@ -79,9 +79,7 @@ from fess.test.ui.search import (
     multibyte_admin_input as search_multibyte_admin_input,
 )
 
-# Integration tests are available but not run by default
-# Uncomment the following line to include integration tests in test runs
-# from fess.test.ui import integration
+from fess.test.ui import integration
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +178,7 @@ def get_modules_to_run() -> List[Any]:
         'backup': backup,
         'maintenance': maintenance,
         'configinfo': configinfo,
-        # 'integration': integration,  # Uncomment to enable
+        'integration': integration,
     }
 
     # Check for TEST_MODULES environment variable
@@ -203,6 +201,10 @@ def get_modules_to_run() -> List[Any]:
             search_i18n_smoke, search_multibyte_query,
             search_layout_overflow, search_console_errors,
             search_multibyte_admin_input,
+            # Cross-resource workflows. After the search modules: dictionary_workflow
+            # edits the morphological analyser's dictionaries, and changed tokenisation
+            # would change what the search assertions above see.
+            integration,
             popularWord,
             # Admin read-only: general
             pagedesign, storage, plugin,

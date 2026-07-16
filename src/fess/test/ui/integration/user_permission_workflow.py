@@ -61,8 +61,8 @@ def run(context: FessContext) -> None:
 
         # Step 2: Create a new group
         logger.info("Step 2: Creating group")
-        page.click(f"text={t(Labels.MENU_USER)}")
-        page.click(f"text={t(Labels.MENU_GROUP)}")
+        page.goto(context.url("/admin/group/"))
+        page.wait_for_load_state("domcontentloaded")
         assert_equal(page.url, context.url("/admin/group/"))
 
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
@@ -81,8 +81,8 @@ def run(context: FessContext) -> None:
 
         # Step 3: Create a new user and assign to group
         logger.info("Step 3: Creating user with group assignment")
-        page.click(f"text={t(Labels.MENU_USER)}")
-        page.click('a[href*="/admin/user/"]')
+        page.goto(context.url("/admin/user/"))
+        page.wait_for_load_state("domcontentloaded")
         assert_equal(page.url, context.url("/admin/user/"))
 
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
@@ -135,8 +135,8 @@ def run(context: FessContext) -> None:
         # Delete group
         if "group" in created:
             try:
-                page.click(f"text={t(Labels.MENU_USER)}")
-                page.click(f"text={t(Labels.MENU_GROUP)}")
+                page.goto(context.url("/admin/group/"))
+                page.wait_for_load_state("domcontentloaded")
                 assert_equal(page.url, context.url("/admin/group/"))
                 page.click(f"text={group_name}")
                 page.wait_for_load_state("domcontentloaded")
@@ -150,8 +150,8 @@ def run(context: FessContext) -> None:
         # Delete role
         if "role" in created:
             try:
-                page.click(f"text={t(Labels.MENU_USER)}")
-                page.click(f"text={t(Labels.MENU_ROLE)}")
+                page.goto(context.url("/admin/role/"))
+                page.wait_for_load_state("domcontentloaded")
                 assert_equal(page.url, context.url("/admin/role/"))
                 page.click(f"text={role_name}")
                 page.wait_for_load_state("domcontentloaded")

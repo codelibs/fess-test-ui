@@ -61,8 +61,8 @@ def run(context: FessContext) -> None:
 
         # Step 2: Create RelatedContent entry
         logger.info("Step 2: Creating RelatedContent entry")
-        page.click(f"text={t(Labels.MENU_CRAWL)}")
-        page.click(f"text={t(Labels.MENU_RELATED_CONTENT)}")
+        page.goto(context.url("/admin/relatedcontent/"))
+        page.wait_for_load_state("domcontentloaded")
         assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
@@ -82,8 +82,8 @@ def run(context: FessContext) -> None:
 
         # Step 3: Create RelatedQuery entry
         logger.info("Step 3: Creating RelatedQuery entry")
-        page.click(f"text={t(Labels.MENU_CRAWL)}")
-        page.click(f"text={t(Labels.MENU_RELATED_QUERY)}")
+        page.goto(context.url("/admin/relatedquery/"))
+        page.wait_for_load_state("domcontentloaded")
         assert_equal(page.url, context.url("/admin/relatedquery/"))
 
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
@@ -120,8 +120,8 @@ def run(context: FessContext) -> None:
         if "relatedcontent" in created:
             try:
                 logger.info("Step 5: Deleting RelatedContent")
-                page.click(f"text={t(Labels.MENU_CRAWL)}")
-                page.click(f"text={t(Labels.MENU_RELATED_CONTENT)}")
+                page.goto(context.url("/admin/relatedcontent/"))
+                page.wait_for_load_state("domcontentloaded")
                 assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
                 page.click(f"text={search_term}")
@@ -137,8 +137,8 @@ def run(context: FessContext) -> None:
         if "keymatch" in created:
             try:
                 logger.info("Step 6: Deleting KeyMatch")
-                page.click(f"text={t(Labels.MENU_CRAWL)}")
-                page.click(f"text={t(Labels.MENU_KEY_MATCH)}")
+                page.goto(context.url("/admin/keymatch/"))
+                page.wait_for_load_state("domcontentloaded")
                 assert_equal(page.url, context.url("/admin/keymatch/"))
 
                 page.click(f"text={search_term}")

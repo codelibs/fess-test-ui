@@ -2,7 +2,7 @@
 import logging
 import re
 
-from fess.test import assert_equal
+from fess.test import assert_equal, assert_not_equal
 from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
@@ -50,10 +50,16 @@ def run(context: FessContext) -> None:
         page.wait_for_load_state("domcontentloaded")
 
         page.fill("input[name=\"token\"]", test_word)
-        page.fill("input[name=\"reading\"]", "test")
+        page.fill("input[name=\"segmentation\"]", "全文 検索 エンジン")
+        page.fill("input[name=\"reading\"]", "ゼンブン ケンサク エンジン")
         page.fill("input[name=\"pos\"]", "名詞")
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        assert_equal(page.url, context.url("/admin/dict/kuromoji/list/1?dictId=amEva3Vyb21vamkudHh0"))
         page.wait_for_load_state("domcontentloaded")
+
+        table_content: str = page.inner_text("table")
+        assert_not_equal(table_content.find(test_word), -1,
+                         f"{test_word} not in {table_content}")
 
         created.append("kuromoji")
         logger.info(f"✓ Kuromoji entry '{test_word}' created")
@@ -69,7 +75,12 @@ def run(context: FessContext) -> None:
 
         page.fill("input[name=\"input\"]", test_word)
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        assert_equal(page.url, context.url("/admin/dict/protwords/list/1?dictId=ZW4vcHJvdHdvcmRzLnR4dA=="))
         page.wait_for_load_state("domcontentloaded")
+
+        table_content = page.inner_text("table")
+        assert_not_equal(table_content.find(test_word), -1,
+                         f"{test_word} not in {table_content}")
 
         created.append("protwords")
         logger.info(f"✓ Protwords entry '{test_word}' created")
@@ -84,21 +95,30 @@ def run(context: FessContext) -> None:
         page.wait_for_load_state("domcontentloaded")
 
         page.fill("textarea[name=\"inputs\"]", test_word)
-        page.fill("textarea[name=\"output\"]", "mapped_value")
+        page.fill("input[name=\"output\"]", "mapped_value")
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        assert_equal(page.url, context.url("/admin/dict/mapping/list/1?dictId=bWFwcGluZy50eHQ="))
         page.wait_for_load_state("domcontentloaded")
+
+        # New entries are appended at the end of the list; jump to
+        # the last page to find the one just created.
+        page_info: str = page.inner_text("div.col-sm-2")
+        match = re.search(r'(\d+)/(\d+)', page_info)
+        last_page = int(match.group(2)) if match else 1
+        page.goto(page.url.replace("/list/1", f"/list/{last_page}"))
+        page.wait_for_load_state("domcontentloaded")
+
+        table_content = page.inner_text("table")
+        assert_not_equal(table_content.find(test_word), -1,
+                         f"{test_word} not in {table_content}")
 
         created.append("mapping")
         logger.info(f"✓ Mapping entry '{test_word}' created")
-
-        # Step 5: Verify all entries exist
-        logger.info("Step 5: Verifying all dictionary entries")
-        # (Verification is implicit - if creation succeeded, entries exist)
     finally:
-        # Step 6: Cleanup - Delete mapping entry
+        # Step 5: Cleanup - Delete mapping entry
         if "mapping" in created:
             try:
-                logger.info("Step 6: Cleanup - deleting mapping entry")
+                logger.info("Step 5: Cleanup - deleting mapping entry")
                 page.goto(context.url("/admin/dict/"))
                 page.click(":nth-match(:text(\"mapping.txt\"), 3)")
                 page.wait_for_load_state("domcontentloaded")
@@ -123,10 +143,10 @@ def run(context: FessContext) -> None:
             except Exception as e:
                 logger.error(f"LEAKED mapping dictionary entry '{test_word}' (global analyzer config) — will pollute later modules: {e}")
 
-        # Step 7: Delete protwords entry
+        # Step 6: Delete protwords entry
         if "protwords" in created:
             try:
-                logger.info("Step 7: Deleting protwords entry")
+                logger.info("Step 6: Deleting protwords entry")
                 page.goto(context.url("/admin/dict/"))
                 page.click("text=en/protwords.txt")
                 page.wait_for_load_state("domcontentloaded")
@@ -140,10 +160,10 @@ def run(context: FessContext) -> None:
             except Exception as e:
                 logger.error(f"LEAKED protwords dictionary entry '{test_word}' (global analyzer config) — will pollute later modules: {e}")
 
-        # Step 8: Delete kuromoji entry
+        # Step 7: Delete kuromoji entry
         if "kuromoji" in created:
             try:
-                logger.info("Step 8: Deleting kuromoji entry")
+                logger.info("Step 7: Deleting kuromoji entry")
                 page.goto(context.url("/admin/dict/"))
                 page.click("text=ja/kuromoji.txt")
                 page.wait_for_load_state("domcontentloaded")
