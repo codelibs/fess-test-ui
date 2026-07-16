@@ -89,22 +89,26 @@ def _assert_offset_over_max_is_reported(page, context: FessContext) -> None:
 def _assert_offset_at_max_does_not_trip_the_guard(page, context: FessContext) -> None:
     """The boundary: at exactly the max offset the guard must stay silent.
 
-    Fess checks `start > max` (SearchEngineClient:2215) against
+    Fess checks `start > max` in SearchEngineClient's build() against
     query.max.search.result.offset=100000, so relaxing it to `>=` would report
     the result-size error one document early and turn this red.
 
-    EXPECT A FESS 500 AND A STACK TRACE IN THE LOG FROM THIS CHECK. That is
-    not a failure and not something to chase: clearing the offset guard hands
-    the request to the search engine, and from+size at this depth exceeds
-    max_result_window (10000 by default, and Fess does not raise it), so the
-    engine refuses it and the request ends on the system-error page. The
-    boundary cannot be probed without provoking that -- 100000 IS the guard's
-    limit.
+    Clearing the offset guard does hand the request to the search engine, and
+    from+size at this depth exceeds max_result_window (10000 by default, which
+    Fess does not raise), so the engine refuses it. That refusal is HANDLED,
+    not fatal: SearchEngineClient:1652 catches the OpenSearchException and
+    rethrows InvalidQueryException(invalid_query_cannot_process), which
+    SearchAction turns into saveError + redirectToRoot. Measured on
+    fessx/opensearch3, seeded and unseeded: 302 to /, HTTP 200, error box
+    "Could not process the specified query." -- no 500, and no stack trace,
+    because that catch logs at DEBUG only. A 500 or an ERROR-level trace from
+    this check is therefore NOT expected and IS worth chasing.
 
     Only the ABSENCE of the result-size message is asserted. Do not "improve"
-    this by also asserting the landing path: the page it lands on today is
-    Fess's 500, and pinning that would lock in a defect and go red the day
-    someone raises max_result_window or handles the engine's refusal.
+    this by also asserting the landing path: it lands on / today only because
+    the engine refuses an offset this deep, so raising max_result_window past
+    100000 would let the search succeed and land on /search/ instead. That is
+    the engine's behaviour, not this guard's, and not this suite's to pin.
     """
     _search(page, context, f"?q=alpha&start={MAX_OFFSET}")
 
