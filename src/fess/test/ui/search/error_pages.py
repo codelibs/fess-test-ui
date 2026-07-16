@@ -61,10 +61,10 @@ def _assert_view_renders(page, context: FessContext, path: str, key: str) -> Non
                  f"{path} did not serve itself; landed on {page.url}")
 
     marker = t(key)
-    assert_contains_marker(page, marker, path)
+    _assert_contains_marker(page, marker, path)
 
 
-def assert_contains_marker(page, marker: str, path: str) -> None:
+def _assert_contains_marker(page, marker: str, path: str) -> None:
     body = page.inner_text("body")
     assert_true(marker in body,
                 f"{path} did not render its own text {marker!r}")
@@ -85,7 +85,7 @@ def _assert_lands_on_notfound(page, context: FessContext, requested: str) -> Non
     # page.url -- that would be testing the encoded form by accident.
     assert_equal(parse_qs(landed.query).get("url"), [requested],
                  f"expected ?url={requested} after landing, got {page.url}")
-    assert_contains_marker(page, t(Labels.PAGE_NOT_FOUND_TITLE), page.url)
+    _assert_contains_marker(page, t(Labels.PAGE_NOT_FOUND_TITLE), page.url)
 
 
 def _assert_badrequest_falls_through_to_notfound(page, context: FessContext) -> None:

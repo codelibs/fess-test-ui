@@ -46,6 +46,19 @@ def _cleanup_by_name(context: FessContext, page: "Page", list_path: str, name: s
             page.wait_for_load_state("domcontentloaded")
             page.goto(context.url(list_path))
             page.wait_for_load_state("domcontentloaded")
+        if iterations == 0:
+            # count() above only sees page 1, so a row pushed onto page 2 by
+            # >=25 pre-existing rows reads as "nothing to clean" and leaks with
+            # no log at all -- the LEAKED branch above only fires after 10
+            # non-progressing iterations, which this path never reaches.
+            # Logged, not escalated: "found nothing" is genuinely ambiguous
+            # here, since a test body that failed before creating the record
+            # also lands here, and that module is already red for its own
+            # reason. Unreachable on a fresh instance (needs >=25 rows).
+            logger.warning(f"CLEANUP deleted nothing for name={name!r} at {list_path}: "
+                           f"no matching row on page 1. Either the record was never "
+                           f"created, or it is beyond page 1 and has LEAKED onto this "
+                           f"shared instance.")
     except Exception as e:
         logger.error(f"CLEANUP FAILED for name={name!r} at {list_path} -- this record has "
                      f"LEAKED and will pollute later modules on this shared instance: {e}")
