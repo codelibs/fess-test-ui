@@ -10,6 +10,7 @@ run while a test has the UI closed to anonymous users. In the default order
 that test (general/loginRequired) runs last, after every search module.
 """
 import logging
+from urllib.parse import urlparse
 
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 OSDD_LINK = 'link[rel="search"][type="application/opensearchdescription+xml"]'
 OSDD_HREF = "/osdd"
+# /osdd 301s to /osdd/, so this is where the fetch actually lands.
+OSDD_SERVED_PATH = "/osdd/"
 # The OpenSearch 1.1 spec namespace: what makes the document an OSDD at all.
 OSDD_NAMESPACE = "http://a9.com/-/spec/opensearch/1.1/"
 
@@ -61,8 +64,13 @@ def _assert_osdd_document_is_served(page, context: FessContext, href: str) -> No
     it. /osdd 301s to /osdd/; the request follows that redirect.
     """
     response = page.request.get(context.url(href))
-    assert_equal(response.status, 200,
-                 f"{href} returned HTTP {response.status}")
+
+    # Deliberately not an HTTP status assertion. An /osdd that resolved to
+    # nothing would redirect to /error/notfound/, which Fess answers with 200,
+    # and page.request follows redirects -- so `status == 200` would still pass
+    # with the endpoint gone. The landing URL is what tells the two apart.
+    assert_equal(urlparse(response.url).path, OSDD_SERVED_PATH,
+                 f"{href} did not serve the OSDD; landed on {response.url}")
 
     headers = response.headers
     content_type = headers.get("content-type", "")
