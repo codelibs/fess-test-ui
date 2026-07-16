@@ -13,18 +13,32 @@ Two pages, not the four that have a deleteall() method:
                 modal and no deleteall button in admin_searchlog.jsp
                 (its only buttons are name="search" and name="reset"), so
                 there is nothing to click and nothing to observe.
-  failureurl    NOT covered -- the button does not exist on this instance.
+  failureurl    NOT covered, by decision -- the button does not exist to
+                click on this instance. This is a deliberate exclusion with
+                a known cost, not a forgotten case: covering it would mean
+                seeding a deliberately-failing crawl.
+
                 The trigger and modal live inside
                 <c:if test="${failureUrlPager.allRecordCount > 0}">
-                (admin_failureurl.jsp:108-191), and the list is always
-                empty here: failure URLs are only written when a crawl
-                fails, and sampledata01 has no broken links (every href in
+                (admin_failureurl.jsp:108-191), so on an empty list they are
+                absent, not disabled. failureurl is always empty here:
+                failure URLs are only written when a crawl fails, and
+                sampledata01 has no broken links (every href under
                 sampledata/content resolves to a file). Nothing else in the
-                suite crawls -- webconfig/job.py and
-                integration/crawler_workflow.py both create a job and
-                delete it without launching. Reaching that handler needs a
-                deliberately-failing crawl to be seeded first; see the
-                Phase 4c/4d report.
+                suite crawls a failing URL -- webconfig/job.py and
+                integration/crawler_workflow.py both create a job and delete
+                it without launching.
+
+                Measured (admin-UI probe against a seeded instance):
+                    /admin/failureurl/    rows=0  trigger=0  modal=0
+                    /admin/joblog/        rows=1  trigger=1  modal=1
+                    /admin/crawlinginfo/  rows=1  trigger=1  modal=1
+                so the two covered here reach the button and failureurl
+                cannot. Its deleteall handler (failureUrlService.deleteAll,
+                AdminFailureurlAction:217-225) therefore goes uncovered; the
+                modal mechanics it shares are still exercised on the two
+                pages below. See the Phase 4c/4d report for the cost of
+                covering it.
 
 The two covered pages render byte-identical modal markup apart from their
 label keys, so the shared selectors below are asserted twice.
@@ -60,11 +74,27 @@ CONFIRM = '#confirmToDeleteAll button[name="deleteall"]'
 ROWS = "table tbody tr"
 SUCCESS_ALERT = "div.alert-success"
 
-# A crawl outlives search_seed, which returns as soon as enough documents
-# are indexed. While a job is in flight neither deleteall empties its list:
+# Wait for the crawler to go idle before deleting -- this is load-bearing,
+# not flake insurance.
+#
+# While a job is in flight neither deleteall actually empties its list:
 # AdminJoblogAction.deleteall() removes only ok/fail rows (:243-254) and
-# crawlinginfo's deleteOldSessions() excludes running sessions. Both would
-# then report success while deleting nothing.
+# crawlinginfo's deleteOldSessions() excludes running sessions. Both still
+# saveInfo() the success message and redirect. So delete-while-running gives
+# a GREEN success assertion over a delete that removed nothing -- the exact
+# "assertion that covers nothing" this suite exists to eliminate. The row
+# left behind (screenshot failure_deleteall_*, an OK Default Crawler row
+# beside the success alert) is what surfaced it; the wait is what makes the
+# emptied-list assertion below actually mean the list emptied.
+#
+# search_seed returns as soon as enough documents are indexed, but the crawl
+# it launches runs on: measured ~245s of continued crawling past that return
+# in the ja and de verification runs (the joblog row showed the Running
+# badge with an empty end-time throughout). In the full default order the
+# ~25 search modules between search_seed and sysinfo outlast the crawl, so
+# this wait is free; on a truncated TEST_MODULES subset it does the waiting
+# those modules would otherwise have absorbed. Either way it is required for
+# the assertions to be sound -- do not drop it to speed up a subset run.
 IDLE_TIMEOUT = 900
 IDLE_POLL = 5
 
