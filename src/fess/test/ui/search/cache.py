@@ -76,6 +76,19 @@ def _search(page, context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
 
 
+def _cache_link(page):
+    """The top result's cache link. Absent rather than empty when the
+    document has no stored copy (searchResults.jsp:141 wraps it in
+    <c:if test="${doc.has_cache=='true'}">), so this is the one place that
+    turns 'no cache at all' into a message that says so."""
+    link = page.query_selector(CACHE_LINK)
+    assert_true(link is not None,
+                f"no {CACHE_LINK} for q={QUERY}; the top result has no "
+                f"cached copy (has_cache != 'true'), so crawler document "
+                f"caching may be off")
+    return link
+
+
 def _first_result_doc_url(page) -> str:
     """The document URL of the top result, read off the element rather than
     assumed: which of the two 'intro' pages ranks first does not matter, but
@@ -98,11 +111,7 @@ def _assert_cache_link_is_rendered(page, context: FessContext) -> None:
                 f"seeded?")
     doc_id = title_link.get_attribute("data-id")
 
-    cache_link = page.query_selector(CACHE_LINK)
-    assert_true(cache_link is not None,
-                f"no {CACHE_LINK} for q={QUERY}; the top result has no "
-                f"cached copy (has_cache != 'true'), so crawler document "
-                f"caching may be off")
+    cache_link = _cache_link(page)
     assert_equal(cache_link.inner_text().strip(),
                  t(Labels.SEARCH_RESULT_CACHE),
                  f"the cache link is not labelled "
@@ -129,7 +138,7 @@ def _assert_snapshot_renders(page, context: FessContext) -> None:
     _search(page, context)
     doc_url = _first_result_doc_url(page)
 
-    page.query_selector(CACHE_LINK).click()
+    _cache_link(page).click()
     page.wait_for_load_state("domcontentloaded")
 
     assert_equal(urlparse(page.url).path, "/cache/",
