@@ -19,6 +19,7 @@ from fess.test.ui.admin import (accesstoken,
                                 duplicatehost,
                                 elevateword,
                                 fileauth,
+                                general,
                                 keymatch,
                                 label,
                                 pathmap,
@@ -26,6 +27,7 @@ from fess.test.ui.admin import (accesstoken,
                                 relatedquery,
                                 reqheader,
                                 scheduler,
+                                sysinfo,
                                 user,
                                 group,
                                 role,
@@ -33,21 +35,6 @@ from fess.test.ui.admin import (accesstoken,
                                 webauth,
                                 webconfig,
                                 fileconfig)
-
-from fess.test.ui.admin.general import (popularWord,
-                                        pagedesign,
-                                        storage,
-                                        plugin)
-
-from fess.test.ui.admin.sysinfo import (backup,
-                                        configinfo,
-                                        crawlinfo,
-                                        failureurl,
-                                        joblog,
-                                        logfile,
-                                        maintenance,
-                                        searchlist,
-                                        searchlog)
 
 from fess.test.ui.admin.dict import (kuromoji,
                                      protwords,
@@ -163,21 +150,10 @@ def get_modules_to_run() -> List[Any]:
         'search_layout_overflow': search_layout_overflow,
         'search_console_errors': search_console_errors,
         'search_multibyte_admin_input': search_multibyte_admin_input,
-        'popularWord': popularWord,
-        # Admin read-only: general sub-pages
-        'pagedesign': pagedesign,
-        'storage': storage,
-        'plugin': plugin,
-        # Admin read-only: system info
-        'searchlog': searchlog,
-        'joblog': joblog,
-        'searchlist': searchlist,
-        'crawlinfo': crawlinfo,
-        'failureurl': failureurl,
-        'logfile': logfile,
-        'backup': backup,
-        'maintenance': maintenance,
-        'configinfo': configinfo,
+        # Package composers: these run every leaf in their package, so the
+        # leaves are deliberately not registered individually here.
+        'general': general,
+        'sysinfo': sysinfo,
         'integration': integration,
     }
 
@@ -205,14 +181,11 @@ def get_modules_to_run() -> List[Any]:
             # edits the morphological analyser's dictionaries, and changed tokenisation
             # would change what the search assertions above see.
             integration,
-            popularWord,
-            # Admin read-only: general
-            pagedesign, storage, plugin,
-            # Admin read-only: system info (data-independent structural first)
-            configinfo, logfile,
-            crawlinfo, joblog, failureurl,
-            searchlog, searchlist,
-            backup, maintenance,
+            sysinfo,
+            # Last: general's final module (loginRequired) briefly closes the
+            # public UI to anonymous visitors. It restores the setting itself,
+            # but if that ever fails, nothing is left queued behind it.
+            general,
         ]
     else:
         # Parse comma-separated list of module names
