@@ -55,13 +55,13 @@ def run(context: FessContext) -> None:
         page.fill("textarea[name=\"description\"]", "Integration test crawler")
 
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("webconfig")
         assert_equal(page.url, context.url("/admin/webconfig/"))
 
         page.wait_for_load_state("domcontentloaded")
         table_content: str = page.inner_text("table")
         assert_not_equal(table_content.find(webconfig_name), -1,
                          f"{webconfig_name} not created in webconfig")
-        created.append("webconfig")
         logger.info(f"✓ Web crawl configuration '{webconfig_name}' created successfully")
 
         # Step 2: Create scheduled job for the crawler
@@ -79,14 +79,17 @@ def run(context: FessContext) -> None:
         page.fill("input[name=\"name\"]", job_name)
         # Leave cronExpression blank for a manual-trigger job (avoids accidental runs)
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("job")
         page.wait_for_load_state("domcontentloaded")
         assert_equal(page.url, context.url("/admin/scheduler/"))
 
-        created.append("job")
         logger.info(f"✓ Scheduled job created for '{webconfig_name}'")
 
         # Step 3: Verify job exists in scheduler
         logger.info("Step 3: Verifying job in scheduler")
+        # Re-fetch rather than read the create response still on screen: this
+        # asserts the job persisted server-side, not merely that the response
+        # echoed it back. Deleting this goto would silently weaken the check.
         page.goto(context.url("/admin/scheduler/"))
         page.wait_for_load_state("domcontentloaded")
 
@@ -114,9 +117,12 @@ def run(context: FessContext) -> None:
         if "webconfig" in created:
             try:
                 logger.info("Step 5: Deleting web crawl configuration")
-                page.click(f"text={t(Labels.MENU_CRAWL)}")
-                page.click(f"text={t(Labels.MENU_WEB)}")
-                assert_equal(page.url, context.url("/admin/webconfig/"))
+                # Navigate directly rather than through the sidebar: cleanup must
+                # not depend on menu state. Whether the Crawler section is already
+                # expanded (clicking it then collapses it, hiding the item beneath)
+                # depends on where the failure above left the page.
+                page.goto(context.url("/admin/webconfig/"))
+                page.wait_for_load_state("domcontentloaded")
 
                 page.click(f"text={webconfig_name}")
                 assert_startswith(page.url, context.url("/admin/webconfig/details/4/"))

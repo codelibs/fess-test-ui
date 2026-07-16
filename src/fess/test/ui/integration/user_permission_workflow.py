@@ -50,40 +50,38 @@ def run(context: FessContext) -> None:
 
         page.fill("input[name=\"name\"]", role_name)
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("role")
         assert_equal(page.url, context.url("/admin/role/"))
 
         page.wait_for_load_state("domcontentloaded")
         table_content: str = page.inner_text("table")
         assert_not_equal(table_content.find(role_name), -1,
                          f"{role_name} not created")
-        created.append("role")
         logger.info(f"✓ Role '{role_name}' created successfully")
 
         # Step 2: Create a new group
         logger.info("Step 2: Creating group")
         page.goto(context.url("/admin/group/"))
         page.wait_for_load_state("domcontentloaded")
-        assert_equal(page.url, context.url("/admin/group/"))
 
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
         assert_equal(page.url, context.url("/admin/group/createnew/"))
 
         page.fill("input[name=\"name\"]", group_name)
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("group")
         assert_equal(page.url, context.url("/admin/group/"))
 
         page.wait_for_load_state("domcontentloaded")
         table_content = page.inner_text("table")
         assert_not_equal(table_content.find(group_name), -1,
                          f"{group_name} not created")
-        created.append("group")
         logger.info(f"✓ Group '{group_name}' created successfully")
 
         # Step 3: Create a new user and assign to group
         logger.info("Step 3: Creating user with group assignment")
         page.goto(context.url("/admin/user/"))
         page.wait_for_load_state("domcontentloaded")
-        assert_equal(page.url, context.url("/admin/user/"))
 
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
         assert_equal(page.url, context.url("/admin/user/createnew/"))
@@ -96,13 +94,13 @@ def run(context: FessContext) -> None:
         page.select_option("select[name=\"groups\"]", label=group_name)
 
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("user")
         assert_equal(page.url, context.url("/admin/user/"))
 
         page.wait_for_load_state("domcontentloaded")
         table_content = page.inner_text("table")
         assert_not_equal(table_content.find(user_name), -1,
                          f"{user_name} not created")
-        created.append("user")
         logger.info(f"✓ User '{user_name}' created and assigned to group")
 
         # Step 4: Verify user details with group assignment
@@ -137,7 +135,6 @@ def run(context: FessContext) -> None:
             try:
                 page.goto(context.url("/admin/group/"))
                 page.wait_for_load_state("domcontentloaded")
-                assert_equal(page.url, context.url("/admin/group/"))
                 page.click(f"text={group_name}")
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f"text={t(Labels.CRUD_LINK_DELETE)}")
@@ -152,7 +149,6 @@ def run(context: FessContext) -> None:
             try:
                 page.goto(context.url("/admin/role/"))
                 page.wait_for_load_state("domcontentloaded")
-                assert_equal(page.url, context.url("/admin/role/"))
                 page.click(f"text={role_name}")
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')

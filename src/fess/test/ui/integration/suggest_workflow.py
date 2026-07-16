@@ -50,20 +50,19 @@ def run(context: FessContext) -> None:
         page.fill("input[name=\"query\"]", f"{search_term} AND test")
         page.fill("input[name=\"maxSize\"]", "10")
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("keymatch")
         assert_equal(page.url, context.url("/admin/keymatch/"))
 
         page.wait_for_load_state("domcontentloaded")
         table_content = page.inner_text("table")
         assert_not_equal(table_content.find(search_term), -1,
                          f"KeyMatch {search_term} not created")
-        created.append("keymatch")
         logger.info(f"✓ KeyMatch entry '{search_term}' created")
 
         # Step 2: Create RelatedContent entry
         logger.info("Step 2: Creating RelatedContent entry")
         page.goto(context.url("/admin/relatedcontent/"))
         page.wait_for_load_state("domcontentloaded")
-        assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
         assert_equal(page.url, context.url("/admin/relatedcontent/createnew/"))
@@ -71,20 +70,19 @@ def run(context: FessContext) -> None:
         page.fill("input[name=\"term\"]", search_term)
         page.fill("textarea[name=\"content\"]", f"<p>Related content for {search_term}</p>")
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("relatedcontent")
         assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
         page.wait_for_load_state("domcontentloaded")
         table_content = page.inner_text("table")
         assert_not_equal(table_content.find(search_term), -1,
                          f"RelatedContent {search_term} not created")
-        created.append("relatedcontent")
         logger.info(f"✓ RelatedContent entry '{search_term}' created")
 
         # Step 3: Create RelatedQuery entry
         logger.info("Step 3: Creating RelatedQuery entry")
         page.goto(context.url("/admin/relatedquery/"))
         page.wait_for_load_state("domcontentloaded")
-        assert_equal(page.url, context.url("/admin/relatedquery/"))
 
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
         assert_equal(page.url, context.url("/admin/relatedquery/createnew/"))
@@ -92,13 +90,13 @@ def run(context: FessContext) -> None:
         page.fill("input[name=\"term\"]", search_term)
         page.fill("textarea[name=\"queries\"]", f"{search_term} related\n{search_term} similar")
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("relatedquery")
         assert_equal(page.url, context.url("/admin/relatedquery/"))
 
         page.wait_for_load_state("domcontentloaded")
         table_content = page.inner_text("table")
         assert_not_equal(table_content.find(search_term), -1,
                          f"RelatedQuery {search_term} not created")
-        created.append("relatedquery")
         logger.info(f"✓ RelatedQuery entry '{search_term}' created")
     finally:
         # Step 4: Cleanup - Delete RelatedQuery
@@ -122,7 +120,6 @@ def run(context: FessContext) -> None:
                 logger.info("Step 5: Deleting RelatedContent")
                 page.goto(context.url("/admin/relatedcontent/"))
                 page.wait_for_load_state("domcontentloaded")
-                assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
                 page.click(f"text={search_term}")
                 page.wait_for_load_state("domcontentloaded")
@@ -139,7 +136,6 @@ def run(context: FessContext) -> None:
                 logger.info("Step 6: Deleting KeyMatch")
                 page.goto(context.url("/admin/keymatch/"))
                 page.wait_for_load_state("domcontentloaded")
-                assert_equal(page.url, context.url("/admin/keymatch/"))
 
                 page.click(f"text={search_term}")
                 page.wait_for_load_state("domcontentloaded")

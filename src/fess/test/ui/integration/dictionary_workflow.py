@@ -11,6 +11,25 @@ from playwright.sync_api import Playwright, sync_playwright
 logger = logging.getLogger(__name__)
 
 
+def _last_page(page: "Page") -> int:
+    """Last page number of an admin dictionary list, read from the "n/m" pager.
+
+    New entries are appended at the end of the list, so a dictionary that
+    ships with more rows than fit on one page puts a freshly created entry on
+    the last page rather than the first. Falls back to 1 when the pager cannot
+    be read, and says so: a silent fall back to page 1 looks exactly like a
+    record that was never created.
+    """
+    page_info: str = page.inner_text("div.col-sm-2")
+    match = re.search(r'(\d+)/(\d+)', page_info)
+    if not match:
+        logger.warning(f"could not read the pager from {page_info!r}; assuming a "
+                       f"single page. If the entry is not found below, suspect this "
+                       f"first -- the div.col-sm-2 markup may have changed.")
+        return 1
+    return int(match.group(2))
+
+
 def setup(playwright: Playwright) -> FessContext:
     context: FessContext = FessContext(playwright)
     context.login()
@@ -54,6 +73,11 @@ def run(context: FessContext) -> None:
         page.fill("input[name=\"reading\"]", "ゼンブン ケンサク エンジン")
         page.fill("input[name=\"pos\"]", "名詞")
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        # Register for cleanup before verifying. If an assertion below fails
+        # after the record landed, finally must still delete it -- gating
+        # cleanup on the verification would leak the record silently, with no
+        # LEAKED log, onto an instance every later module shares.
+        created.append("kuromoji")
         assert_equal(page.url, context.url("/admin/dict/kuromoji/list/1?dictId=amEva3Vyb21vamkudHh0"))
         page.wait_for_load_state("domcontentloaded")
 
@@ -61,7 +85,6 @@ def run(context: FessContext) -> None:
         assert_not_equal(table_content.find(test_word), -1,
                          f"{test_word} not in {table_content}")
 
-        created.append("kuromoji")
         logger.info(f"✓ Kuromoji entry '{test_word}' created")
 
         # Step 3: Add protwords entry
@@ -75,6 +98,7 @@ def run(context: FessContext) -> None:
 
         page.fill("input[name=\"input\"]", test_word)
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("protwords")
         assert_equal(page.url, context.url("/admin/dict/protwords/list/1?dictId=ZW4vcHJvdHdvcmRzLnR4dA=="))
         page.wait_for_load_state("domcontentloaded")
 
@@ -82,7 +106,6 @@ def run(context: FessContext) -> None:
         assert_not_equal(table_content.find(test_word), -1,
                          f"{test_word} not in {table_content}")
 
-        created.append("protwords")
         logger.info(f"✓ Protwords entry '{test_word}' created")
 
         # Step 4: Add mapping entry
@@ -97,22 +120,19 @@ def run(context: FessContext) -> None:
         page.fill("textarea[name=\"inputs\"]", test_word)
         page.fill("input[name=\"output\"]", "mapped_value")
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("mapping")
         assert_equal(page.url, context.url("/admin/dict/mapping/list/1?dictId=bWFwcGluZy50eHQ="))
         page.wait_for_load_state("domcontentloaded")
 
-        # New entries are appended at the end of the list; jump to
-        # the last page to find the one just created.
-        page_info: str = page.inner_text("div.col-sm-2")
-        match = re.search(r'(\d+)/(\d+)', page_info)
-        last_page = int(match.group(2)) if match else 1
-        page.goto(page.url.replace("/list/1", f"/list/{last_page}"))
+        # mapping.txt ships with over a thousand entries, so the new one is not
+        # on page 1 -- see _last_page.
+        page.goto(page.url.replace("/list/1", f"/list/{_last_page(page)}"))
         page.wait_for_load_state("domcontentloaded")
 
         table_content = page.inner_text("table")
         assert_not_equal(table_content.find(test_word), -1,
                          f"{test_word} not in {table_content}")
 
-        created.append("mapping")
         logger.info(f"✓ Mapping entry '{test_word}' created")
     finally:
         # Step 5: Cleanup - Delete mapping entry
@@ -123,13 +143,9 @@ def run(context: FessContext) -> None:
                 page.click(":nth-match(:text(\"mapping.txt\"), 3)")
                 page.wait_for_load_state("domcontentloaded")
 
-                # New entries are appended at the end of the list; jump to
-                # the last page to find the one just created.
-                page_info: str = page.inner_text("div.col-sm-2")
-                match = re.search(r'(\d+)/(\d+)', page_info)
-                last_page = int(match.group(2)) if match else 1
-                page.goto(page.url.replace("/admin/dict/mapping/?dictId=",
-                                            f"/admin/dict/mapping/list/{last_page}?dictId="))
+                page.goto(page.url.replace(
+                    "/admin/dict/mapping/?dictId=",
+                    f"/admin/dict/mapping/list/{_last_page(page)}?dictId="))
                 page.wait_for_load_state("domcontentloaded")
 
                 # The list cell renders data.inputs (a List) via
