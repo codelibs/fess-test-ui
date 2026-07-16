@@ -89,11 +89,22 @@ def _assert_offset_over_max_is_reported(page, context: FessContext) -> None:
 def _assert_offset_at_max_does_not_trip_the_guard(page, context: FessContext) -> None:
     """The boundary: at exactly the max offset the guard must stay silent.
 
-    Fess checks `start > max`, so relaxing that to `>=` would report the
-    result-size error one document early and turn this red. Only the absence
-    of THAT message is asserted: the search engine still rejects an offset
-    this deep for its own reasons (max_result_window), which is not this
-    guard's behaviour and not this suite's to pin.
+    Fess checks `start > max` (SearchEngineClient:2215) against
+    query.max.search.result.offset=100000, so relaxing it to `>=` would report
+    the result-size error one document early and turn this red.
+
+    EXPECT A FESS 500 AND A STACK TRACE IN THE LOG FROM THIS CHECK. That is
+    not a failure and not something to chase: clearing the offset guard hands
+    the request to the search engine, and from+size at this depth exceeds
+    max_result_window (10000 by default, and Fess does not raise it), so the
+    engine refuses it and the request ends on the system-error page. The
+    boundary cannot be probed without provoking that -- 100000 IS the guard's
+    limit.
+
+    Only the ABSENCE of the result-size message is asserted. Do not "improve"
+    this by also asserting the landing path: the page it lands on today is
+    Fess's 500, and pinning that would lock in a defect and go red the day
+    someone raises max_result_window or handles the engine's refusal.
     """
     _search(page, context, f"?q=alpha&start={MAX_OFFSET}")
 
