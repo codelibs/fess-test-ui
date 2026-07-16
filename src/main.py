@@ -44,6 +44,7 @@ from fess.test.ui.admin.dict import (kuromoji,
                                      synonym)
 
 from fess.test.ui.search import (
+    advance as search_advance,
     facet as search_facet,
     form_submit as search_form_submit,
     help as search_help,
@@ -165,6 +166,7 @@ def get_modules_to_run() -> List[Any]:
         'search_profile_form': search_profile_form,
         'search_form_submit': search_form_submit,
         'search_query': search_query,
+        'search_advance': search_advance,
         'search_no_results': search_no_results,
         'search_pagination': search_pagination,
         'search_facet': search_facet,
@@ -222,7 +224,7 @@ def get_modules_to_run() -> List[Any]:
             search_seed,
             search_root_top, search_top, search_help, search_login_form,
             search_profile_form, search_form_submit,
-            search_query, search_no_results,
+            search_query, search_advance, search_no_results,
             search_pagination, search_facet, search_sort,
             search_thumbnail, search_suggest, search_related,
             search_i18n_smoke, search_multibyte_query,
