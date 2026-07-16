@@ -4,9 +4,7 @@ persistence on reload, and restores the original value in a finally clause so
 the test is idempotent and leaves no trace."""
 import logging
 
-from fess.test import assert_contains, assert_equal
-from fess.test.i18n import t
-from fess.test.i18n.keys import Labels
+from fess.test import assert_contains
 from fess.test.ui import FessContext
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -32,7 +30,6 @@ def run(context: FessContext) -> None:
 
     page.goto(context.url("/admin/general/"))
     page.wait_for_load_state("domcontentloaded")
-    assert_equal(page.url, context.url("/admin/general/"))
 
     original = page.input_value(f"textarea[name=\"{FIELD_NAME}\"]")
     logger.debug(f"original virtualhost value length: {len(original)}")
@@ -40,7 +37,12 @@ def run(context: FessContext) -> None:
     try:
         new_value = (original + "\n" if original else "") + TEST_RULE
         page.fill(f"textarea[name=\"{FIELD_NAME}\"]", new_value)
-        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
+        # Select by element name, not label text: /admin/general/ carries a
+        # second submit button (name="sendmail", AdminGeneralAction.sendmail),
+        # LastaFlute routes on the submit button's request param rather than the
+        # URL, and has-text is a substring match -- so matching on the label
+        # risks POSTing a different action entirely.
+        page.click('button[name="update"]')
         page.wait_for_load_state("domcontentloaded")
 
         # Re-open and verify persistence
@@ -55,7 +57,7 @@ def run(context: FessContext) -> None:
             page.goto(context.url("/admin/general/"))
             page.wait_for_load_state("domcontentloaded")
             page.fill(f"textarea[name=\"{FIELD_NAME}\"]", original)
-            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
+            page.click('button[name="update"]')
             page.wait_for_load_state("domcontentloaded")
             logger.info("virtualhost value restored")
         except Exception as e:

@@ -68,6 +68,33 @@ from fess.test.ui.search import (
 
 from fess.test.ui import integration
 
+# Leaves of the general/ and sysinfo/ packages. The default run drives the two
+# composers imported above; these aliases exist so TEST_MODULES can name a
+# single leaf when debugging one settings page.
+from fess.test.ui.admin.general import (
+    jsonResponse as general_jsonResponse,
+    logLevel as general_logLevel,
+    loginLink as general_loginLink,
+    loginRequired as general_loginRequired,
+    notificationLogin as general_notificationLogin,
+    notificationSearchTop as general_notificationSearchTop,
+    pagedesign as general_pagedesign,
+    plugin as general_plugin,
+    popularWord as general_popularWord,
+    storage as general_storage,
+)
+from fess.test.ui.admin.sysinfo import (
+    backup as sysinfo_backup,
+    configinfo as sysinfo_configinfo,
+    crawlinfo as sysinfo_crawlinfo,
+    failureurl as sysinfo_failureurl,
+    joblog as sysinfo_joblog,
+    logfile as sysinfo_logfile,
+    maintenance as sysinfo_maintenance,
+    searchlist as sysinfo_searchlist,
+    searchlog as sysinfo_searchlog,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -150,11 +177,35 @@ def get_modules_to_run() -> List[Any]:
         'search_layout_overflow': search_layout_overflow,
         'search_console_errors': search_console_errors,
         'search_multibyte_admin_input': search_multibyte_admin_input,
-        # Package composers: these run every leaf in their package, so the
-        # leaves are deliberately not registered individually here.
+        # Package composers. The default run drives these, not their leaves:
+        # a leaf added to the package then runs without anyone remembering to
+        # touch this file, which is exactly how the six general modules stayed
+        # unregistered and unrun.
         'general': general,
         'sysinfo': sysinfo,
         'integration': integration,
+        # The same leaves, addressable individually so TEST_MODULES can still
+        # name one while debugging (TEST_MODULES=storage). Filtering only --
+        # they are absent from the default order above by design.
+        'jsonResponse': general_jsonResponse,
+        'logLevel': general_logLevel,
+        'loginLink': general_loginLink,
+        'loginRequired': general_loginRequired,
+        'notificationLogin': general_notificationLogin,
+        'notificationSearchTop': general_notificationSearchTop,
+        'pagedesign': general_pagedesign,
+        'plugin': general_plugin,
+        'popularWord': general_popularWord,
+        'storage': general_storage,
+        'backup': sysinfo_backup,
+        'configinfo': sysinfo_configinfo,
+        'crawlinfo': sysinfo_crawlinfo,
+        'failureurl': sysinfo_failureurl,
+        'joblog': sysinfo_joblog,
+        'logfile': sysinfo_logfile,
+        'maintenance': sysinfo_maintenance,
+        'searchlist': sysinfo_searchlist,
+        'searchlog': sysinfo_searchlog,
     }
 
     # Check for TEST_MODULES environment variable
