@@ -46,8 +46,15 @@ def _open_advance(page, context: FessContext) -> None:
     page.wait_for_load_state("domcontentloaded")
     # SearchAction.advance() redirects to /login/ when isLoginRequired();
     # landing anywhere else means the page under test never rendered.
-    assert_true("/search/advance" in page.url,
-                f"expected /search/advance, got {page.url}")
+    #
+    # Compare the parsed path, not a substring of the whole URL. If the route
+    # disappeared, the 404 handler redirects to /error/notfound/?url=%2Fsearch%2Fadvance
+    # -- which contains "/search/advance" only in percent-encoded form, so a
+    # substring test happens to still work. Relying on that is fragile: it turns
+    # on how the browser normalises %2F, and it would silently stop failing if
+    # that ever changed.
+    assert_equal(urlparse(page.url).path.rstrip("/"), "/search/advance",
+                 f"expected /search/advance, got {page.url}")
 
 
 def _submit(page) -> None:

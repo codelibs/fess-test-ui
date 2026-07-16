@@ -31,10 +31,19 @@ done
 shopt -u nullglob
 rm -rf "${DEST}/_tmp"
 
-if [ ! -f "${DEST}/fess_label.properties" ]; then
-    echo "ERROR: fess_label.properties not found in ${IMAGE}" >&2
-    exit 1
-fi
+# Guard both families. The glob above runs under `shopt -s nullglob`, so a Fess
+# image that stopped shipping either one would expand to nothing and this script
+# would still exit 0 -- the failure would only surface later, as a
+# FileNotFoundError pointing at /labels rather than at extraction. Both are
+# load-bearing: i18n.init() constructs LabelStrings and MessageStrings
+# unconditionally, so a missing file of either kind kills the whole run before a
+# single test module executes.
+for required in fess_label.properties fess_message.properties; do
+    if [ ! -f "${DEST}/${required}" ]; then
+        echo "ERROR: ${required} not found in ${IMAGE}" >&2
+        exit 1
+    fi
+done
 
 echo "Extracted ${moved} files. Sample:"
 ls -1 "${DEST}" | head -5

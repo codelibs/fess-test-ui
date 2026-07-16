@@ -79,7 +79,10 @@ def _assert_lands_on_notfound(page, context: FessContext, requested: str) -> Non
     assert_equal(landed.path, NOTFOUND_PATH,
                  f"expected {requested} to land on {NOTFOUND_PATH}, got {page.url}")
     # redirect.jsp:31-33 URL-encodes the original request URI into ?url=.
-    # Playwright decodes it back for us.
+    # parse_qs does the decoding, not Playwright: page.url hands back the
+    # percent-encoded form (%2F stays %2F), and parse_qs is what turns it back
+    # into the original path. Do not "simplify" this into a substring test on
+    # page.url -- that would be testing the encoded form by accident.
     assert_equal(parse_qs(landed.query).get("url"), [requested],
                  f"expected ?url={requested} after landing, got {page.url}")
     assert_contains_marker(page, t(Labels.PAGE_NOT_FOUND_TITLE), page.url)
