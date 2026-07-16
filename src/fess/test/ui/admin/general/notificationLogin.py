@@ -23,6 +23,7 @@ import requests
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup
 
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
@@ -101,11 +102,16 @@ def run(context: FessContext) -> None:
         assert_equal(_notification_on_login_page(context), test_value,
                      "saved notificationLogin text is not what the login page shows")
     finally:
-        try:
+        # assert_saved, not just the click: a rejected save raises nothing --
+        # the page simply re-renders with ul.has-error -- so without it the
+        # log below would claim a restore that never happened.
+        cleanup = Cleanup()
+        with cleanup.guard(f"notificationLogin not restored (left showing the "
+                           f"test banner {test_value!r} on the login page)"):
             _save(context, page, original)
+            assert_saved(page)
             logger.info("notificationLogin restored")
-        except Exception as e:
-            logger.warning(f"notificationLogin restore failed (continuing): {e}")
+        cleanup.escalate()
 
     logger.info("notificationLogin test completed")
 

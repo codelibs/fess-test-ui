@@ -5,6 +5,7 @@ from fess.test import assert_equal, assert_not_equal
 from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup, assert_absent
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -99,9 +100,11 @@ def run(context: FessContext) -> None:
                          f"RelatedQuery {search_term} not created")
         logger.info(f"✓ RelatedQuery entry '{search_term}' created")
     finally:
+        cleanup = Cleanup()
+
         # Step 4: Cleanup - Delete RelatedQuery
         if "relatedquery" in created:
-            try:
+            with cleanup.guard(f"RelatedQuery entry '{search_term}'"):
                 logger.info("Step 4: Cleanup - deleting RelatedQuery")
                 page.goto(context.url("/admin/relatedquery/"))
                 page.wait_for_load_state("domcontentloaded")
@@ -109,14 +112,13 @@ def run(context: FessContext) -> None:
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
                 page.click('div.modal-footer button[name="delete"]')
-                assert_equal(page.url, context.url("/admin/relatedquery/"))
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, search_term, "/admin/relatedquery/")
                 logger.info("✓ RelatedQuery entry deleted")
-            except Exception as e:
-                logger.error(f"LEAKED RelatedQuery entry '{search_term}' — will pollute later modules: {e}")
 
         # Step 5: Delete RelatedContent
         if "relatedcontent" in created:
-            try:
+            with cleanup.guard(f"RelatedContent entry '{search_term}'"):
                 logger.info("Step 5: Deleting RelatedContent")
                 page.goto(context.url("/admin/relatedcontent/"))
                 page.wait_for_load_state("domcontentloaded")
@@ -125,14 +127,13 @@ def run(context: FessContext) -> None:
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
                 page.click('div.modal-footer button[name="delete"]')
-                assert_equal(page.url, context.url("/admin/relatedcontent/"))
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, search_term, "/admin/relatedcontent/")
                 logger.info("✓ RelatedContent entry deleted")
-            except Exception as e:
-                logger.error(f"LEAKED RelatedContent entry '{search_term}' — will pollute later modules: {e}")
 
         # Step 6: Delete KeyMatch
         if "keymatch" in created:
-            try:
+            with cleanup.guard(f"KeyMatch entry '{search_term}'"):
                 logger.info("Step 6: Deleting KeyMatch")
                 page.goto(context.url("/admin/keymatch/"))
                 page.wait_for_load_state("domcontentloaded")
@@ -141,10 +142,11 @@ def run(context: FessContext) -> None:
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
                 page.click('div.modal-footer button[name="delete"]')
-                assert_equal(page.url, context.url("/admin/keymatch/"))
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, search_term, "/admin/keymatch/")
                 logger.info("✓ KeyMatch entry deleted")
-            except Exception as e:
-                logger.error(f"LEAKED KeyMatch entry '{search_term}' — will pollute later modules: {e}")
+
+        cleanup.escalate()
 
     logger.info("✓ Suggest workflow integration test completed successfully")
 

@@ -40,6 +40,7 @@ from fess.test.i18n import t, tm
 from fess.test.i18n.keys import Labels
 from fess.test.i18n.message_keys import Messages
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup, assert_absent
 
 logger = logging.getLogger(__name__)
 
@@ -207,16 +208,13 @@ def run(context: FessContext) -> None:
                     f"the finish button should land back on the wizard index; "
                     f"no button[name=\"crawlingConfigForm\"] at {page.url}")
     finally:
+        cleanup = Cleanup()
         for name in created:
-            try:
+            with cleanup.guard(f"web config '{name}' created by the wizard"):
                 _delete_webconfig(page, context, name)
-                listed = page.inner_text("section.content")
-                assert_equal(listed.find(name), -1,
-                             f"{name} still listed after delete")
+                assert_absent(page, name, WEBCONFIG_URL)
                 logger.info(f"cleaned up wizard config {name}")
-            except Exception as e:
-                logger.error(f"LEAKED web config '{name}' created by the wizard "
-                             f"— will pollute later modules: {e}")
+        cleanup.escalate()
 
     logger.info("wizard crawling_config test completed successfully")
 

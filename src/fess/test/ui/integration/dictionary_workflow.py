@@ -6,6 +6,7 @@ from fess.test import assert_equal, assert_not_equal
 from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup, assert_absent
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,22 @@ def _last_page(page: "Page") -> int:
                        f"first -- the div.col-sm-2 markup may have changed.")
         return 1
     return int(match.group(2))
+
+
+def _assert_entry_deleted(page: "Page", word: str, where: str) -> None:
+    """Assert `word` is gone, looking on the page a survivor would be on.
+
+    Every dict delete ends in redirectWith(..., moreUrl("list/1")), but new
+    entries are appended, so an entry that survived deletion sits on the LAST
+    page (see _last_page). Checking whichever page the redirect lands on would
+    therefore pass while the row sat pages away -- an assertion that cannot
+    fail, which is exactly what this replaces.
+
+    _last_page is read before the goto, off the list/1 pager we land on.
+    """
+    page.goto(page.url.replace("/list/1", f"/list/{_last_page(page)}"))
+    page.wait_for_load_state("domcontentloaded")
+    assert_absent(page, word, where)
 
 
 def setup(playwright: Playwright) -> FessContext:
@@ -135,9 +152,14 @@ def run(context: FessContext) -> None:
 
         logger.info(f"✓ Mapping entry '{test_word}' created")
     finally:
+        # These entries are GLOBAL analyzer config: a survivor changes
+        # tokenisation for every later run on this shared instance, so a leak
+        # here is escalated rather than merely logged.
+        cleanup = Cleanup()
+
         # Step 5: Cleanup - Delete mapping entry
         if "mapping" in created:
-            try:
+            with cleanup.guard(f"mapping dictionary entry '{test_word}' (global analyzer config)"):
                 logger.info("Step 5: Cleanup - deleting mapping entry")
                 page.goto(context.url("/admin/dict/"))
                 page.click(":nth-match(:text(\"mapping.txt\"), 3)")
@@ -155,13 +177,12 @@ def run(context: FessContext) -> None:
                 page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
                 page.click('div.modal-footer button[name="delete"]')
                 page.wait_for_load_state("domcontentloaded")
+                _assert_entry_deleted(page, test_word, "mapping.txt")
                 logger.info("✓ Mapping entry deleted")
-            except Exception as e:
-                logger.error(f"LEAKED mapping dictionary entry '{test_word}' (global analyzer config) — will pollute later modules: {e}")
 
         # Step 6: Delete protwords entry
         if "protwords" in created:
-            try:
+            with cleanup.guard(f"protwords dictionary entry '{test_word}' (global analyzer config)"):
                 logger.info("Step 6: Deleting protwords entry")
                 page.goto(context.url("/admin/dict/"))
                 page.click("text=en/protwords.txt")
@@ -172,13 +193,12 @@ def run(context: FessContext) -> None:
                 page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
                 page.click('div.modal-footer button[name="delete"]')
                 page.wait_for_load_state("domcontentloaded")
+                _assert_entry_deleted(page, test_word, "en/protwords.txt")
                 logger.info("✓ Protwords entry deleted")
-            except Exception as e:
-                logger.error(f"LEAKED protwords dictionary entry '{test_word}' (global analyzer config) — will pollute later modules: {e}")
 
         # Step 7: Delete kuromoji entry
         if "kuromoji" in created:
-            try:
+            with cleanup.guard(f"kuromoji dictionary entry '{test_word}' (global analyzer config)"):
                 logger.info("Step 7: Deleting kuromoji entry")
                 page.goto(context.url("/admin/dict/"))
                 page.click("text=ja/kuromoji.txt")
@@ -189,9 +209,10 @@ def run(context: FessContext) -> None:
                 page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
                 page.click('div.modal-footer button[name="delete"]')
                 page.wait_for_load_state("domcontentloaded")
+                _assert_entry_deleted(page, test_word, "ja/kuromoji.txt")
                 logger.info("✓ Kuromoji entry deleted")
-            except Exception as e:
-                logger.error(f"LEAKED kuromoji dictionary entry '{test_word}' (global analyzer config) — will pollute later modules: {e}")
+
+        cleanup.escalate()
 
     logger.info("✓ Dictionary workflow integration test completed successfully")
 

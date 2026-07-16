@@ -17,6 +17,7 @@ import logging
 
 from fess.test import assert_equal
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup
 
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
@@ -70,15 +71,19 @@ def run(context: FessContext) -> None:
         assert_equal(persisted, target,
                      f"logLevel select did not hold the saved value; expected {target}, got {persisted}")
     finally:
-        try:
+        # assert_saved, not just the click: a rejected save raises nothing --
+        # the page simply re-renders with ul.has-error -- so without it the
+        # log below would claim a restore that never happened.
+        cleanup = Cleanup()
+        with cleanup.guard(f"logLevel not restored to {original} (left at {target})"):
             page.goto(context.url(GENERAL_PATH))
             page.wait_for_load_state("domcontentloaded")
             page.select_option(FIELD, original)
             page.click(SAVE_BUTTON)
             page.wait_for_load_state("domcontentloaded")
+            assert_saved(page)
             logger.info(f"logLevel restored to {original}")
-        except Exception as e:
-            logger.warning(f"logLevel restore failed (continuing): {e}")
+        cleanup.escalate()
 
     logger.info("logLevel test completed")
 

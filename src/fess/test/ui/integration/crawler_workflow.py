@@ -5,6 +5,7 @@ from fess.test import assert_equal, assert_not_equal, assert_startswith
 from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup, assert_absent
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -98,9 +99,11 @@ def run(context: FessContext) -> None:
                          f"Job for {webconfig_name} not found in scheduler")
         logger.info(f"✓ Job verified in scheduler")
     finally:
+        cleanup = Cleanup()
+
         # Step 4: Delete the job (cleanup)
         if "job" in created:
-            try:
+            with cleanup.guard(f"scheduled job '{job_name}'"):
                 logger.info("Step 4: Deleting scheduled job")
                 page.goto(context.url("/admin/scheduler/"))
                 page.wait_for_load_state("domcontentloaded")
@@ -109,13 +112,12 @@ def run(context: FessContext) -> None:
                 page.click(f"text={t(Labels.CRUD_BUTTON_DELETE)}")
                 page.click('div.modal-footer button[name="delete"]')
                 page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, job_name, "/admin/scheduler/")
                 logger.info("✓ Job deleted")
-            except Exception as e:
-                logger.error(f"LEAKED scheduled job '{job_name}' — will pollute later modules: {e}")
 
         # Step 5: Delete crawler configuration (cleanup)
         if "webconfig" in created:
-            try:
+            with cleanup.guard(f"webconfig '{webconfig_name}'"):
                 logger.info("Step 5: Deleting web crawl configuration")
                 # Navigate directly rather than through the sidebar: cleanup must
                 # not depend on menu state. Whether the Crawler section is already
@@ -129,15 +131,12 @@ def run(context: FessContext) -> None:
 
                 page.click(f"text={t(Labels.CRUD_BUTTON_DELETE)}")
                 page.click('div.modal-footer button[name="delete"]')
-                assert_equal(page.url, context.url("/admin/webconfig/"))
 
                 page.wait_for_load_state("domcontentloaded")
-                table_content = page.inner_text("section.content")
-                assert_equal(table_content.find(webconfig_name), -1,
-                             f"{webconfig_name} still exists after deletion")
+                assert_absent(page, webconfig_name, "/admin/webconfig/")
                 logger.info(f"✓ Web crawl configuration deleted")
-            except Exception as e:
-                logger.error(f"LEAKED webconfig '{webconfig_name}' — will pollute later modules: {e}")
+
+        cleanup.escalate()
 
     logger.info("✓ Crawler workflow integration test completed successfully")
 

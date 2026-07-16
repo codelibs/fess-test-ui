@@ -5,6 +5,7 @@ from fess.test import assert_equal, assert_not_equal, assert_startswith
 from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup, assert_absent
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -115,48 +116,48 @@ def run(context: FessContext) -> None:
     finally:
         # Step 5: Cleanup - Delete user, group, and role
         logger.info("Step 5: Cleanup - deleting user, group, and role")
+        cleanup = Cleanup()
 
         # Delete user (known password: testpassword123 — must not leak)
         if "user" in created:
-            try:
+            with cleanup.guard(f"user '{user_name}' with known password 'testpassword123'"):
                 page.goto(context.url("/admin/user/"))
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f"text={user_name}")
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f"text={t(Labels.CRUD_LINK_DELETE)}")
                 page.click('div.modal-footer button[name="delete"]')
-                assert_equal(page.url, context.url("/admin/user/"))
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, user_name, "/admin/user/")
                 logger.info(f"✓ User '{user_name}' deleted")
-            except Exception as e:
-                logger.error(f"LEAKED user '{user_name}' with known password 'testpassword123' — will pollute later modules: {e}")
 
         # Delete group
         if "group" in created:
-            try:
+            with cleanup.guard(f"group '{group_name}'"):
                 page.goto(context.url("/admin/group/"))
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f"text={group_name}")
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f"text={t(Labels.CRUD_LINK_DELETE)}")
                 page.click('div.modal-footer button[name="delete"]')
-                assert_equal(page.url, context.url("/admin/group/"))
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, group_name, "/admin/group/")
                 logger.info(f"✓ Group '{group_name}' deleted")
-            except Exception as e:
-                logger.error(f"LEAKED group '{group_name}' — will pollute later modules: {e}")
 
         # Delete role
         if "role" in created:
-            try:
+            with cleanup.guard(f"role '{role_name}'"):
                 page.goto(context.url("/admin/role/"))
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f"text={role_name}")
                 page.wait_for_load_state("domcontentloaded")
                 page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
                 page.click('div.modal-footer button[name="delete"]')
-                assert_equal(page.url, context.url("/admin/role/"))
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, role_name, "/admin/role/")
                 logger.info(f"✓ Role '{role_name}' deleted")
-            except Exception as e:
-                logger.error(f"LEAKED role '{role_name}' — will pollute later modules: {e}")
+
+        cleanup.escalate()
 
     logger.info("✓ User permission workflow integration test completed successfully")
 

@@ -22,6 +22,7 @@ import requests
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup
 
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
@@ -105,11 +106,16 @@ def run(context: FessContext) -> None:
         assert_equal(_notification_on_top_page(context), test_value,
                      "saved notificationSearchTop text is not what the top page shows")
     finally:
-        try:
+        # assert_saved, not just the click: a rejected save raises nothing --
+        # the page simply re-renders with ul.has-error -- so without it the
+        # log below would claim a restore that never happened.
+        cleanup = Cleanup()
+        with cleanup.guard(f"notificationSearchTop not restored (left showing "
+                           f"the test banner {test_value!r} on the top page)"):
             _save(context, page, original)
+            assert_saved(page)
             logger.info("notificationSearchTop restored")
-        except Exception as e:
-            logger.warning(f"notificationSearchTop restore failed (continuing): {e}")
+        cleanup.escalate()
 
     logger.info("notificationSearchTop test completed")
 
