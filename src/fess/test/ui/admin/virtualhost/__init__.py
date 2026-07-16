@@ -6,6 +6,8 @@ import logging
 
 from fess.test import assert_contains
 from fess.test.ui import FessContext
+from fess.test.ui.admin.general._saved import assert_saved
+from fess.test.ui.cleanup import Cleanup
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -52,16 +54,19 @@ def run(context: FessContext) -> None:
         assert_contains(persisted, TEST_RULE,
                         f"TEST_RULE not in virtualhost textarea after save; got first 200 chars: {persisted[:200]}")
     finally:
-        # Restore original value no matter what happened above
-        try:
+        # assert_saved, not just the click: a rejected save raises nothing --
+        # the page simply re-renders with ul.has-error -- so without it the
+        # log below would claim a restore that never happened.
+        cleanup = Cleanup()
+        with cleanup.guard(f"virtualhost value not restored (left carrying {TEST_RULE!r})"):
             page.goto(context.url("/admin/general/"))
             page.wait_for_load_state("domcontentloaded")
             page.fill(f"textarea[name=\"{FIELD_NAME}\"]", original)
             page.click('button[name="update"]')
             page.wait_for_load_state("domcontentloaded")
+            assert_saved(page)
             logger.info("virtualhost value restored")
-        except Exception as e:
-            logger.warning(f"virtualhost restore failed (continuing): {e}")
+        cleanup.escalate()
 
     logger.info("virtualhost test completed")
 

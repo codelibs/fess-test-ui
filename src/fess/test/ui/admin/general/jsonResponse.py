@@ -17,6 +17,7 @@ import logging
 
 from fess.test import assert_contains, assert_equal
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup
 
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
@@ -117,11 +118,15 @@ def run(context: FessContext) -> None:
         assert_contains(enabled_response.json(), "response",
                         "v2 search response is missing its top-level 'response' key")
     finally:
-        try:
+        # assert_saved, not just the click: a rejected save raises nothing --
+        # the page simply re-renders with ul.has-error -- so without it the
+        # log below would claim a restore that never happened.
+        cleanup = Cleanup()
+        with cleanup.guard(f"webApiJson not restored to {original}"):
             _set_web_api_json(context, page, original)
+            assert_saved(page)
             logger.info(f"webApiJson restored to {original}")
-        except Exception as e:
-            logger.warning(f"webApiJson restore failed (continuing): {e}")
+        cleanup.escalate()
 
     logger.info("jsonResponse (webApiJson) test completed")
 
