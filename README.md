@@ -16,7 +16,7 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 - **Testing Framework**: [Playwright](https://playwright.dev/) 1.56.0 with Python
 - **Containerization**: Docker & Docker Compose
 - **Search Engines**: OpenSearch 2.19.1, OpenSearch 3.7.0
-- **Fess Versions**: 15.3.2 (stable), snapshot builds
+- **Fess Versions**: 15.7.0 (stable), snapshot builds
 - **Base Images**: Microsoft Playwright (Ubuntu Noble), CodeLibs Fess & OpenSearch
 
 ## Status
@@ -76,9 +76,9 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 ## Available Configurations
 
 ### Fess Versions
-- `fess15` - Fess 15.2.0 (Debian-based)
-- `fess15-al2023` - Fess 15.2.0 (Amazon Linux 2023)
-- `fess15-noble` - Fess 15.2.0 (Ubuntu Noble)
+- `fess15` - Fess 15.7.0 (Debian-based)
+- `fess15-al2023` - Fess 15.7.0 (Amazon Linux 2023)
+- `fess15-noble` - Fess 15.7.0 (Ubuntu Noble)
 - `fessx` - Latest snapshot (Debian-based)
 - `fessx-al2023` - Latest snapshot (Amazon Linux 2023)
 - `fessx-noble` - Latest snapshot (Ubuntu Noble)

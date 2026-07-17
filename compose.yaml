@@ -14,7 +14,7 @@ services:
       # so without these lines they are silently dropped at the container
       # boundary and the features can never be switched on. Same bug 9f7004c
       # fixed for TEST_MODULES.
-      - "HTML_CAPTURE=${HTML_CAPTURE:-false}"
+      - "HTML_CAPTURE=${HTML_CAPTURE:-on_failure}"
       - "HTML_CAPTURE_DIR=${HTML_CAPTURE_DIR:-html_snapshots}"
       - "TRACE_ON_FAILURE=${TRACE_ON_FAILURE:-false}"
       - "TRACE_ALL=${TRACE_ALL:-false}"
