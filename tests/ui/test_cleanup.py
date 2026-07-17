@@ -5,9 +5,12 @@ log line, and it does so from inside a `finally` block where getting it wrong
 means masking the real failure. That logic is pure Python, so it is pinned here
 rather than only in a Docker run.
 """
+import re
+
 import pytest
 
-from fess.test.ui.cleanup import Cleanup, CleanupError, assert_absent
+from fess.test.ui.cleanup import (MAX_DELETE_ITERATIONS, Cleanup, CleanupError,
+                                  assert_absent, delete_by_name)
 
 
 class _FakePage:
@@ -18,6 +21,67 @@ class _FakePage:
 
     def inner_text(self, selector: str) -> str:
         return self._text
+
+
+class _FakeContext:
+    def url(self, path: str) -> str:
+        return f"http://fess{path}"
+
+
+class _FakeLocator:
+    def __init__(self, page: "_FakeListPage", name: str):
+        self._page = page
+        self._name = name
+
+    def count(self) -> int:
+        return self._page.rows.count(self._name)
+
+    @property
+    def first(self) -> "_FakeLocator":
+        return self
+
+    def click(self) -> None:
+        self._page.selected = self._name
+
+
+class _FakeListPage:
+    """An admin list page with rows that the delete flow actually removes.
+
+    Models the real flow: clicking the row opens its details, and it is the
+    modal-footer button that deletes. `deletes` = False makes every delete a
+    no-op, which is how a non-progressing loop is exercised.
+    """
+
+    ROW_RE = re.compile(r'tr:has-text\("(.*)"\)')
+
+    def __init__(self, rows: list, deletes: bool = True):
+        self.rows = list(rows)
+        self.deletes = deletes
+        self.selected = None
+        self.gotos = 0
+
+    def goto(self, url: str) -> None:
+        self.gotos += 1
+
+    def wait_for_load_state(self, state: str) -> None:
+        pass
+
+    def locator(self, selector: str) -> _FakeLocator:
+        return _FakeLocator(self, self.ROW_RE.search(selector).group(1))
+
+    def click(self, selector: str) -> None:
+        if 'name="delete"' in selector and self.deletes and self.selected in self.rows:
+            self.rows.remove(self.selected)
+
+    def inner_text(self, selector: str) -> str:
+        return "\n".join(self.rows)
+
+
+@pytest.fixture(autouse=True)
+def _no_i18n(monkeypatch):
+    """delete_by_name resolves the Delete button's label through t(), which
+    needs an initialized bundle. The loop is what is under test here."""
+    monkeypatch.setattr("fess.test.ui.cleanup.t", lambda key: "Delete")
 
 
 def test_no_leaks_does_not_raise():
@@ -138,6 +202,66 @@ def test_cleanup_error_is_an_assertion_error():
     """main.run_module() files AssertionError as `failed` and everything else
     as `error`; a leak is a failed absence assertion."""
     assert issubclass(CleanupError, AssertionError)
+
+
+def test_delete_by_name_deletes_the_row():
+    page = _FakeListPage(["u1", "other"])
+    delete_by_name(_FakeContext(), page, "/admin/user/", "u1")
+    assert page.rows == ["other"]
+
+
+def test_delete_by_name_loops_over_duplicates():
+    """Fess never rejects duplicate names, and admin/webconfig's duplicate test
+    deliberately creates two rows under one -- so deleting once is not enough."""
+    page = _FakeListPage(["w1", "w1", "other"])
+    delete_by_name(_FakeContext(), page, "/admin/webconfig/", "w1")
+    assert page.rows == ["other"]
+
+
+def test_delete_by_name_raises_when_nothing_matched():
+    """The row is either beyond page 1 (leaked) or was never created. Both are
+    real problems, so this raises rather than logging -- and escalate() stands
+    down on the "never created" case, where a body failure is propagating."""
+    page = _FakeListPage(["other"])
+    with pytest.raises(CleanupError, match="beyond page 1"):
+        delete_by_name(_FakeContext(), page, "/admin/user/", "u1")
+
+
+def test_delete_by_name_raises_when_deleting_makes_no_progress():
+    page = _FakeListPage(["u1"], deletes=False)
+    with pytest.raises(CleanupError, match="delete attempts made no progress"):
+        delete_by_name(_FakeContext(), page, "/admin/user/", "u1")
+
+
+def test_delete_by_name_gives_up_rather_than_looping_forever():
+    page = _FakeListPage(["u1"], deletes=False)
+    with pytest.raises(CleanupError):
+        delete_by_name(_FakeContext(), page, "/admin/user/", "u1")
+    # One goto to open the list, then one per attempt before it gives up.
+    assert page.gotos == MAX_DELETE_ITERATIONS + 1
+
+
+def test_delete_by_name_leak_reddens_its_own_module():
+    """The whole point: a leak that used to be a log line now fails the module
+    that caused it."""
+    page = _FakeListPage(["u1"], deletes=False)
+    cleanup = Cleanup()
+    with cleanup.guard("user 'u1'"):
+        delete_by_name(_FakeContext(), page, "/admin/user/", "u1")
+    with pytest.raises(CleanupError, match="the test passed but"):
+        cleanup.escalate()
+
+
+def test_delete_by_name_leak_does_not_mask_an_original_failure():
+    page = _FakeListPage(["u1"], deletes=False)
+    with pytest.raises(ValueError, match="the real failure"):
+        try:
+            raise ValueError("the real failure")
+        finally:
+            cleanup = Cleanup()
+            with cleanup.guard("user 'u1'"):
+                delete_by_name(_FakeContext(), page, "/admin/user/", "u1")
+            cleanup.escalate()
 
 
 def test_assert_absent_passes_when_the_row_is_gone():

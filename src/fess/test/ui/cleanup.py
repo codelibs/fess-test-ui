@@ -44,6 +44,8 @@ import sys
 from contextlib import contextmanager
 
 from fess.test import assert_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +83,53 @@ def assert_absent(page, name: str, where: str) -> None:
     listed = page.inner_text(LIST_SECTION)
     assert_equal(listed.find(name), -1,
                  f"{name} is still listed at {where} after deleting it")
+
+
+MAX_DELETE_ITERATIONS = 10
+
+
+def delete_by_name(context, page, list_path: str, name: str) -> None:
+    """Delete every row matching `name` on an admin list page.
+
+    Loops rather than assuming a single match: Fess never rejects duplicate
+    names, and admin/webconfig's duplicate-name test deliberately creates two
+    rows under one, so a leaked name can appear more than once.
+
+    Raises rather than logging. Call it inside `Cleanup.guard()`: the leak then
+    reddens its own module, and `Cleanup.escalate()` keeps it from masking the
+    failure that got you into `finally`.
+    """
+    page.goto(context.url(list_path))
+    page.wait_for_load_state("domcontentloaded")
+
+    row = f'table tr:has-text("{name}")'
+    iterations = 0
+    while page.locator(row).count() > 0:
+        iterations += 1
+        if iterations > MAX_DELETE_ITERATIONS:
+            raise CleanupError(
+                f"{name} is still listed at {list_path} after "
+                f"{MAX_DELETE_ITERATIONS} delete attempts made no progress")
+        page.locator(row).first.click()
+        page.wait_for_load_state("domcontentloaded")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+        page.click('div.modal-footer button[name="delete"]')
+        page.wait_for_load_state("domcontentloaded")
+        page.goto(context.url(list_path))
+        page.wait_for_load_state("domcontentloaded")
+
+    if iterations == 0:
+        # count() only ever sees page 1 (paging.page.size = 25), so a row
+        # pushed onto page 2 reads as "nothing to clean". Raising is safe
+        # despite the "was it ever created?" ambiguity: a body that failed
+        # before creating the record leaves an exception propagating, and
+        # escalate() stands down for that case rather than masking it.
+        raise CleanupError(
+            f"nothing matched {name} at {list_path}: no such row on page 1, "
+            f"so either it was never created or it is beyond page 1 and has "
+            f"leaked onto this shared instance")
+
+    assert_absent(page, name, list_path)
 
 
 class Cleanup:

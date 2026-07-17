@@ -5,6 +5,7 @@ from fess.test import assert_equal, assert_not_equal, assert_true
 from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup, delete_by_name
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -19,49 +20,6 @@ def setup(playwright: Playwright) -> FessContext:
 def destroy(context: FessContext) -> None:
     context.close()
 
-
-def _cleanup_by_name(context: FessContext, page: "Page", list_path: str, name: str) -> None:
-    """Delete every row matching `name` on an admin list page. Loops rather
-    than assuming a single match because Fess never rejects duplicate names
-    (see the duplicate-name test below), so a leaked name can appear more
-    than once. Swallows and logs its own failures so a cleanup problem never
-    masks the real test outcome in the enclosing try/finally."""
-    max_iterations = 10
-    try:
-        page.goto(context.url(list_path))
-        page.wait_for_load_state("domcontentloaded")
-        iterations = 0
-        while page.locator(f'table tr:has-text("{name}")').count() > 0:
-            iterations += 1
-            if iterations > max_iterations:
-                logger.error(f"CLEANUP FAILED for name={name!r} at {list_path} -- gave up "
-                             f"after {max_iterations} iterations without making progress; "
-                             f"this record has LEAKED and will pollute later modules on "
-                             f"this shared instance")
-                break
-            page.locator(f'table tr:has-text("{name}")').first.click()
-            page.wait_for_load_state("domcontentloaded")
-            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
-            page.click('div.modal-footer button[name="delete"]')
-            page.wait_for_load_state("domcontentloaded")
-            page.goto(context.url(list_path))
-            page.wait_for_load_state("domcontentloaded")
-        if iterations == 0:
-            # count() above only sees page 1, so a row pushed onto page 2 by
-            # >=25 pre-existing rows reads as "nothing to clean" and leaks with
-            # no log at all -- the LEAKED branch above only fires after 10
-            # non-progressing iterations, which this path never reaches.
-            # Logged, not escalated: "found nothing" is genuinely ambiguous
-            # here, since a test body that failed before creating the record
-            # also lands here, and that module is already red for its own
-            # reason. Unreachable on a fresh instance (needs >=25 rows).
-            logger.warning(f"CLEANUP deleted nothing for name={name!r} at {list_path}: "
-                           f"no matching row on page 1. Either the record was never "
-                           f"created, or it is beyond page 1 and has LEAKED onto this "
-                           f"shared instance.")
-    except Exception as e:
-        logger.error(f"CLEANUP FAILED for name={name!r} at {list_path} -- this record has "
-                     f"LEAKED and will pollute later modules on this shared instance: {e}")
 
 
 def run(context: FessContext) -> None:
@@ -128,7 +86,10 @@ def run(context: FessContext) -> None:
                          "XSS attempt should be visible as text, not executed")
         logger.info("Test 3 passed: XSS prevention working - payload escaped, not executed")
     finally:
-        _cleanup_by_name(context, page, "/admin/user/", xss_marker)
+        cleanup = Cleanup()
+        with cleanup.guard(f"user '{xss_marker}'"):
+            delete_by_name(context, page, "/admin/user/", xss_marker)
+        cleanup.escalate()
 
     # Test 4: Invalid password (below password.min.length=8)
     logger.info("Test 4: Weak password validation")
@@ -178,7 +139,10 @@ def run(context: FessContext) -> None:
                      "duplicate user create must upsert onto a single row")
         logger.info("Test 5 passed: duplicate username upserts onto a single row")
     finally:
-        _cleanup_by_name(context, page, "/admin/user/", duplicate_username)
+        cleanup = Cleanup()
+        with cleanup.guard(f"user '{duplicate_username}'"):
+            delete_by_name(context, page, "/admin/user/", duplicate_username)
+        cleanup.escalate()
 
     logger.info("User validation test completed successfully")
 
