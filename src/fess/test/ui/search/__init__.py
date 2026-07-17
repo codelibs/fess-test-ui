@@ -1,6 +1,8 @@
 from fess.test.ui.search import (
+    cache,
     facet,
     form_submit,
+    go_click,
     help,
     login_form,
     no_results,
@@ -17,8 +19,10 @@ from fess.test.ui.search import (
 )
 
 __all__ = [
+    "cache",
     "facet",
     "form_submit",
+    "go_click",
     "help",
     "login_form",
     "no_results",

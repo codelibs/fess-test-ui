@@ -72,4 +72,15 @@ echo "Fess:   ${fess_name}"
 echo "Search: ${search_engine_name}"
 echo "TEST_LANG=${TEST_LANG} (resolved) TEST_LANG_SEED=${TEST_LANG_SEED:-<unset>}"
 
-docker compose ${docker_compose_files} up --build --abort-on-container-exit --exit-code-from test01 --attach test01
+docker compose ${docker_compose_files} up --build --abort-on-container-exit --exit-code-from test01 --attach test01 && rc=0 || rc=$?
+
+# Copy outputs off the runner over the Docker API. A bind-mount cannot be used:
+# under Jenkins Docker-in-Docker the daemon cannot resolve workspace paths, so it
+# would silently mount an empty dir and the results would never reach the host
+# (same failure a9dbfc3 fixed for the labels mount, but quieter). `up` stops
+# test01 without removing it, so it is still cp-able here.
+for artifact in test_results.json test_metrics_history.json screenshots traces logs html_snapshots ; do
+    docker cp "test01:/app/${artifact}" "${base_dir}/src/" 2>/dev/null || true
+done
+
+exit ${rc}

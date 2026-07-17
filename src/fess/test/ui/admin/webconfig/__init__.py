@@ -6,6 +6,6 @@ from . import add, delete, update, job, validation
 def run(context: FessContext) -> None:
     add.run(context)
     update.run(context)
-    # validation.run(context)  # Temporarily disabled - needs adjustment for actual Fess behavior
+    validation.run(context)
     job.run(context)
     delete.run(context)

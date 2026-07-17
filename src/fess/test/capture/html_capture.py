@@ -1,8 +1,8 @@
 """
-HTML Capture Module for Test Coverage Analysis.
+HTML Capture Module for Failure Diagnosis.
 
-Captures HTML snapshots during test execution for later analysis
-to identify untested UI elements and improve test coverage.
+Captures HTML snapshots during test execution to aid debugging
+when a test fails.
 """
 
 import json
@@ -138,7 +138,11 @@ class HTMLCapture:
 
     def capture_on_failure(self, page: "Page", error_message: str = None) -> Optional[str]:
         """
-        Capture HTML when a test fails (always captures regardless of mode).
+        Capture HTML when a test fails.
+
+        `force` bypasses the on_failure_only check, NOT the disabled one: an
+        explicit HTML_CAPTURE=false still means no capture at all. The compose
+        default is on_failure, so this is the path a CI failure takes.
 
         Args:
             page: Playwright page object

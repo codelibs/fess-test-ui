@@ -12,12 +12,6 @@ from fess.test.result import ResultCollector, TestResult
 from fess.test import i18n as i18n_mod
 from fess.test.metrics import MetricsCollector
 from fess.test.logging_config import setup_logging
-from fess.test.coverage import (
-    CoverageAnalyzer,
-    InventoryManager,
-    CoverageReporter,
-    TestStubGenerator,
-)
 from fess.test.ui.admin import (accesstoken,
                                 badword,
                                 boostdoc,
@@ -25,6 +19,7 @@ from fess.test.ui.admin import (accesstoken,
                                 duplicatehost,
                                 elevateword,
                                 fileauth,
+                                general,
                                 keymatch,
                                 label,
                                 pathmap,
@@ -32,28 +27,15 @@ from fess.test.ui.admin import (accesstoken,
                                 relatedquery,
                                 reqheader,
                                 scheduler,
+                                sysinfo,
                                 user,
                                 group,
                                 role,
                                 virtualhost,
                                 webauth,
                                 webconfig,
+                                wizard,
                                 fileconfig)
-
-from fess.test.ui.admin.general import (popularWord,
-                                        pagedesign,
-                                        storage,
-                                        plugin)
-
-from fess.test.ui.admin.sysinfo import (backup,
-                                        configinfo,
-                                        crawlinfo,
-                                        failureurl,
-                                        joblog,
-                                        logfile,
-                                        maintenance,
-                                        searchlist,
-                                        searchlog)
 
 from fess.test.ui.admin.dict import (kuromoji,
                                      protwords,
@@ -63,11 +45,18 @@ from fess.test.ui.admin.dict import (kuromoji,
                                      synonym)
 
 from fess.test.ui.search import (
+    advance as search_advance,
+    cache as search_cache,
+    error_pages as search_error_pages,
     facet as search_facet,
     form_submit as search_form_submit,
+    go_click as search_go_click,
     help as search_help,
     login_form as search_login_form,
+    logout as search_logout,
     no_results as search_no_results,
+    osdd as search_osdd,
+    query_errors as search_query_errors,
     pagination as search_pagination,
     profile_form as search_profile_form,
     query as search_query,
@@ -85,9 +74,39 @@ from fess.test.ui.search import (
     multibyte_admin_input as search_multibyte_admin_input,
 )
 
-# Integration tests are available but not run by default
-# Uncomment the following line to include integration tests in test runs
-# from fess.test.ui import integration
+from fess.test.ui import integration
+
+# Leaves of the general/ and sysinfo/ packages. The default run drives the two
+# composers imported above; these aliases exist so TEST_MODULES can name a
+# single leaf when debugging one settings page.
+from fess.test.ui.admin.general import (
+    jsonResponse as general_jsonResponse,
+    logLevel as general_logLevel,
+    loginLink as general_loginLink,
+    loginRequired as general_loginRequired,
+    notificationLogin as general_notificationLogin,
+    notificationSearchTop as general_notificationSearchTop,
+    pagedesign as general_pagedesign,
+    plugin as general_plugin,
+    popularWord as general_popularWord,
+    storage as general_storage,
+)
+from fess.test.ui.admin.sysinfo import (
+    backup as sysinfo_backup,
+    backup_download as sysinfo_backup_download,
+    configinfo as sysinfo_configinfo,
+    crawlinfo as sysinfo_crawlinfo,
+    deleteall as sysinfo_deleteall,
+    failureurl as sysinfo_failureurl,
+    joblog as sysinfo_joblog,
+    logfile as sysinfo_logfile,
+    maintenance as sysinfo_maintenance,
+    searchlist as sysinfo_searchlist,
+    searchlog as sysinfo_searchlog,
+)
+from fess.test.ui.admin.wizard import (
+    crawling_config as wizard_crawling_config,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +121,7 @@ def _initialize_i18n() -> dict:
     label_dir = os.environ.get("FESS_LABEL_DIR", "/labels")
     i18n_mod.init(lang, label_dir)
     sizes = i18n_mod.label_sizes()
+    message_sizes = i18n_mod.message_sizes()
 
     # Note: $GITHUB_ENV is written from the host in run_test.sh (the file path
     # is host-only and unreachable from inside the runner container).
@@ -111,6 +131,7 @@ def _initialize_i18n() -> dict:
         "browser_locale": i18n_mod.selected_browser_locale(),
         "label_dir": label_dir,
         "sizes": sizes,
+        "message_sizes": message_sizes,
         "seed": seed,
     }
 
@@ -159,7 +180,14 @@ def get_modules_to_run() -> List[Any]:
         'search_profile_form': search_profile_form,
         'search_form_submit': search_form_submit,
         'search_query': search_query,
+        'search_advance': search_advance,
         'search_no_results': search_no_results,
+        'search_query_errors': search_query_errors,
+        'search_go_click': search_go_click,
+        'search_cache': search_cache,
+        'search_error_pages': search_error_pages,
+        'search_osdd': search_osdd,
+        'search_logout': search_logout,
         'search_pagination': search_pagination,
         'search_facet': search_facet,
         'search_sort': search_sort,
@@ -171,22 +199,39 @@ def get_modules_to_run() -> List[Any]:
         'search_layout_overflow': search_layout_overflow,
         'search_console_errors': search_console_errors,
         'search_multibyte_admin_input': search_multibyte_admin_input,
-        'popularWord': popularWord,
-        # Admin read-only: general sub-pages
-        'pagedesign': pagedesign,
-        'storage': storage,
-        'plugin': plugin,
-        # Admin read-only: system info
-        'searchlog': searchlog,
-        'joblog': joblog,
-        'searchlist': searchlist,
-        'crawlinfo': crawlinfo,
-        'failureurl': failureurl,
-        'logfile': logfile,
-        'backup': backup,
-        'maintenance': maintenance,
-        'configinfo': configinfo,
-        # 'integration': integration,  # Uncomment to enable
+        # Package composers. The default run drives these, not their leaves:
+        # a leaf added to the package then runs without anyone remembering to
+        # touch this file, which is exactly how the six general modules stayed
+        # unregistered and unrun.
+        'general': general,
+        'sysinfo': sysinfo,
+        'integration': integration,
+        'wizard': wizard,
+        # The same leaves, addressable individually so TEST_MODULES can still
+        # name one while debugging (TEST_MODULES=storage). Filtering only --
+        # they are absent from the default order above by design.
+        'jsonResponse': general_jsonResponse,
+        'logLevel': general_logLevel,
+        'loginLink': general_loginLink,
+        'loginRequired': general_loginRequired,
+        'notificationLogin': general_notificationLogin,
+        'notificationSearchTop': general_notificationSearchTop,
+        'pagedesign': general_pagedesign,
+        'plugin': general_plugin,
+        'popularWord': general_popularWord,
+        'storage': general_storage,
+        'backup': sysinfo_backup,
+        'backup_download': sysinfo_backup_download,
+        'configinfo': sysinfo_configinfo,
+        'crawlinfo': sysinfo_crawlinfo,
+        'deleteall': sysinfo_deleteall,
+        'failureurl': sysinfo_failureurl,
+        'joblog': sysinfo_joblog,
+        'logfile': sysinfo_logfile,
+        'maintenance': sysinfo_maintenance,
+        'searchlist': sysinfo_searchlist,
+        'searchlog': sysinfo_searchlog,
+        'crawling_config': wizard_crawling_config,
     }
 
     # Check for TEST_MODULES environment variable
@@ -203,20 +248,36 @@ def get_modules_to_run() -> List[Any]:
             search_seed,
             search_root_top, search_top, search_help, search_login_form,
             search_profile_form, search_form_submit,
-            search_query, search_no_results,
+            search_query, search_advance, search_no_results,
+            search_query_errors,
             search_pagination, search_facet, search_sort,
             search_thumbnail, search_suggest, search_related,
+            # Both drive a real result: they need search_seed's index, and
+            # go_click's click writes a ClickLog for the document it opens.
+            search_go_click, search_cache,
             search_i18n_smoke, search_multibyte_query,
             search_layout_overflow, search_console_errors,
             search_multibyte_admin_input,
-            popularWord,
-            # Admin read-only: general
-            pagedesign, storage, plugin,
-            # Admin read-only: system info (data-independent structural first)
-            configinfo, logfile,
-            crawlinfo, joblog, failureurl,
-            searchlog, searchlist,
-            backup, maintenance,
+            # search_osdd must precede general: /osdd is behind the
+            # loginRequired gate, which general's last module toggles.
+            search_error_pages, search_osdd, search_logout,
+            # Cross-resource workflows. After the search modules: dictionary_workflow
+            # edits the morphological analyser's dictionaries, and changed tokenisation
+            # would change what the search assertions above see.
+            integration,
+            # After the search modules because it creates real, persistent
+            # crawl configs. It never starts a crawl -- the wizard's
+            # startCrawling button relaunches every crawler job, which would
+            # rewrite the index the modules above assert against -- so it
+            # deletes the configs it made and leaves the index alone.
+            wizard,
+            # sysinfo ends in deleteall, which empties the job-log and
+            # crawling-info indices. Nothing after it reads them.
+            sysinfo,
+            # Last: general's final module (loginRequired) briefly closes the
+            # public UI to anonymous visitors. It restores the setting itself,
+            # but if that ever fails, nothing is left queued behind it.
+            general,
         ]
     else:
         # Parse comma-separated list of module names
@@ -325,6 +386,9 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
         page = context.get_current_page()
         url = page.url if page else None
 
+        if page:
+            context.html_capture.capture_on_failure(page, error_msg)
+
         result = TestResult(
             module=module_name,
             status='failed',
@@ -357,6 +421,9 @@ def run_module(context: FessContext, module: Any, collector: ResultCollector,
 
         page = context.get_current_page()
         url = page.url if page else None
+
+        if page:
+            context.html_capture.capture_on_failure(page, error_msg)
 
         result = TestResult(
             module=module_name,
@@ -395,6 +462,8 @@ def main():
     logger.info(f"Label directory   : {i18n_info['label_dir']} "
                 f"({i18n_info['sizes']['lang']} keys + "
                 f"{i18n_info['sizes']['base']} fallback)")
+    logger.info(f"Message keys      : {i18n_info['message_sizes']['lang']} keys + "
+                f"{i18n_info['message_sizes']['base']} fallback")
     if i18n_info['seed'] is not None:
         logger.info(f"Lang seed         : {i18n_info['seed']} "
                     f"(export TEST_LANG_SEED={i18n_info['seed']} to reproduce)")
@@ -455,12 +524,6 @@ def main():
     except Exception as e:
         logger.error(f"Failed to save/print metrics: {e}")
 
-    # Run coverage analysis if HTML capture was enabled
-    try:
-        run_coverage_analysis()
-    except Exception as e:
-        logger.error(f"Failed to run coverage analysis: {e}")
-
     # Print summary to console
     collector.print_summary()
 
@@ -472,90 +535,6 @@ def main():
     else:
         logger.info("TEST SUITE PASSED")
         return 0
-
-
-def run_coverage_analysis() -> None:
-    """
-    Run coverage analysis on captured HTML files.
-
-    This function analyzes HTML snapshots captured during test execution,
-    calculates coverage metrics, and generates reports.
-    """
-    coverage_enabled = os.environ.get("COVERAGE_ANALYSIS", "false").lower() == "true"
-    html_capture_dir = os.environ.get("HTML_CAPTURE_DIR", "html_snapshots")
-
-    if not coverage_enabled:
-        logger.debug("Coverage analysis is disabled (set COVERAGE_ANALYSIS=true to enable)")
-        return
-
-    if not os.path.exists(html_capture_dir):
-        logger.info(f"No HTML snapshots found in {html_capture_dir}")
-        return
-
-    logger.info("=" * 60)
-    logger.info("COVERAGE ANALYSIS - Starting")
-    logger.info("=" * 60)
-
-    # Initialize components
-    analyzer = CoverageAnalyzer()
-    inventory_manager = InventoryManager()
-    report_format = os.environ.get("COVERAGE_REPORT_FORMAT", "json")
-    report_dir = os.environ.get("COVERAGE_REPORT_DIR", "coverage_reports")
-    reporter = CoverageReporter(output_dir=report_dir)
-
-    # Analyze HTML files
-    inventories = analyzer.analyze_directory(html_capture_dir)
-    if not inventories:
-        logger.warning("No HTML files found for analysis")
-        return
-
-    logger.info(f"Analyzed {len(inventories)} HTML snapshots")
-
-    # Add inventories to manager
-    for inv in inventories:
-        inventory_manager.add_inventory(inv)
-
-    # Import test logs to identify tested elements
-    log_file = os.environ.get("LOG_FILE_PATH")
-    if log_file and os.path.exists(log_file):
-        with open(log_file, 'r', encoding='utf-8') as f:
-            log_content = f.read()
-        inventory_manager.import_test_logs(log_content)
-
-    # Calculate coverage for each page
-    page_coverages = {}
-    for url_path in inventory_manager._inventories.keys():
-        coverage = inventory_manager.calculate_coverage(url_path)
-        if coverage:
-            page_coverages[url_path] = coverage
-
-    # Identify coverage gaps
-    gaps = inventory_manager.identify_gaps(min_priority=0.5)
-
-    # Generate reports
-    if report_format == "all":
-        reporter.generate_report(page_coverages, gaps, "json")
-        reporter.generate_report(page_coverages, gaps, "html")
-        reporter.generate_report(page_coverages, gaps, "md")
-    else:
-        reporter.generate_report(page_coverages, gaps, report_format)
-
-    # Print console summary
-    reporter.print_console_summary(page_coverages, gaps)
-
-    # Generate test stubs if gaps found
-    generate_stubs = os.environ.get("COVERAGE_GENERATE_STUBS", "false").lower() == "true"
-    if generate_stubs and gaps:
-        stub_dir = os.environ.get("COVERAGE_STUB_DIR", "generated_tests")
-        generator = TestStubGenerator(output_dir=stub_dir)
-        generator.generate_from_gaps(gaps)
-        logger.info(f"Generated test stubs in {stub_dir}")
-
-    # Save inventory for future reference
-    inventory_manager.save_inventory()
-
-    logger.info("Coverage analysis completed")
-    logger.info("=" * 60)
 
 
 if __name__ == "__main__":

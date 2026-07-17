@@ -1,90 +1,98 @@
-from playwright.sync_api import Playwright, sync_playwright
+"""Log level is a select on /admin/general/.
+
+This test verifies the form round-trip ONLY, and that is deliberate:
+SystemHelper.setLogLevel() sets a JVM system property and calls Log4j's
+Configurator.setLevel(). It is never persisted (not to system.properties, not
+to the config index) and has no effect any HTTP client can observe, so there is
+no honest way to assert "the log level changed" from here. What is observable
+is that AdminGeneralAction.updateForm() repopulates the select from
+SystemHelper.getLogLevel(), so saving a level and re-reading the page proves
+the value reached the JVM and came back. Nothing here verifies that anything is
+actually logged at the selected level.
+
+Fess rounds an unknown level silently to WARN (Level.toLevel(level, WARN)), so
+only values from the select's own option list are used.
+"""
 import logging
 
-from fess.test.i18n import t
-from fess.test.i18n.keys import Labels
+from fess.test import assert_equal
+from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup
+
+from ._saved import assert_saved
+from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
 
+GENERAL_PATH = "/admin/general/"
+FIELD = "#logLevel"
+# The save button is selected by element name, not label: the page carries a
+# second submit button (name="sendmail") and `has-text` matches substrings, so
+# the name attribute is the unambiguous, locale-independent choice.
+SAVE_BUTTON = 'button[name="update"]'
 
-def run(playwright: Playwright) -> None:
-    logger.info("Starting log level test")
-    browser = playwright.chromium.launch(headless=False, slow_mo=500)
-    context = browser.new_context()
+# admin_general.jsp offers OFF/FATAL/ERROR/WARN/INFO/DEBUG/TRACE/ALL; default
+# is WARN. Pick a level that differs from whatever is set now so the assertion
+# below can never pass by accident.
+PRIMARY_LEVEL = "DEBUG"
+FALLBACK_LEVEL = "INFO"
 
-    # Open new page
-    page = context.new_page()
 
-    # Go to http://localhost:8080/login/
-    logger.info("Step 1: Navigate to login page")
-    page.goto("http://localhost:8080/login/")
+def setup(playwright: Playwright) -> FessContext:
+    context: FessContext = FessContext(playwright)
+    context.login()
+    return context
 
-    # Fill [placeholder="ユーザー名"]
-    page.fill(f'[placeholder="{t(Labels.LOGIN_PLACEHOLDER_USERNAME)}"]', "admin")
 
-    # Fill [placeholder="パスワード"]
-    page.fill(f'[placeholder="{t(Labels.LOGIN_PLACEHOLDER_PASSWORD)}"]', "admin1234")
-
-    # Click button:has-text("ログイン")
-    logger.info("Step 2: Login with admin credentials")
-    page.click(f'button:has-text("{t(Labels.LOGIN)}")')
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
-
-    # Click a:has-text("システム")
-    logger.info("Step 3: Navigate to System > General settings")
-    page.click(f"text={t(Labels.MENU_SYSTEM)}")
-
-    # Click text=全般
-    page.click(f"text={t(Labels.MENU_CRAWL_CONFIG)}")
-    # assert page.url == "http://localhost:8080/admin/general/"
-
-    # Select DEBUG
-    logger.info("Step 4: Change log level to DEBUG")
-    page.select_option("select[name=\"logLevel\"]", "DEBUG")
-
-    # Click button:has-text("更新")
-    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
-    # assert page.url == "http://localhost:8080/admin/general/"
-
-    # Go to http://localhost:8080/search/?q=fess
-    logger.info("Step 5: Verify DEBUG log level by performing search")
-    page.goto("http://localhost:8080/search/?q=fess")
-
-    # Click text=admin
-    page.click("text=admin")
-
-    # Click localized "Administration"
-    page.click(f"text={t(Labels.MENU_ADMINISTRATION)}")
-    # assert page.url == "http://localhost:8080/admin/dashboard/"
-
-    # Click a:has-text("システム")
-    page.click(f"text={t(Labels.MENU_SYSTEM)}")
-
-    # Click a:has-text("全般")
-    page.click(f"text={t(Labels.MENU_CRAWL_CONFIG)}")
-    # assert page.url == "http://localhost:8080/admin/general/"
-
-    # Select WARN
-    logger.info("Step 6: Change log level to WARN")
-    page.select_option("select[name=\"logLevel\"]", "WARN")
-
-    # Click button:has-text("更新")
-    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
-    # assert page.url == "http://localhost:8080/admin/general/"
-
-    # Go to http://localhost:8080/search/?q=fess
-    logger.info("Step 7: Verify WARN log level by performing search")
-    page.goto("http://localhost:8080/search/?q=fess")
-
-    # Close page
-    page.close()
-
-    # ---------------------
+def destroy(context: FessContext) -> None:
     context.close()
-    browser.close()
-
-    logger.info("Log level test completed successfully")
 
 
-with sync_playwright() as playwright:
-    run(playwright)
+def run(context: FessContext) -> None:
+    logger.info("Starting logLevel test")
+    page = context.get_admin_page()
+
+    page.goto(context.url(GENERAL_PATH))
+    page.wait_for_load_state("domcontentloaded")
+
+    original = page.input_value(FIELD)
+    logger.debug(f"original logLevel: {original}")
+    target = PRIMARY_LEVEL if original != PRIMARY_LEVEL else FALLBACK_LEVEL
+
+    try:
+        page.select_option(FIELD, target)
+        page.click(SAVE_BUTTON)
+        page.wait_for_load_state("domcontentloaded")
+        assert_saved(page)
+
+        page.goto(context.url(GENERAL_PATH))
+        page.wait_for_load_state("domcontentloaded")
+        persisted = page.input_value(FIELD)
+        assert_equal(persisted, target,
+                     f"logLevel select did not hold the saved value; expected {target}, got {persisted}")
+    finally:
+        # assert_saved, not just the click: a rejected save raises nothing --
+        # the page simply re-renders with ul.has-error -- so without it the
+        # log below would claim a restore that never happened.
+        cleanup = Cleanup()
+        with cleanup.guard(f"logLevel not restored to {original} (left at {target})"):
+            page.goto(context.url(GENERAL_PATH))
+            page.wait_for_load_state("domcontentloaded")
+            page.select_option(FIELD, original)
+            page.click(SAVE_BUTTON)
+            page.wait_for_load_state("domcontentloaded")
+            assert_saved(page)
+            logger.info(f"logLevel restored to {original}")
+        cleanup.escalate()
+
+    logger.info("logLevel test completed")
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    with sync_playwright() as playwright:
+        context = setup(playwright)
+        try:
+            run(context)
+        finally:
+            destroy(context)

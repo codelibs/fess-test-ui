@@ -84,12 +84,14 @@ def to_browser_locale(fess_lang: str) -> str:
 
 from typing import Optional as _Optional
 from .labels import LabelStrings as _LabelStrings
+from .messages import MessageStrings as _MessageStrings
 
 # Singleton state
 _state = {
     "lang": None,        # type: _Optional[str]
     "browser_locale": None,
     "labels": None,      # type: _Optional[_LabelStrings]
+    "messages": None,    # type: _Optional[_MessageStrings]
     "label_dir": None,
 }
 
@@ -99,12 +101,16 @@ def init(lang: str, label_dir: str) -> None:
 
     Idempotent only when called with the same args. A second call with
     different args overwrites the state (use _reset_for_tests in tests).
+
+    label_dir must hold both the fess_label* and fess_message* families;
+    scripts/extract_labels.sh copies both out of the Fess image.
     """
     if lang not in SUPPORTED_LANGS:
         raise ValueError(f"unsupported lang={lang!r}")
     _state["lang"] = lang
     _state["browser_locale"] = to_browser_locale(lang)
     _state["labels"] = _LabelStrings(lang, label_dir)
+    _state["messages"] = _MessageStrings(lang, label_dir)
     _state["label_dir"] = label_dir
 
 
@@ -114,6 +120,23 @@ def t(key: str, default: _Optional[str] = None) -> str:
         raise RuntimeError(
             "fess.test.i18n not initialized; call init(lang, label_dir) first")
     return _state["labels"].get(key, default=default)
+
+
+def tm(key: str, *args: str, default: _Optional[str] = None) -> str:
+    """Get a localized user message by key, substituting {0}, {1}, ... args.
+
+    Fess writes messages in java.text.MessageFormat syntax, e.g.
+    "The specified sort {0} is unsupported.". Only positional {n} holes are
+    substituted here -- MessageFormat's quoting rules ('' and '{') are not
+    interpreted, which is fine for the keys the suite asserts on.
+    """
+    if _state["messages"] is None:
+        raise RuntimeError(
+            "fess.test.i18n not initialized; call init(lang, label_dir) first")
+    text = _state["messages"].get(key, default=default)
+    for index, value in enumerate(args):
+        text = text.replace("{" + str(index) + "}", value)
+    return text
 
 
 def selected_lang() -> str:
@@ -135,9 +158,17 @@ def label_sizes() -> dict:
     return _state["labels"].sizes()
 
 
+def message_sizes() -> dict:
+    """For startup banner: how many message keys were loaded."""
+    if _state["messages"] is None:
+        raise RuntimeError("fess.test.i18n not initialized")
+    return _state["messages"].sizes()
+
+
 def _reset_for_tests() -> None:
     """Test-only: clear singleton state."""
     _state["lang"] = None
     _state["browser_locale"] = None
     _state["labels"] = None
+    _state["messages"] = None
     _state["label_dir"] = None

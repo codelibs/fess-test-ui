@@ -1,10 +1,11 @@
 
 import logging
 
-from fess.test import assert_equal
+from fess.test import assert_equal, assert_not_equal, assert_true
 from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup, delete_by_name
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ def destroy(context: FessContext) -> None:
     context.close()
 
 
+
 def run(context: FessContext) -> None:
     logger.info("Starting user validation test")
 
@@ -27,7 +29,7 @@ def run(context: FessContext) -> None:
 
     # Navigate to user
     page.click(f"text={t(Labels.MENU_USER)}")
-    page.click(f"text={t(Labels.MENU_USER)}")
+    page.click('a[href*="/admin/user/"]')
     assert_equal(page.url, context.url("/admin/user/"))
 
     # Test 1: Required field validation - empty name
@@ -39,9 +41,14 @@ def run(context: FessContext) -> None:
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
-    assert_equal(page.url, context.url("/admin/user/createnew/"),
-                "Should stay on create page when required fields are empty")
-    logger.info("Test 1 passed: Required field validation working")
+    # A POST lands on the list URL whether validation passed or failed
+    # (LastaFlute re-renders createnew.jsp under /admin/user/ on error and
+    # redirects to the same URL on success); ul.has-error is the real
+    # discriminator between the two outcomes.
+    assert_equal(page.url, context.url("/admin/user/"))
+    assert_true(page.locator("ul.has-error").count() > 0,
+                "empty required fields must be rejected")
+    logger.info("Test 1 passed: required field validation working")
 
     # Test 2: Password mismatch
     logger.info("Test 2: Password confirmation mismatch")
@@ -51,23 +58,40 @@ def run(context: FessContext) -> None:
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
-    # Should stay on create page with error
-    assert_equal(page.url, context.url("/admin/user/createnew/"),
-                "Should stay on create page when passwords don't match")
-    logger.info("Test 2 passed: Password mismatch validation working")
+    assert_equal(page.url, context.url("/admin/user/"))
+    assert_true(page.locator("ul.has-error").count() > 0,
+                "mismatched password confirmation must be rejected")
+    logger.info("Test 2 passed: password mismatch validation working")
 
     # Test 3: Special characters in username (XSS prevention)
     logger.info("Test 3: XSS prevention in username")
-    page.fill("input[name=\"name\"]", f"<script>alert('xss')</script>")
-    page.fill("input[name=\"password\"]", "password123")
-    page.fill("input[name=\"confirmPassword\"]", "password123")
-    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+    xss_marker = f"x{context.generate_str(10)}"
+    xss_username = f"<script>alert('xss')</script>{xss_marker}"
+    try:
+        page.fill("input[name=\"name\"]", xss_username)
+        page.fill("input[name=\"password\"]", "password123")
+        page.fill("input[name=\"confirmPassword\"]", "password123")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
-    page.wait_for_load_state("domcontentloaded")
-    if page.url == context.url("/admin/user/"):
-        logger.info("Test 3 passed: XSS prevention working - user created with escaped content")
+        page.wait_for_load_state("domcontentloaded")
+        assert_equal(page.locator("ul.has-error").count(), 0,
+                     f"XSS-named record should have been created; url={page.url}")
+        # The payload must render as escaped TEXT, never as live markup.
+        payload_is_live = page.evaluate(
+            "() => Array.from(document.querySelectorAll('script'))"
+            ".some(s => (s.textContent || '').includes(\"alert('xss')\"))")
+        assert_true(not payload_is_live,
+                    "XSS payload was parsed into a live script element")
+        assert_not_equal(page.inner_text("table").find("script"), -1,
+                         "XSS attempt should be visible as text, not executed")
+        logger.info("Test 3 passed: XSS prevention working - payload escaped, not executed")
+    finally:
+        cleanup = Cleanup()
+        with cleanup.guard(f"user '{xss_marker}'"):
+            delete_by_name(context, page, "/admin/user/", xss_marker)
+        cleanup.escalate()
 
-    # Test 4: Invalid password (too short or weak)
+    # Test 4: Invalid password (below password.min.length=8)
     logger.info("Test 4: Weak password validation")
     page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
     page.fill("input[name=\"name\"]", context.generate_str(10))
@@ -76,27 +100,32 @@ def run(context: FessContext) -> None:
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
 
     page.wait_for_load_state("domcontentloaded")
-    # Should either reject or allow depending on Fess password policy
-    logger.info("Test 4 passed: Weak password test completed")
+    assert_equal(page.url, context.url("/admin/user/"))
+    assert_true(page.locator("ul.has-error").count() > 0,
+                "password shorter than password.min.length=8 must be rejected")
+    logger.info("Test 4 passed: weak password rejected")
 
-    # Navigate back
-    if page.url != context.url("/admin/user/"):
-        page.goto(context.url("/admin/user/"))
+    # Test 4 rejected, so the page is still the create form re-rendered
+    # under the list URL (no "Create New" link there); get back to the
+    # real list page before Test 5 clicks it.
+    page.goto(context.url("/admin/user/"))
+    page.wait_for_load_state("domcontentloaded")
 
     # Test 5: Duplicate username prevention
     logger.info("Test 5: Duplicate username prevention")
     duplicate_username = f"TestUser_{context.generate_str(5)}"
 
-    # Create first user
-    page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
-    page.fill("input[name=\"name\"]", duplicate_username)
-    page.fill("input[name=\"password\"]", "password123")
-    page.fill("input[name=\"confirmPassword\"]", "password123")
-    page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
-    page.wait_for_load_state("domcontentloaded")
+    try:
+        # Create first user
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
+        page.fill("input[name=\"name\"]", duplicate_username)
+        page.fill("input[name=\"password\"]", "password123")
+        page.fill("input[name=\"confirmPassword\"]", "password123")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        page.wait_for_load_state("domcontentloaded")
 
-    if page.url == context.url("/admin/user/"):
-        # Try to create duplicate
+        # Try to create a duplicate. Fess has no duplicate check for user
+        # names; the id is Base64(name), so this upserts the same row.
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
         page.fill("input[name=\"name\"]", duplicate_username)
         page.fill("input[name=\"password\"]", "password456")
@@ -104,19 +133,16 @@ def run(context: FessContext) -> None:
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
         page.wait_for_load_state("domcontentloaded")
 
-        # Should reject duplicate username
-        logger.info("Test 5 passed: Duplicate username test completed")
-
-        # Cleanup: delete the test user
-        page.goto(context.url("/admin/user/"))
-        page.wait_for_load_state("domcontentloaded")
-        table_content = page.inner_text("table")
-        if table_content.find(duplicate_username) != -1:
-            page.click(f"text={duplicate_username}")
-            page.wait_for_load_state("domcontentloaded")
-            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
-            page.click('div.modal-footer button[name="delete"]')
-            page.wait_for_load_state("domcontentloaded")
+        assert_equal(page.locator("ul.has-error").count(), 0,
+                     "Fess does not reject duplicate names")
+        assert_equal(page.locator(f'table tr:has-text("{duplicate_username}")').count(), 1,
+                     "duplicate user create must upsert onto a single row")
+        logger.info("Test 5 passed: duplicate username upserts onto a single row")
+    finally:
+        cleanup = Cleanup()
+        with cleanup.guard(f"user '{duplicate_username}'"):
+            delete_by_name(context, page, "/admin/user/", duplicate_username)
+        cleanup.escalate()
 
     logger.info("User validation test completed successfully")
 

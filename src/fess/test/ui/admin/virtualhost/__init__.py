@@ -4,10 +4,10 @@ persistence on reload, and restores the original value in a finally clause so
 the test is idempotent and leaves no trace."""
 import logging
 
-from fess.test import assert_contains, assert_equal
-from fess.test.i18n import t
-from fess.test.i18n.keys import Labels
+from fess.test import assert_contains
 from fess.test.ui import FessContext
+from fess.test.ui.admin.general._saved import assert_saved
+from fess.test.ui.cleanup import Cleanup
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,6 @@ def run(context: FessContext) -> None:
 
     page.goto(context.url("/admin/general/"))
     page.wait_for_load_state("domcontentloaded")
-    assert_equal(page.url, context.url("/admin/general/"))
 
     original = page.input_value(f"textarea[name=\"{FIELD_NAME}\"]")
     logger.debug(f"original virtualhost value length: {len(original)}")
@@ -40,7 +39,12 @@ def run(context: FessContext) -> None:
     try:
         new_value = (original + "\n" if original else "") + TEST_RULE
         page.fill(f"textarea[name=\"{FIELD_NAME}\"]", new_value)
-        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
+        # Select by element name, not label text: /admin/general/ carries a
+        # second submit button (name="sendmail", AdminGeneralAction.sendmail),
+        # LastaFlute routes on the submit button's request param rather than the
+        # URL, and has-text is a substring match -- so matching on the label
+        # risks POSTing a different action entirely.
+        page.click('button[name="update"]')
         page.wait_for_load_state("domcontentloaded")
 
         # Re-open and verify persistence
@@ -50,16 +54,19 @@ def run(context: FessContext) -> None:
         assert_contains(persisted, TEST_RULE,
                         f"TEST_RULE not in virtualhost textarea after save; got first 200 chars: {persisted[:200]}")
     finally:
-        # Restore original value no matter what happened above
-        try:
+        # assert_saved, not just the click: a rejected save raises nothing --
+        # the page simply re-renders with ul.has-error -- so without it the
+        # log below would claim a restore that never happened.
+        cleanup = Cleanup()
+        with cleanup.guard(f"virtualhost value not restored (left carrying {TEST_RULE!r})"):
             page.goto(context.url("/admin/general/"))
             page.wait_for_load_state("domcontentloaded")
             page.fill(f"textarea[name=\"{FIELD_NAME}\"]", original)
-            page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_UPDATE)}")')
+            page.click('button[name="update"]')
             page.wait_for_load_state("domcontentloaded")
+            assert_saved(page)
             logger.info("virtualhost value restored")
-        except Exception as e:
-            logger.warning(f"virtualhost restore failed (continuing): {e}")
+        cleanup.escalate()
 
     logger.info("virtualhost test completed")
 

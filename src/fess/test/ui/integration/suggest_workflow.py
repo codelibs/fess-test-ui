@@ -2,7 +2,10 @@
 import logging
 
 from fess.test import assert_equal, assert_not_equal
+from fess.test.i18n import t
+from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
+from fess.test.ui.cleanup import Cleanup, assert_absent
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -33,101 +36,117 @@ def run(context: FessContext) -> None:
     label_base = context.create_label_name()
     search_term = f"term_{label_base}"
 
-    # Step 1: Create KeyMatch entry
-    logger.info("Step 1: Creating KeyMatch entry")
-    page.click("text=サジェスト")
-    page.click("text=キーマッチ")
-    assert_equal(page.url, context.url("/admin/keymatch/"))
+    created: list = []
+    try:
+        # Step 1: Create KeyMatch entry
+        logger.info("Step 1: Creating KeyMatch entry")
+        page.click(f"text={t(Labels.MENU_CRAWL)}")
+        page.click(f"text={t(Labels.MENU_KEY_MATCH)}")
+        assert_equal(page.url, context.url("/admin/keymatch/"))
 
-    page.click("text=新規作成")
-    assert_equal(page.url, context.url("/admin/keymatch/createnew/"))
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
+        assert_equal(page.url, context.url("/admin/keymatch/createnew/"))
 
-    page.fill("input[name=\"term\"]", search_term)
-    page.fill("input[name=\"query\"]", f"{search_term} AND test")
-    page.fill("input[name=\"maxSize\"]", "10")
-    page.click("button:has-text(\"作成\")")
-    assert_equal(page.url, context.url("/admin/keymatch/"))
+        page.fill("input[name=\"term\"]", search_term)
+        page.fill("input[name=\"query\"]", f"{search_term} AND test")
+        page.fill("input[name=\"maxSize\"]", "10")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("keymatch")
+        assert_equal(page.url, context.url("/admin/keymatch/"))
 
-    page.wait_for_load_state("domcontentloaded")
-    table_content = page.inner_text("table")
-    assert_not_equal(table_content.find(search_term), -1,
-                     f"KeyMatch {search_term} not created")
-    logger.info(f"✓ KeyMatch entry '{search_term}' created")
+        page.wait_for_load_state("domcontentloaded")
+        table_content = page.inner_text("table")
+        assert_not_equal(table_content.find(search_term), -1,
+                         f"KeyMatch {search_term} not created")
+        logger.info(f"✓ KeyMatch entry '{search_term}' created")
 
-    # Step 2: Create RelatedContent entry
-    logger.info("Step 2: Creating RelatedContent entry")
-    page.click("text=サジェスト")
-    page.click("text=関連コンテンツ")
-    assert_equal(page.url, context.url("/admin/relatedcontent/"))
+        # Step 2: Create RelatedContent entry
+        logger.info("Step 2: Creating RelatedContent entry")
+        page.goto(context.url("/admin/relatedcontent/"))
+        page.wait_for_load_state("domcontentloaded")
 
-    page.click("text=新規作成")
-    assert_equal(page.url, context.url("/admin/relatedcontent/createnew/"))
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
+        assert_equal(page.url, context.url("/admin/relatedcontent/createnew/"))
 
-    page.fill("input[name=\"term\"]", search_term)
-    page.fill("textarea[name=\"content\"]", f"<p>Related content for {search_term}</p>")
-    page.click("button:has-text(\"作成\")")
-    assert_equal(page.url, context.url("/admin/relatedcontent/"))
+        page.fill("input[name=\"term\"]", search_term)
+        page.fill("textarea[name=\"content\"]", f"<p>Related content for {search_term}</p>")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("relatedcontent")
+        assert_equal(page.url, context.url("/admin/relatedcontent/"))
 
-    page.wait_for_load_state("domcontentloaded")
-    table_content = page.inner_text("table")
-    assert_not_equal(table_content.find(search_term), -1,
-                     f"RelatedContent {search_term} not created")
-    logger.info(f"✓ RelatedContent entry '{search_term}' created")
+        page.wait_for_load_state("domcontentloaded")
+        table_content = page.inner_text("table")
+        assert_not_equal(table_content.find(search_term), -1,
+                         f"RelatedContent {search_term} not created")
+        logger.info(f"✓ RelatedContent entry '{search_term}' created")
 
-    # Step 3: Create RelatedQuery entry
-    logger.info("Step 3: Creating RelatedQuery entry")
-    page.click("text=サジェスト")
-    page.click("text=関連クエリー")
-    assert_equal(page.url, context.url("/admin/relatedquery/"))
+        # Step 3: Create RelatedQuery entry
+        logger.info("Step 3: Creating RelatedQuery entry")
+        page.goto(context.url("/admin/relatedquery/"))
+        page.wait_for_load_state("domcontentloaded")
 
-    page.click("text=新規作成")
-    assert_equal(page.url, context.url("/admin/relatedquery/createnew/"))
+        page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
+        assert_equal(page.url, context.url("/admin/relatedquery/createnew/"))
 
-    page.fill("input[name=\"term\"]", search_term)
-    page.fill("textarea[name=\"queries\"]", f"{search_term} related\n{search_term} similar")
-    page.click("button:has-text(\"作成\")")
-    assert_equal(page.url, context.url("/admin/relatedquery/"))
+        page.fill("input[name=\"term\"]", search_term)
+        page.fill("textarea[name=\"queries\"]", f"{search_term} related\n{search_term} similar")
+        page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
+        created.append("relatedquery")
+        assert_equal(page.url, context.url("/admin/relatedquery/"))
 
-    page.wait_for_load_state("domcontentloaded")
-    table_content = page.inner_text("table")
-    assert_not_equal(table_content.find(search_term), -1,
-                     f"RelatedQuery {search_term} not created")
-    logger.info(f"✓ RelatedQuery entry '{search_term}' created")
+        page.wait_for_load_state("domcontentloaded")
+        table_content = page.inner_text("table")
+        assert_not_equal(table_content.find(search_term), -1,
+                         f"RelatedQuery {search_term} not created")
+        logger.info(f"✓ RelatedQuery entry '{search_term}' created")
+    finally:
+        cleanup = Cleanup()
 
-    # Step 4: Cleanup - Delete RelatedQuery
-    logger.info("Step 4: Cleanup - deleting RelatedQuery")
-    page.click(f"text={search_term}")
-    page.wait_for_load_state("domcontentloaded")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
-    assert_equal(page.url, context.url("/admin/relatedquery/"))
-    logger.info("✓ RelatedQuery entry deleted")
+        # Step 4: Cleanup - Delete RelatedQuery
+        if "relatedquery" in created:
+            with cleanup.guard(f"RelatedQuery entry '{search_term}'"):
+                logger.info("Step 4: Cleanup - deleting RelatedQuery")
+                page.goto(context.url("/admin/relatedquery/"))
+                page.wait_for_load_state("domcontentloaded")
+                page.click(f"text={search_term}")
+                page.wait_for_load_state("domcontentloaded")
+                page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+                page.click('div.modal-footer button[name="delete"]')
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, search_term, "/admin/relatedquery/")
+                logger.info("✓ RelatedQuery entry deleted")
 
-    # Step 5: Delete RelatedContent
-    logger.info("Step 5: Deleting RelatedContent")
-    page.click("text=サジェスト")
-    page.click("text=関連コンテンツ")
-    assert_equal(page.url, context.url("/admin/relatedcontent/"))
+        # Step 5: Delete RelatedContent
+        if "relatedcontent" in created:
+            with cleanup.guard(f"RelatedContent entry '{search_term}'"):
+                logger.info("Step 5: Deleting RelatedContent")
+                page.goto(context.url("/admin/relatedcontent/"))
+                page.wait_for_load_state("domcontentloaded")
 
-    page.click(f"text={search_term}")
-    page.wait_for_load_state("domcontentloaded")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
-    assert_equal(page.url, context.url("/admin/relatedcontent/"))
-    logger.info("✓ RelatedContent entry deleted")
+                page.click(f"text={search_term}")
+                page.wait_for_load_state("domcontentloaded")
+                page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+                page.click('div.modal-footer button[name="delete"]')
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, search_term, "/admin/relatedcontent/")
+                logger.info("✓ RelatedContent entry deleted")
 
-    # Step 6: Delete KeyMatch
-    logger.info("Step 6: Deleting KeyMatch")
-    page.click("text=サジェスト")
-    page.click("text=キーマッチ")
-    assert_equal(page.url, context.url("/admin/keymatch/"))
+        # Step 6: Delete KeyMatch
+        if "keymatch" in created:
+            with cleanup.guard(f"KeyMatch entry '{search_term}'"):
+                logger.info("Step 6: Deleting KeyMatch")
+                page.goto(context.url("/admin/keymatch/"))
+                page.wait_for_load_state("domcontentloaded")
 
-    page.click(f"text={search_term}")
-    page.wait_for_load_state("domcontentloaded")
-    page.click("text=削除")
-    page.click("text=キャンセル 削除 >> button[name=\"delete\"]")
-    assert_equal(page.url, context.url("/admin/keymatch/"))
-    logger.info("✓ KeyMatch entry deleted")
+                page.click(f"text={search_term}")
+                page.wait_for_load_state("domcontentloaded")
+                page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_DELETE)}")')
+                page.click('div.modal-footer button[name="delete"]')
+                page.wait_for_load_state("domcontentloaded")
+                assert_absent(page, search_term, "/admin/keymatch/")
+                logger.info("✓ KeyMatch entry deleted")
+
+        cleanup.escalate()
 
     logger.info("✓ Suggest workflow integration test completed successfully")
 

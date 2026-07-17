@@ -59,3 +59,11 @@ jobs:
           name: failure-screenshots-fess15-noble-opensearch2-${{ env.TEST_LANG_RESOLVED }}
           path: src/screenshots/
           retention-days: 30
+
+      - name: Upload failure HTML snapshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-html-fess15-noble-opensearch2-${{ env.TEST_LANG_RESOLVED }}
+          path: src/html_snapshots/
+          retention-days: 30

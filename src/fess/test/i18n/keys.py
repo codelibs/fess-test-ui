@@ -89,11 +89,59 @@ class Labels:
     FILE_CRAWLING_BUTTON_CREATE_JOB = "labels.file_crawling_button_create_job"
     DATA_CRAWLING_BUTTON_CREATE_JOB = "labels.data_crawling_button_create_job"
 
+    # ---- Error pages -------------------------------------------------
+    # One marker per error view, each rendered only by its own page, so a
+    # body-text assertion proves which error page was served. All four live
+    # in <body>; labels.system_error_title is also the <title> of the other
+    # views, but inner_text("body") does not see <head>. These four
+    # genuinely do not collide with one another or with ERROR_TITLE below --
+    # only ERROR_TITLE has the problem documented there.
+    PAGE_NOT_FOUND_TITLE = "labels.page_not_found_title"      # error/notFound.jsp
+    SYSTEM_ERROR_TITLE = "labels.system_error_title"          # error/system.jsp
+    BUSY_TITLE = "labels.busy_title"                          # error/busy.jsp
+    REQUEST_ERROR_TITLE = "labels.request_error_title"        # error/badRequest.jsp
+
+    # The <h2> of error/error.jsp. Unlike the four above it is reached two
+    # ways: /error/ (where GoAction redirects a bad docId) and an in-place
+    # render of the same view when an Action's validate() fallback fires.
+    #
+    # DO NOT body-text-assert this key: labels.error_title is a SUBSTRING of
+    # labels.system_error_title in 12 of the 16 supported locales (en, es,
+    # fr, hi, it, ja, ko, pl, pt_BR, tr, zh_CN, zh_TW -- plus the ROOT
+    # fallback bundle; de, id, nl, ru are the only locales where the two
+    # strings do not overlap). A body-text `in` check on this key therefore
+    # cannot distinguish error.jsp from error/system.jsp in most locales --
+    # verified empirically against ./labels/. Assert exact equality on a
+    # selector scoped to error.jsp's own <h2> (e.g. "main h2") instead; see
+    # search/go_click.py and search/cache.py for the pattern.
+    ERROR_TITLE = "labels.error_title"                        # error/error.jsp
+
+    # ---- OpenSearch description (OSDD) -------------------------------
+    # title= of the <link rel="search"> that index.jsp:8-12 emits.
+    INDEX_OSDD_TITLE = "labels.index_osdd_title"
+
+    # ---- Cached copy (CacheAction / cache.hbs) -----------------------
+    # Text of the per-result cache link (searchResults.jsp:141-148). Only
+    # rendered for documents whose has_cache field is 'true'.
+    SEARCH_RESULT_CACHE = "labels.search_result_cache"
+    # The banner cache.hbs renders above the snapshot. ViewHelper fills
+    # {0} with the document URL and {1} with the crawl timestamp, so only
+    # the {0} half is predictable from a test.
+    SEARCH_CACHE_MSG = "labels.search_cache_msg"
+
     # ---- Read-only page markers (for body-content assertions) --------
     DESIGN_TITLE_FILE = "labels.design_title_file"
     SYSTEM_INFO_FESS_PROP_TITLE = "labels.system_info_fess_prop_title"
     LIST_COULD_NOT_FIND_CRUD_TABLE = "labels.list_could_not_find_crud_table"
     SEARCHLOG_QUERY_ID = "labels.searchlog_queryid"
     SEARCHLOG_ACCESS_TYPE = "labels.searchlog_accesstype"
+
+    # The per-row job-status badge on admin_joblog.jsp:88-90, rendered only
+    # while jobStatus == Constants.RUNNING. deleteall.py polls for its
+    # ABSENCE: AdminJoblogAction.deleteall() removes only ok/fail rows and
+    # AdminCrawlinginfoAction.deleteall() skips sessions still running, so
+    # asserting either list empties out is only sound once no job is in
+    # flight. The seed crawl outlives search_seed's doc-count wait.
+    JOBLOG_STATUS_RUNNING = "labels.joblog_status_running"
     FAILURE_URL_ERROR_COUNT = "labels.failure_url_search_error_count"
     FAILURE_URL_ERROR_NAME = "labels.failure_url_search_error_name"
