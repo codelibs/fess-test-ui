@@ -8,12 +8,12 @@ does not, the user silently lands on the Not Found view instead of the view
 the branch names; this module pins where users actually land so that closing
 one of those gaps is a deliberate, visible change rather than a silent one.
 
-The suite runs against several Fess builds (README: 15.7.0 and snapshot), and
+The suite runs against several Fess builds (README: 15.8.0 and snapshot), and
 the request error view is served at a different path depending on the build --
-/error/badrequrest/ on 15.7.0 and below, /error/badrequest/ on builds that
-have renamed the action. No version flag is plumbed to the runner, so which
-spelling is routed is detected at runtime and the assertion is the invariant
-that holds on either build; see _assert_exactly_one_request_error_path_renders.
+/error/badrequrest/ on 15.7.0 and below, /error/badrequest/ on 15.8.0 and
+later. No version flag is plumbed to the runner, so which spelling is routed
+is detected at runtime and the assertion is the invariant that holds on either
+build; see _assert_exactly_one_request_error_path_renders.
 
 No HTTP status is asserted anywhere here: web.xml maps 404 to redirect.jsp,
 which sendRedirect()s to a page served as 200, so a redirect-following
@@ -119,8 +119,9 @@ def _assert_exactly_one_request_error_path_renders(page, context: FessContext) -
         badRequest branch to the correctly spelled /error/badrequest/, which
         resolves to nothing. That mismatch is a real Fess bug: a genuine HTTP
         400 shows the user the 404 page rather than the request error page.
-      * Later builds rename the action to ErrorBadrequestAction, so the JSP and
-        the action agree and the misspelling is what resolves to nothing.
+      * Fess 15.8.0 renamed the action to ErrorBadrequestAction (fess#3188), so
+        the JSP and the action agree and the misspelling is what resolves to
+        nothing.
 
     Asserting the exclusive-or covers both spellings on either build without
     pinning a version, and still fails loudly if neither answers (the view went
@@ -147,7 +148,9 @@ def _assert_error_system_falls_through_to_notfound(page, context: FessContext) -
     /error/system it pins a real fall-through (a bad authentication shows the 404
     page), while on builds that point that branch elsewhere nothing reaches this
     path from redirect.jsp any more and the check is only a guard that no
-    ErrorSystemAction has appeared. Kept for the older builds in the matrix."""
+    ErrorSystemAction has appeared. Fess 15.8.0 sends badAuth to
+    /error/systemerror/ instead, so no build in the current matrix reaches this
+    path from redirect.jsp and the guard is all it is now."""
     _goto(page, context, "/error/system?message_key=errors.bad_authentication")
     assert_equal(urlparse(page.url).path, NOTFOUND_PATH,
                  f"expected /error/system to land on {NOTFOUND_PATH}, got {page.url}")
