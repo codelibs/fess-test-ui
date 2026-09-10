@@ -23,11 +23,8 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 
 | Status | Fess | SearchEngine |
 | ------ | ---- | ------------ |
-| [![run-fessx-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-opensearch2.yml) | Fess (snapshot-deb) | OpenSearch 2 |
-| [![run-fessx-al2023-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-al2023-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-al2023-opensearch2.yml) | Fess (snapshot-rpm) | OpenSearch 2 |
 | [![run-fessx-opensearch3](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-opensearch3.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-opensearch3.yml) | Fess (snapshot-deb) | OpenSearch 3 |
 | [![run-fessx-al2023-opensearch3](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-al2023-opensearch3.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-al2023-opensearch3.yml) | Fess (snapshot-rpm) | OpenSearch 3 |
-| [![run-fessx-noble-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-noble-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-noble-opensearch2.yml) | Fess (snapshot-noble) | OpenSearch 2 |
 | [![run-fessx-noble-opensearch3](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-noble-opensearch3.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-noble-opensearch3.yml) | Fess (snapshot-noble) | OpenSearch 3 |
 | [![run-fess15-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-opensearch2.yml) | Fess 15 | OpenSearch 2 |
 | [![run-fess15-al2023-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch2.yml) | Fess 15 (al2023) | OpenSearch 2 |
@@ -64,12 +61,9 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
    ./run_test.sh fess15-noble opensearch2
    ./run_test.sh fess15-noble opensearch3
 
-   # Fess snapshot builds with OpenSearch
-   ./run_test.sh fessx opensearch2
+   # Fess snapshot builds with OpenSearch 3
    ./run_test.sh fessx opensearch3
-   ./run_test.sh fessx-al2023 opensearch2
    ./run_test.sh fessx-al2023 opensearch3
-   ./run_test.sh fessx-noble opensearch2
    ./run_test.sh fessx-noble opensearch3
    ```
 
@@ -84,7 +78,7 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 - `fessx-noble` - Latest snapshot (Ubuntu Noble)
 
 ### Search Engines
-- `opensearch2` - OpenSearch 2.19.1
+- `opensearch2` - OpenSearch 2.19.1 (`fess15*` only: snapshot builds refuse to start against OpenSearch 2)
 - `opensearch3` - OpenSearch 3.8.0
 
 ## Configuration
