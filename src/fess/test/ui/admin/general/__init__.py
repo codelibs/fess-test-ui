@@ -12,13 +12,12 @@ module to the login screen.
 from fess.test.ui import FessContext
 
 from . import (jsonResponse, logLevel, loginLink, loginRequired,
-               notificationLogin, notificationSearchTop, pagedesign, plugin,
-               popularWord, storage)
+               notificationLogin, notificationSearchTop, plugin, popularWord,
+               storage)
 
 
 def run(context: FessContext) -> None:
     popularWord.run(context)
-    pagedesign.run(context)
     storage.run(context)
     plugin.run(context)
     logLevel.run(context)
