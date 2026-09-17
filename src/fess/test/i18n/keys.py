@@ -23,7 +23,6 @@ class Labels:
     MENU_WIZARD = "labels.menu_wizard"
     MENU_CRAWL_CONFIG = "labels.menu_crawl_config"
     MENU_SCHEDULER_CONFIG = "labels.menu_scheduler_config"
-    MENU_DESIGN = "labels.menu_design"
     MENU_DICT = "labels.menu_dict"
     MENU_ACCESS_TOKEN = "labels.menu_access_token"
     MENU_PLUGIN = "labels.menu_plugin"
@@ -130,7 +129,6 @@ class Labels:
     SEARCH_CACHE_MSG = "labels.search_cache_msg"
 
     # ---- Read-only page markers (for body-content assertions) --------
-    DESIGN_TITLE_FILE = "labels.design_title_file"
     SYSTEM_INFO_FESS_PROP_TITLE = "labels.system_info_fess_prop_title"
     LIST_COULD_NOT_FIND_CRUD_TABLE = "labels.list_could_not_find_crud_table"
     SEARCHLOG_QUERY_ID = "labels.searchlog_queryid"
