@@ -20,6 +20,8 @@ from playwright.sync_api import Playwright, sync_playwright
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
 from fess.test.ui.search._theme import ThemeKeys, tt
+from fess.test.ui.search import profile_form_jsp
+from fess.test.ui.version import run_jsp_variant
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,8 @@ def setup(playwright: Playwright) -> FessContext:
 
 
 def run(context: FessContext) -> None:
+    if run_jsp_variant(context, profile_form_jsp):
+        return
     logger.info("Starting search/profile_form")
     page = context.get_wrapped_page() or context.get_admin_page()
 

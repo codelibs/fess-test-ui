@@ -21,6 +21,8 @@ from playwright.sync_api import Playwright, sync_playwright
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
 from fess.test.ui.search._theme import ThemeKeys, tt
+from fess.test.ui.search import advance_jsp
+from fess.test.ui.version import run_jsp_variant
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +134,8 @@ def _assert_occurrence_alone_is_a_noop(page, context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
+    if run_jsp_variant(context, advance_jsp):
+        return
     logger.info("Starting search/advance")
     page = context.get_wrapped_page() or context.get_admin_page()
 

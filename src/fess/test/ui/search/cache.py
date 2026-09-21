@@ -31,6 +31,8 @@ from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from fess.test.ui.search._theme import ThemeKeys, tt
+from fess.test.ui.search import cache_jsp
+from fess.test.ui.version import run_jsp_variant
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +174,8 @@ def _assert_missing_docid_is_not_found(page, context: FessContext) -> None:
 
 
 def run(context: FessContext) -> None:
+    if run_jsp_variant(context, cache_jsp):
+        return
     logger.info("Starting search/cache")
     page = context.get_wrapped_page() or context.get_admin_page()
 

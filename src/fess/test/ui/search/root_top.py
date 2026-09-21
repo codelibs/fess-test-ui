@@ -16,6 +16,8 @@ from playwright.sync_api import Playwright, sync_playwright
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
+from fess.test.ui.search import root_top_jsp
+from fess.test.ui.version import run_jsp_variant
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,8 @@ def setup(playwright: Playwright) -> FessContext:
 
 
 def run(context: FessContext) -> None:
+    if run_jsp_variant(context, root_top_jsp):
+        return
     logger.info("Starting search/root_top")
     page = context.get_wrapped_page() or context.get_admin_page()
 

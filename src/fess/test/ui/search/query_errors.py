@@ -26,6 +26,8 @@ from fess.test import assert_equal, assert_true
 from fess.test.i18n import tm
 from fess.test.i18n.message_keys import Messages
 from fess.test.ui import FessContext
+from fess.test.ui.search import query_errors_jsp
+from fess.test.ui.version import run_jsp_variant
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +119,8 @@ def _assert_offset_at_max_does_not_trip_the_guard(page, context: FessContext) ->
 
 
 def run(context: FessContext) -> None:
+    if run_jsp_variant(context, query_errors_jsp):
+        return
     logger.info("Starting search/query_errors")
     page = context.get_wrapped_page() or context.get_admin_page()
 
