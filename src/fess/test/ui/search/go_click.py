@@ -1,51 +1,44 @@
 """Verify that a search-result click really travels through GoAction, and pin
-where GoAction's two failure paths land.
+how GoAction's two failure paths are answered.
 
 /go/ is the redirect-and-click-log hop behind every search-result click, and
 nothing else in the suite touches it.
 
-The trap this module is built around: js/search.js:111-127 rewrites a result
-link's href to /go/?rt=..&docId=..&queryId=..&order=.. on **mousedown**, not
-on click. A synthetic dispatch_event("click") never fires mousedown, so it
-would follow the un-rewritten href straight to the document and bypass /go/
-entirely -- green, and testing nothing.
+Since fess#3460, /search is the bootstrap static-theme SPA. It renders the
+title link's href as the /go/ URL up front --
+go/?rt=<#rt>&docId=<data-id>&queryId=<#queryId>&order=<n>, relative to the
+<base href> Fess injects -- with the document URL kept in data-uri. There is
+no mousedown rewrite any more, so the href is pinned as rendered, and a real
+click is watched on the network: the landing URL alone cannot show that the
+click went through /go/, because /go/ redirects to the same document the
+raw URL would have opened.
 
-Worse, no assertion on the landing URL can catch that, because both routes
-end at the same place: the raw href goes to the document directly, and /go/
-redirects to that same document (GoAction:162). The landing URL is identical
-either way. So the click path is pinned two ways that do not share the
-failure mode:
+The thumbnail is a second a.link inside the same result, so every lookup is
+scoped to h3.title.
 
-  * _assert_mousedown_rewrites_the_href: fire mousedown by hand and pin the
-    rewritten href exactly, reproducing search.js:118's own construction.
-  * _assert_a_real_click_travels_through_go: watch the network across a real
-    click (which does fire mousedown) and require the /go/ request to have
-    actually happened. This is the one that would notice if a browser read
-    href before the handler ran.
+rt and queryId are read from the hidden inputs the results view fills,
+never fabricated: GoAction calls Long.parseLong(form.rt) with no guard, so
+an invented rt would be a 500 rather than the behaviour under test.
 
-The thumbnail is a second a.link inside the same result (searchResults.jsp:
-106-107), so every lookup is scoped to h3.title (searchResults.jsp:99-102).
+Errors are rendered in place: ErrorPageServlet answers the failing /go/ URL
+itself with the real HTTP status and the static theme's error view, and
+names the reason in <meta name="x-fess-error-detail-key">, which the view
+turns into its .error-detail-additional line. So status, URL and the
+rendered title/detail are all observable.
 
-rt and queryId are read from the hidden inputs the results page renders
-(searchResults.jsp:94-95), never fabricated: GoAction:123 calls
-Long.parseLong(form.rt) with no guard, so an invented rt would be a 500
-rather than the behaviour under test.
-
-No HTTP status is asserted here. web.xml routes errors through
-error/redirect.jsp, which sendRedirect()s to a page served as 200, so a
-redirect-following client cannot tell a broken endpoint from a working one
-by status. The landing URL and the rendered message are the observables.
+The last check -- that the href's order equals the result's 0-based
+data-order, as the JSP pages sent it -- pins codelibs/fess#3463: before it,
+the SPA sent order=<n+1>. It runs last so the checks before it still report
+on a Fess without that fix.
 """
 import logging
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import Playwright, sync_playwright
 
 from fess.test import assert_contains, assert_equal, assert_true
-from fess.test.i18n import t, tm
-from fess.test.i18n.keys import Labels
-from fess.test.i18n.message_keys import Messages
 from fess.test.ui import FessContext
+from fess.test.ui.search._theme import ThemeKeys, tt
 
 logger = logging.getLogger(__name__)
 
@@ -55,22 +48,11 @@ logger = logging.getLogger(__name__)
 # matter: every expected value is read off the element itself.
 QUERY = "intro"
 
-# h3.title scopes past the thumbnail's a.link (searchResults.jsp:106-107).
+# h3.title scopes past the thumbnail's a.link.
 TITLE_LINK = "#result0 h3.title a.link"
 
-# One rendered error message on error/error.jsp.
-#
-# NOT div.alert.alert-warning -- that is index.jsp's box, and it only looks
-# that way because index.jsp:126-129 passes prefix="errors.front_prefix"
-# explicitly. error.jsp:26 writes <la:errors styleClass="list-unstyled"/>
-# with no prefix override, so HtmlErrorsTag falls back to the defaults:
-# styleClass replaces the header with <ul class="list-unstyled">
-# (HtmlErrorsTag.setupHeader), and each message is wrapped in
-# errors.prefix/suffix = <li><i class="fa fa-exclamation-circle"></i> ...
-# </li>. Scoped to <main> because header.jsp/footer.jsp are included into
-# the same body (neither uses list-unstyled today, but the scope keeps this
-# about error.jsp's own markup).
-ERROR_MESSAGE = "main ul.list-unstyled li"
+ERROR_TITLE = "#error-view h2.error-title"
+ERROR_DETAIL = "#error-view .error-detail-additional"
 
 
 def setup(playwright: Playwright) -> FessContext:
@@ -79,72 +61,50 @@ def setup(playwright: Playwright) -> FessContext:
     return context
 
 
-def _search(page, context: FessContext) -> None:
+def _search(page, context: FessContext):
     page.goto(context.url(f"/search/?q={QUERY}"))
-    page.wait_for_load_state("domcontentloaded")
+    # Times out, rather than returning None, when the index is not seeded.
+    return page.wait_for_selector(TITLE_LINK)
 
 
-def _first_result_link(page):
-    link = page.query_selector(TITLE_LINK)
-    assert_true(link is not None,
-                f"no result link at {TITLE_LINK} for q={QUERY}; "
-                f"is the index seeded?")
-    return link
+def _go_params(link) -> dict:
+    href = link.get_attribute("href")
+    assert_true(href.startswith("go/?"),
+                f"the result link should point at go/?..., got {href}")
+    return parse_qs(urlparse(href).query)
 
 
-def _assert_mousedown_rewrites_the_href(page, context: FessContext) -> None:
-    """search.js:111-127 swaps the raw document href for a /go/ URL on
-    mousedown. Pin the result exactly, mirroring search.js:118."""
-    _search(page, context)
-    link = _first_result_link(page)
+def _assert_href_is_the_go_url(page, context: FessContext) -> None:
+    """The href carries the click-log parameters of this very result."""
+    link = _search(page, context)
+    params = _go_params(link)
 
-    doc_url = link.get_attribute("data-uri")
-    doc_id = link.get_attribute("data-id")
-    order = link.get_attribute("data-order")
-    rt = page.input_value("#rt")
-    query_id = page.input_value("#queryId")
-    context_path = page.input_value("#contextPath")
-
-    # Before mousedown: searchResults.jsp:100-101 renders href and data-uri
-    # from the same ${doc.url_link}, so they must still agree. This is what
-    # makes the post-mousedown assertion below meaningful rather than
-    # vacuous -- it establishes that the href started out as the raw
-    # document URL and therefore actually changed.
-    before = link.get_attribute("href")
-    assert_equal(before, doc_url,
-                 f"expected the un-rewritten href to be the document URL "
-                 f"{doc_url}, got {before}")
-
-    link.dispatch_event("mousedown")
-
-    # get_attribute returns the literal attribute, not a resolved URL, so
-    # this compares against search.js's own string construction.
-    expected = (f"{context_path}/go/?rt={rt}&docId={doc_id}"
-                f"&queryId={query_id}&order={order}")
-    assert_equal(link.get_attribute("href"), expected,
-                 f"mousedown did not rewrite the href as search.js:118 "
-                 f"builds it; expected {expected}, got "
-                 f"{link.get_attribute('href')}")
+    expected = {
+        "rt": [page.input_value("#rt")],
+        "docId": [link.get_attribute("data-id")],
+        "queryId": [page.input_value("#queryId")],
+    }
+    for name, value in expected.items():
+        assert_true(value[0], f"the results view left {name} empty")
+        assert_equal(params.get(name), value,
+                     f"the /go/ href carries {name}={params.get(name)}, "
+                     f"expected {value}; href={link.get_attribute('href')}")
 
 
 def _assert_a_real_click_travels_through_go(page, context: FessContext) -> None:
     """A genuine click must reach /go/ before landing on the document.
 
     The landing URL alone cannot show this -- it is the same document URL
-    whether the click went through /go/ or followed the raw href -- so the
-    network is the only witness. Deleting the mousedown handler from
-    search.js turns this red while leaving the landing assertion green,
-    which is exactly the blind spot it exists to cover.
+    whether the click went through /go/ or opened the document directly --
+    so the network is the only witness.
 
-    This click also causes GoAction (:130) to write a ClickLog, but that is
-    a deliberate omission here, not a gap: addClickLog (SearchLogHelper:314-
-    322) only enqueues to an in-memory ConcurrentLinkedQueue: the queue is
-    drained to the persistent store by AggregateLogJob, a scheduled job, not
-    by this request. Asserting a ClickLog synchronously after the click
+    This click also causes GoAction to write a ClickLog, but that is a
+    deliberate omission here, not a gap: addClickLog only enqueues to an
+    in-memory queue that AggregateLogJob, a scheduled job, drains to the
+    persistent store. Asserting a ClickLog synchronously after the click
     would be racing that job and would be flaky by construction.
     """
-    _search(page, context)
-    link = _first_result_link(page)
+    link = _search(page, context)
     doc_url = link.get_attribute("data-uri")
     doc_id = link.get_attribute("data-id")
 
@@ -155,8 +115,8 @@ def _assert_a_real_click_travels_through_go(page, context: FessContext) -> None:
 
     page.on("request", _record)
     try:
-        link.click()
-        page.wait_for_load_state("domcontentloaded")
+        with page.expect_navigation(url=doc_url):
+            link.click()
     finally:
         # The page outlives this module (main.py reuses one FessContext), so
         # a listener left attached would keep appending for every later test.
@@ -174,68 +134,78 @@ def _assert_a_real_click_travels_through_go(page, context: FessContext) -> None:
                  f"{doc_url}, got {page.url}")
 
 
-def _assert_unknown_docid_lands_on_the_error_view(page, context: FessContext) -> None:
-    """GoAction:105-107: a docId that resolves to no document saves
-    errors.docid_not_found and redirects to /error/, whose error.jsp renders
-    it through <la:errors>. This is where GoAction and CacheAction diverge --
-    CacheAction sends the same condition to /error/notfound/ instead, and
-    that view renders no message at all (see search/cache.py).
+def _goto_error(page, context: FessContext, path: str, status: int) -> None:
+    """Open `path`, which must be answered in place with `status`."""
+    response = page.goto(context.url(path))
+    assert_equal(response.status, status,
+                 f"{path} should answer HTTP {status}, got {response.status}")
+    assert_equal(response.headers.get("x-fess-error-code"), str(status),
+                 f"{path} should carry X-Fess-Error-Code: {status}")
+    assert_equal(urlparse(page.url).path, "/go/",
+                 f"the error should be rendered in place at /go/, got {page.url}")
+    page.wait_for_selector(ERROR_TITLE)
 
-    rt and queryId are real values from the results page even though this
-    path returns before the click log reads them (GoAction:107 returns while
-    Long.parseLong(form.rt) is at :123) -- the point is to vary only the
-    docId, so a failure here can only mean the docId lookup.
+
+def _assert_unknown_docid_is_not_found(page, context: FessContext) -> None:
+    """A docId that resolves to no document is a 404 at /go/ whose view says
+    the document was not found (x-fess-error-detail-key =
+    errors.docid_not_found).
+
+    rt and queryId are real values from the results view even though this
+    path returns before the click log reads them -- the point is to vary
+    only the docId, so a failure here can only mean the docId lookup.
     """
     _search(page, context)
     rt = page.input_value("#rt")
     query_id = page.input_value("#queryId")
     unknown = context.generate_str(20)
 
-    page.goto(context.url(
-        f"/go/?docId={unknown}&rt={rt}&queryId={query_id}"))
-    page.wait_for_load_state("domcontentloaded")
-
-    assert_equal(urlparse(page.url).path, "/error/",
-                 f"an unknown docId should redirect to /error/, "
-                 f"got {page.url}")
-
-    rendered = [el.inner_text().strip()
-                for el in page.query_selector_all(ERROR_MESSAGE)]
-    assert_contains(rendered, tm(Messages.ERRORS_DOCID_NOT_FOUND, unknown),
-                    f"/error/ did not render the docid_not_found message "
-                    f"naming {unknown}; messages were {rendered}")
+    _goto_error(page, context,
+                f"/go/?docId={unknown}&rt={rt}&queryId={query_id}", 404)
+    assert_equal(page.inner_text(ERROR_TITLE).strip(),
+                 tt(context, ThemeKeys.ERROR_TITLE_404),
+                 "an unknown docId did not render the Not Found view")
+    assert_equal(page.inner_text(ERROR_DETAIL).strip(),
+                 tt(context, ThemeKeys.ERROR_DETAIL_DOCID_NOT_FOUND),
+                 "an unknown docId did not say the document was not found")
 
 
-def _assert_missing_required_params_render_the_error_view(
+def _assert_missing_required_params_are_a_bad_request(
         page, context: FessContext) -> None:
-    """GoAction:91 validates the form with an asHtml(error.jsp) fallback,
-    which renders in place -- so a request missing the required rt and
-    queryId (GoForm:53,:66) stays at /go/ and never reaches the docId
-    lookup.
+    """GoAction validates the form first, so a request missing the required
+    rt and queryId is a 400 and never reaches the docId lookup.
 
-    The URL is what separates this from the unknown-docId case above, which
-    redirects to /error/: dropping the validation would send this same
-    request on to the lookup, fail it there, and land it on /error/.
+    The status is what separates this from the unknown-docId case above:
+    dropping the validation would send this same request on to the lookup,
+    fail it there, and answer 404 instead.
     """
-    page.goto(context.url("/go/?docId=whatever"))
-    page.wait_for_load_state("domcontentloaded")
+    _goto_error(page, context, "/go/?docId=whatever", 400)
+    assert_equal(page.inner_text(ERROR_TITLE).strip(),
+                 tt(context, ThemeKeys.ERROR_TITLE_400),
+                 "/go/ without rt/queryId did not render the Bad Request view")
 
-    assert_equal(urlparse(page.url).path, "/go/",
-                 f"a validation failure should render error.jsp in place at "
-                 f"/go/, got {page.url}")
-    assert_equal(page.inner_text("main h2").strip(), t(Labels.ERROR_TITLE),
-                 f"/go/ without rt/queryId did not render error.jsp; "
-                 f"main h2 was {page.inner_text('main h2').strip()!r}")
+
+def _assert_order_is_the_zero_based_position(page, context: FessContext) -> None:
+    """order in the /go/ href is the result's 0-based data-order, as the JSP
+    pages sent it (codelibs/fess#3463)."""
+    link = _search(page, context)
+    order = _go_params(link).get("order")
+    data_order = link.get_attribute("data-order")
+    assert_equal(order, [data_order],
+                 f"the /go/ href sends order={order}, but the result's "
+                 f"data-order is {data_order}; "
+                 f"href={link.get_attribute('href')}")
 
 
 def run(context: FessContext) -> None:
     logger.info("Starting search/go_click")
     page = context.get_wrapped_page() or context.get_admin_page()
 
-    _assert_mousedown_rewrites_the_href(page, context)
+    _assert_href_is_the_go_url(page, context)
     _assert_a_real_click_travels_through_go(page, context)
-    _assert_unknown_docid_lands_on_the_error_view(page, context)
-    _assert_missing_required_params_render_the_error_view(page, context)
+    _assert_unknown_docid_is_not_found(page, context)
+    _assert_missing_required_params_are_a_bad_request(page, context)
+    _assert_order_is_the_zero_based_position(page, context)
 
     logger.info("search/go_click completed")
 

@@ -1,9 +1,13 @@
 """Verify the OpenSearch description document is advertised and served.
 
-Two halves that can regress independently: index.jsp:8-12 only emits the
-<link rel="search"> when ${osddLink} is set (osdd.link.enabled=auto plus
-sso.type=none makes isOsddLinkEnabled() true by default), and OsddAction
-must actually serve the document at the advertised href.
+Two halves that can regress independently: the top page must advertise the
+document with a <link rel="search">, and OsddAction must actually serve it at
+the advertised href.
+
+Since fess#3460, / is the bootstrap static-theme SPA: search.js adds the
+<link rel="search"> to <head> once /api/v2/ui/config has answered, with a
+relative href ("osdd", resolved against the <base href> Fess injects) and the
+site name from that config as its title.
 
 /osdd is behind the loginRequired gate (OsddAction.java:57), so this must not
 run while a test has the UI closed to anonymous users. In the default order
@@ -14,15 +18,13 @@ from urllib.parse import urlparse
 
 from playwright.sync_api import Playwright, sync_playwright
 
-from fess.test import assert_contains, assert_equal, assert_true
-from fess.test.i18n import t
-from fess.test.i18n.keys import Labels
+from fess.test import assert_contains, assert_equal
 from fess.test.ui import FessContext
 
 logger = logging.getLogger(__name__)
 
 OSDD_LINK = 'link[rel="search"][type="application/opensearchdescription+xml"]'
-OSDD_HREF = "/osdd"
+OSDD_PATH = "/osdd"
 # /osdd 301s to /osdd/, so this is where the fetch actually lands.
 OSDD_SERVED_PATH = "/osdd/"
 # The OpenSearch 1.1 spec namespace: what makes the document an OSDD at all.
@@ -36,21 +38,22 @@ def setup(playwright: Playwright) -> FessContext:
 
 
 def _assert_top_page_advertises_osdd(page, context: FessContext) -> str:
-    """The search top page must carry the <link rel="search"> discovery tag."""
-    page.goto(context.url("/"))
-    page.wait_for_load_state("domcontentloaded")
+    """The search top page must carry the <link rel="search"> discovery tag.
+    Returns the path its href resolves to."""
+    with page.expect_response(lambda r: "/api/v2/ui/config" in r.url) as info:
+        page.goto(context.url("/"))
+    # search.js falls back to "Fess" when the config names no site.
+    site_name = info.value.json()["response"].get("site_name") or "Fess"
 
-    link = page.query_selector(OSDD_LINK)
-    assert_true(link is not None,
-                "top page is missing the OSDD <link rel=\"search\"> tag")
+    # A <link> in <head> is never visible, so wait for it to be attached.
+    link = page.wait_for_selector(OSDD_LINK, state="attached")
 
-    href = link.get_attribute("href")
-    assert_equal(href, OSDD_HREF,
-                 f"OSDD link points somewhere unexpected: {href!r}")
-    # The tag's title is localized (labels.index_osdd_title), so it is also a
-    # check that the head renders in the session locale, not a fixed language.
-    assert_equal(link.get_attribute("title"), t(Labels.INDEX_OSDD_TITLE),
-                 "OSDD link title is not the localized label")
+    href = urlparse(link.evaluate("l => l.href")).path
+    assert_equal(href, OSDD_PATH,
+                 f"OSDD link resolves somewhere unexpected: {href!r}")
+    # The title is the site name the SPA got from /api/v2/ui/config.
+    assert_equal(link.get_attribute("title"), site_name,
+                 "OSDD link title is not the configured site name")
     return href
 
 
@@ -65,10 +68,8 @@ def _assert_osdd_document_is_served(page, context: FessContext, href: str) -> No
     """
     response = page.request.get(context.url(href))
 
-    # Deliberately not an HTTP status assertion. An /osdd that resolved to
-    # nothing would redirect to /error/notfound/, which Fess answers with 200,
-    # and page.request follows redirects -- so `status == 200` would still pass
-    # with the endpoint gone. The landing URL is what tells the two apart.
+    assert_equal(response.status, 200,
+                 f"{href} answered HTTP {response.status}")
     assert_equal(urlparse(response.url).path, OSDD_SERVED_PATH,
                  f"{href} did not serve the OSDD; landed on {response.url}")
 

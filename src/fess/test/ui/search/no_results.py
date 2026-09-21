@@ -1,13 +1,16 @@
-"""Search for an impossible query and assert the no-result UI renders."""
+"""Search for an impossible query and assert the no-result UI renders.
+
+Since fess#3460, /search is the bootstrap static-theme SPA, which renders
+the no-result message from its own bundle (search.did_not_match) into
+#empty-did-not-match.
+"""
 import logging
-import re
 
 from playwright.sync_api import Playwright, sync_playwright
 
-from fess.test import assert_contains
-from fess.test.i18n import t
-from fess.test.i18n.keys import Labels
+from fess.test import assert_equal
 from fess.test.ui import FessContext
+from fess.test.ui.search._theme import ThemeKeys, tt
 
 logger = logging.getLogger(__name__)
 
@@ -20,36 +23,22 @@ def setup(playwright: Playwright) -> FessContext:
     return context
 
 
-def _no_results_signature(template: str) -> str:
-    """Return a locale-neutral search signature from the did_not_match template.
-
-    The label looks like e.g. "<b>{0}</b> に一致する情報は見つかりませんでした。"
-    or "Your search - <b>{0}</b> - did not match any documents."
-
-    We strip HTML tags and the {0} placeholder, then return the longest
-    remaining text segment (which becomes our substring assertion target).
-    This avoids false negatives on languages where the rendered query is
-    interpolated mid-sentence.
-    """
-    no_html = re.sub(r"<[^>]+>", "", template)
-    parts = [p.strip() for p in no_html.split("{0}") if p.strip()]
-    if not parts:
-        # Defensive: fall back to the whole template minus html
-        return no_html.strip()
-    return max(parts, key=len)
-
-
 def run(context: FessContext) -> None:
     logger.info("Starting search/no_results")
     page = context.get_wrapped_page() or context.get_admin_page()
 
     page.goto(context.url(f"/search/?q={IMPOSSIBLE_QUERY}"))
-    page.wait_for_load_state("domcontentloaded")
+    # search.js reveals #empty-state only once /api/v2/search has answered
+    # with zero hits; before that the results view is empty either way.
+    page.wait_for_selector("#empty-state:not(.d-none)")
 
-    body_text = page.inner_text("body")
-    expected = _no_results_signature(t(Labels.SEARCH_DID_NOT_MATCH))
-    assert_contains(body_text, expected,
-                    f"expected no-result signature {expected!r} for q={IMPOSSIBLE_QUERY}")
+    # The theme fills search.did_not_match with the query as plain text, so
+    # the whole sentence is predictable, not just the part around {0}.
+    expected = tt(context, ThemeKeys.SEARCH_DID_NOT_MATCH, IMPOSSIBLE_QUERY)
+    actual = page.inner_text("#empty-did-not-match").strip()
+    assert_equal(actual, expected,
+                 f"expected the no-result message {expected!r} for "
+                 f"q={IMPOSSIBLE_QUERY}, got {actual!r}")
 
     logger.info("search/no_results completed")
 

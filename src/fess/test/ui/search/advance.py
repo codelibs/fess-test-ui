@@ -1,26 +1,26 @@
 """Exercise /search/advance: fill the advanced-search fields, submit, and assert
-the query Fess assembled from them.
+the query the form assembled from them.
 
-The advance form GETs /search/ (advance.jsp:18), not /search/advance. On the
-results page SearchAction writes the assembled query back into the form
-(SearchAction.java:207-210: `if (form.hasConditionQuery()) form.q =
-renderData.getSearchQuery()`), and getSearchQuery() is the string
-QueryStringBuilder built from the as.* fields (SearchHelper.java:153,207).
-So input#query on the results page is the assembly's observable output.
+Since fess#3460, /search/advance is the bootstrap static-theme SPA. The form
+fields carry ids, not the JSP's as.* names, and advance.js compose()
+assembles the query client-side, then pushState()s to /search?q=<query>. So
+the q parameter of the URL it lands on is the assembly's observable output
+(the SPA also copies it into the header #query box).
 
 Asserts only on that query round-trip, never on hit counts, so it needs no
-crawled data. The expected values below are exact: they were captured from a
-live Fess and match QueryStringBuilder.appendConditions (QueryStringBuilder
-.java:207-245) term for term, including the quoting of as.epq, the NOT
-prefixing of as.nq, and the leading space being trimmed.
+crawled data. The expected values are exact and follow compose() term for
+term: the quoting of the exact phrase, the NOT prefixing of the excluded
+words, site: before filetype:"...", and the allintitle: prefix glued to the
+first term.
 """
 import logging
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import Playwright, sync_playwright
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
+from fess.test.ui.search._theme import ThemeKeys, tt
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +30,11 @@ NONE_WORDS = "delta"
 SITE = "example.com"
 
 # Every field the form is expected to expose. Renaming or dropping one in
-# advance.jsp turns the corresponding assertion red.
-TEXT_FIELDS = ("as.q", "as.epq", "as.oq", "as.nq", "as.sitesearch")
-SELECT_FIELDS = ("as.filetype", "as.occt", "as.timestamp", "num", "sort", "lang")
+# advance.js turns the corresponding assertion red.
+TEXT_FIELDS = ("#adv-all", "#adv-exact", "#adv-any", "#adv-none", "#adv-site")
+SELECT_FIELDS = ("#adv-filetype", "#adv-occt", "#adv-time", "#adv-lang",
+                 "#adv-num", "#adv-sort")
+SUBMIT = "#advance-form button[type=submit]"
 
 
 def setup(playwright: Playwright) -> FessContext:
@@ -43,90 +45,90 @@ def setup(playwright: Playwright) -> FessContext:
 
 def _open_advance(page, context: FessContext) -> None:
     page.goto(context.url("/search/advance"))
-    page.wait_for_load_state("domcontentloaded")
-    # SearchAction.advance() redirects to /login/ when isLoginRequired();
-    # landing anywhere else means the page under test never rendered.
-    #
-    # Compare the parsed path, not a substring of the whole URL. If the route
-    # disappeared, the 404 handler redirects to /error/notfound/?url=%2Fsearch%2Fadvance
-    # -- which contains "/search/advance" only in percent-encoded form, so a
-    # substring test happens to still work. Relying on that is fragile: it turns
-    # on how the browser normalises %2F, and it would silently stop failing if
-    # that ever changed.
+    # advance.js builds the form once the SPA has its config; the view is
+    # hidden until then.
+    page.wait_for_selector("#advance-form")
+    # Compare the parsed path, not a substring of the whole URL: an unrouted
+    # path is rendered in place too (ErrorPageServlet), so the URL alone
+    # cannot tell the views apart -- the #advance-form wait above and the
+    # heading check in _assert_form_contract do that.
     assert_equal(urlparse(page.url).path.rstrip("/"), "/search/advance",
                  f"expected /search/advance, got {page.url}")
 
 
-def _submit(page) -> None:
-    # advance.jsp:309 -- the form GETs /search/, so this leaves /search/advance.
-    page.click('button[name="search"]')
-    page.wait_for_load_state("domcontentloaded")
+def _submit_and_read_query(page) -> str:
+    """Submit the form and return the q it navigated to (None when absent)."""
+    page.click(SUBMIT)
+    page.wait_for_url(lambda url: urlparse(url).path.rstrip("/") != "/search/advance")
+    return (parse_qs(urlparse(page.url).query).get("q") or [None])[0]
 
 
-def _assert_form_contract(page) -> None:
+def _assert_form_contract(page, context: FessContext) -> None:
+    heading = page.inner_text("#advance-view h2").strip()
+    assert_equal(heading, tt(context, ThemeKeys.ADVANCE_TITLE),
+                 f"#advance-view does not carry the advanced-search heading; "
+                 f"got {heading!r}")
     for field in TEXT_FIELDS:
-        assert_true(page.query_selector(f'input[name="{field}"]') is not None,
-                    f"advance form is missing input[name={field}]")
+        assert_true(page.query_selector(f"input{field}") is not None,
+                    f"advance form is missing input{field}")
     for field in SELECT_FIELDS:
-        assert_true(page.query_selector(f'select[name="{field}"]') is not None,
-                    f"advance form is missing select[name={field}]")
+        assert_true(page.query_selector(f"select{field}") is not None,
+                    f"advance form is missing select{field}")
 
 
 def _assert_words_are_assembled(page, context: FessContext) -> None:
-    """as.q + as.epq + as.nq -> `alpha "beta gamma" NOT delta`."""
+    """all + exact + none -> `alpha "beta gamma" NOT delta`."""
     _open_advance(page, context)
-    page.fill('input[name="as.q"]', ALL_WORDS)
-    page.fill('input[name="as.epq"]', EXACT_PHRASE)
-    page.fill('input[name="as.nq"]', NONE_WORDS)
-    _submit(page)
+    page.fill("#adv-all", ALL_WORDS)
+    page.fill("#adv-exact", EXACT_PHRASE)
+    page.fill("#adv-none", NONE_WORDS)
+    query = _submit_and_read_query(page)
 
-    # Parsed path, not a substring: see _open_advance. A substring test would
-    # also be satisfied by a URL that merely mentions /search/ in a query
-    # parameter -- which is exactly what the 404 handler produces.
-    assert_equal(urlparse(page.url).path.rstrip("/") or "/", "/search",
-                 f"expected /search/ after submit, got {page.url}")
-    # Exact, not a substring check: this pins the quoting of as.epq and the
-    # NOT prefixing of as.nq, either of which could regress independently
-    # while every loose `in` assertion stayed green.
-    assert_equal(page.input_value("#query"),
-                 f'{ALL_WORDS} "{EXACT_PHRASE}" NOT {NONE_WORDS}',
+    # Parsed path, not a substring: a URL that merely mentions /search in a
+    # parameter would satisfy a substring test.
+    assert_equal(urlparse(page.url).path, "/search",
+                 f"expected /search after submit, got {page.url}")
+    # Exact, not a substring check: this pins the quoting of the phrase and
+    # the NOT prefixing, either of which could regress independently while
+    # every loose `in` assertion stayed green.
+    assert_equal(query, f'{ALL_WORDS} "{EXACT_PHRASE}" NOT {NONE_WORDS}',
                  f"assembled query mismatch at {page.url}")
 
 
 def _assert_operators_are_assembled(page, context: FessContext) -> None:
-    """as.q + as.occt + as.filetype + as.sitesearch ->
-    `allintitle: alpha filetype:"pdf" site:example.com`."""
+    """all + occt + filetype + site ->
+    `allintitle:alpha site:example.com filetype:"pdf"`."""
     _open_advance(page, context)
-    page.fill('input[name="as.q"]', ALL_WORDS)
-    page.fill('input[name="as.sitesearch"]', SITE)
-    page.select_option('select[name="as.filetype"]', "pdf")
-    page.select_option('select[name="as.occt"]', "allintitle")
-    _submit(page)
+    page.fill("#adv-all", ALL_WORDS)
+    page.fill("#adv-site", SITE)
+    page.select_option("#adv-filetype", "pdf")
+    page.select_option("#adv-occt", "allintitle")
+    query = _submit_and_read_query(page)
 
-    # as.occt is inserted at position 0 while the rest append, so the space
-    # after the colon is the trimmed-away leading space of " alpha".
-    assert_equal(page.input_value("#query"),
-                 f'allintitle: {ALL_WORDS} filetype:"pdf" site:{SITE}',
+    # compose() emits site: before filetype: and prefixes the whole string
+    # with allintitle: (no space) once the rest is assembled.
+    assert_equal(query, f'allintitle:{ALL_WORDS} site:{SITE} filetype:"pdf"',
                  f"assembled query mismatch at {page.url}")
 
 
 def _assert_occurrence_alone_is_a_noop(page, context: FessContext) -> None:
-    """as.occt on its own must not run a search.
+    """The occurrence select on its own must not run a search.
 
-    SearchRequestParams.hasConditionQuery() (:200-209) deliberately omits
-    AS_OCCURRENCE, so with every other field blank the form submit leaves q
-    blank and SearchAction redirects to the root rather than searching.
-    Adding AS_OCCURRENCE to hasConditionQuery() would turn this red.
+    compose() only prefixes allintitle: onto a non-empty query, so with every
+    other field blank the form navigates to /search with no q, and the
+    results route sends a q-less visit back to the root.
     """
     _open_advance(page, context)
-    page.select_option('select[name="as.occt"]', "allintitle")
-    _submit(page)
+    page.select_option("#adv-occt", "allintitle")
+    page.click(SUBMIT)
+    page.wait_for_selector("#home-view")
 
     landed = urlparse(page.url)
     assert_equal(landed.path, "/",
-                 f"as.occt alone should redirect to the root, got {page.url}")
-    assert_equal(landed.query, "",
-                 f"root redirect should carry no query, got {page.url}")
+                 f"the occurrence select alone should land on the root, "
+                 f"got {page.url}")
+    assert_true("q" not in parse_qs(landed.query),
+                f"the root should carry no query, got {page.url}")
 
 
 def run(context: FessContext) -> None:
@@ -134,7 +136,7 @@ def run(context: FessContext) -> None:
     page = context.get_wrapped_page() or context.get_admin_page()
 
     _open_advance(page, context)
-    _assert_form_contract(page)
+    _assert_form_contract(page, context)
 
     _assert_words_are_assembled(page, context)
     _assert_operators_are_assembled(page, context)

@@ -1,22 +1,20 @@
 """The "login link" checkbox (loginLink) on /admin/general/ controls whether the
 search top page offers a link to the login page.
 
-FessSearchAction registers pageLoginLink unconditionally; index.jsp does the
-real gating in a <c:choose>, where the logged-in user dropdown is an earlier
-<c:when>. The link is therefore only reachable when nobody is logged in, which
-is why the effect is observed with an anonymous HTTP GET rather than in the
-browser: the suite shares one logged-in session across every module, and
-logging out to look at the top page is what made the previous version of this
-test leave settings behind when it failed.
+Since fess#3460 the top page is the bootstrap static-theme SPA. It learns the
+setting from /api/v2/ui/config (features.login_link: true/false, or "sso/"
+when SSO is served), and auth.js renders a#login-btn into #auth-controls only
+for a guest and only when the flag is on. Nothing of that is in the HTML the
+server sends, so the effect is observed in a real guest page -- a separate
+browser context with none of the suite's cookies (FessContext.guest_page) --
+rather than by logging the shared admin session out, which is what made an
+older version of this test leave settings behind when it failed.
 
-The anchor is emitted by <la:link href="/login">, and LastaFlute's link tag
-appends a trailing slash to a resolved action path, so the rendered href is
-"/login/" — a matcher for "/login" without the slash would never fire.
+app.js shows #home-view only after auth.js has rendered the header, so once
+the home view is visible the link's absence is a result, not a race.
 """
 import logging
-import re
-
-import requests
+from urllib.parse import urlparse
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
@@ -34,16 +32,7 @@ FIELD = "#loginLink"
 # lives on this page and `has-text` matches substrings.
 SAVE_BUTTON = 'button[name="update"]'
 
-HTTP_TIMEOUT = 15
-
-# <a ... href="/login/" ...> — tolerant of a servlet context path prefix.
-LOGIN_ANCHOR = re.compile(r'<a[^>]*\shref="[^"]*/login/"', re.IGNORECASE)
-
-# index.jsp's own search box. It is the only view in Fess carrying this id, so
-# it is what tells the top page apart from an error page -- which matters here
-# because every error page includes header.jsp, and header.jsp renders a
-# /login/ anchor under the same pageLoginLink flag index.jsp uses.
-TOP_PAGE_MARKER = 'id="contentQuery"'
+LOGIN_LINK = "#auth-controls a#login-btn"
 
 
 def setup(playwright: Playwright) -> FessContext:
@@ -70,22 +59,33 @@ def _set_login_link(context: FessContext, page, enabled: bool) -> None:
     page.wait_for_load_state("domcontentloaded")
 
 
-def _anonymous_top(context: FessContext) -> str:
-    """Fetch the search top page with no session cookie, and return its HTML."""
-    response = requests.get(context.url(TOP_PATH), timeout=HTTP_TIMEOUT)
-    # loginRequired would bounce an anonymous caller to the login page, and the
-    # login page has no login link either way — that would make the assertions
-    # below meaningless rather than failing honestly.
-    assert_true("/login" not in response.url,
-                f"anonymous GET {TOP_PATH} was redirected to {response.url}; "
-                f"loginRequired must be off for this test to observe anything")
-    # An error page would satisfy BOTH legs of this test -- it inherits the same
-    # pageLoginLink-gated anchor -- so without this the module could pass green
-    # having never seen the top page.
-    assert_true(TOP_PAGE_MARKER in response.text,
-                f"anonymous GET {TOP_PATH} landed on {response.url} without the "
-                f"top page's search box; this is an error page, not the top page")
-    return response.text
+def _guest_view(context: FessContext, enabled: bool) -> None:
+    """Open the top page as a guest and check the login link matches `enabled`."""
+    with context.guest_page() as guest:
+        with guest.expect_response(lambda r: "/api/v2/ui/config" in r.url) as info:
+            guest.goto(context.url(TOP_PATH))
+        flag = info.value.json()["response"]["features"]["login_link"]
+        assert_equal(flag, enabled,
+                     f"loginLink={enabled} but /api/v2/ui/config reports "
+                     f"features.login_link={flag!r}")
+        # Visible only once auth.js has rendered the header (see docstring);
+        # with loginRequired on it would stay hidden behind the login modal.
+        guest.wait_for_selector("#home-view:not([hidden])")
+
+        link = guest.query_selector(LOGIN_LINK)
+        if not enabled:
+            assert_true(link is None,
+                        "loginLink=false but the guest top page still shows "
+                        f"{LOGIN_LINK}")
+            return
+        assert_true(link is not None and link.is_visible(),
+                    f"loginLink=true but the guest top page shows no {LOGIN_LINK}")
+        path = urlparse(link.evaluate("a => a.href")).path
+        assert_equal(path, "/login",
+                     f"the login link resolves to {path}, expected /login")
+        # Without SSO the link opens the SPA's login modal.
+        link.click()
+        guest.wait_for_selector("#login-modal.show #login-form")
 
 
 def run(context: FessContext) -> None:
@@ -103,14 +103,11 @@ def run(context: FessContext) -> None:
     try:
         _set_login_link(context, page, True)
         assert_saved(page)
-        enabled_body = _anonymous_top(context)
-        assert_true(LOGIN_ANCHOR.search(enabled_body),
-                    "loginLink=true but the anonymous top page carries no anchor to /login/")
+        _guest_view(context, True)
 
         _set_login_link(context, page, False)
-        disabled_body = _anonymous_top(context)
-        assert_equal(len(LOGIN_ANCHOR.findall(disabled_body)), 0,
-                     "loginLink=false but the anonymous top page still carries an anchor to /login/")
+        assert_saved(page)
+        _guest_view(context, False)
     finally:
         # assert_saved, not just the click: a rejected save raises nothing --
         # the page simply re-renders with ul.has-error -- so without it the

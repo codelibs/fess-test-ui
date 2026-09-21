@@ -1,13 +1,20 @@
-"""Verify the search form submits via UI: fill q on / and click search → /search/?q=...
+"""Verify the search form submits via UI: fill q on / and click search -> /search?q=...
 
 Existing search/* modules construct the URL directly. This module exercises
-the GET-form action wiring so a regression in form submission would surface.
+the form wiring so a regression in form submission would surface.
+
+Since fess#3460, / is the bootstrap static-theme SPA. The home form
+(#contentQuery / #home-search-submit) does not GET a page: search.js
+pushState()s to /search?q=... and renders #results-view in place, so the
+checks wait for the URL and the view rather than for a page load.
 """
 import logging
+import re
+from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import Playwright, sync_playwright
 
-from fess.test import assert_true
+from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
 
 logger = logging.getLogger(__name__)
@@ -26,21 +33,30 @@ def run(context: FessContext) -> None:
     page = context.get_wrapped_page() or context.get_admin_page()
 
     page.goto(context.url("/"))
-    page.wait_for_load_state("domcontentloaded")
+    page.wait_for_selector("#home-view:not([hidden])")
 
-    page.fill('input[name="q"]', QUERY)
-    page.click('button[name="search"]')
-    page.wait_for_load_state("domcontentloaded")
+    # The header form's input[name=q] precedes the home one in the DOM and is
+    # hidden on the home view, so address the home copy by id.
+    page.fill("#contentQuery", QUERY)
+    with page.expect_response(lambda r: "/api/v2/search?" in r.url) as searched:
+        page.click("#home-search-submit")
+    page.wait_for_url(re.compile(r"/search\?(.*&)?q=" + re.escape(QUERY) + r"(&|$)"))
+    page.wait_for_selector("#results-view")
 
-    assert_true("/search/" in page.url,
-                f"after form submit, expected /search/ in URL, got {page.url}")
-    assert_true(f"q={QUERY}" in page.url,
-                f"after form submit, expected q={QUERY} in URL, got {page.url}")
+    assert_equal(searched.value.status, 200,
+                 f"the submitted search failed: {searched.value.url} answered "
+                 f"HTTP {searched.value.status}")
+    assert_equal(parse_qs(urlparse(searched.value.url).query).get("q"), [QUERY],
+                 f"the search request did not carry q={QUERY}: "
+                 f"{searched.value.url}")
 
-    # Page rendered without raising — body text just has to be non-empty.
-    body_text = page.inner_text("body")
-    assert_true(len(body_text.strip()) > 0,
-                "/search/ after form submit rendered an empty body")
+    landed = urlparse(page.url)
+    assert_equal(landed.path, "/search",
+                 f"after form submit, expected /search, got {page.url}")
+    assert_equal(parse_qs(landed.query).get("q"), [QUERY],
+                 f"after form submit, expected q={QUERY} in URL, got {page.url}")
+    assert_true(page.is_hidden("#home-view"),
+                "the home view is still shown after the search was submitted")
 
     logger.info("search/form_submit completed")
 
