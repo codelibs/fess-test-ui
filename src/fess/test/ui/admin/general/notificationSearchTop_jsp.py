@@ -1,25 +1,29 @@
 """The "search top notification" textarea (notificationSearchTop) on
 /admin/general/ sets a message rendered on the search top page.
 
-Since fess#3460 the top page is the bootstrap static-theme SPA: the server's
-HTML carries an empty <div class="notification" id="home-notification">, and
-app.js fills it from /api/v2/ui/config (notifications.search_top) through
-the theme's HTML sanitizer, hiding it with d-none when the setting is empty.
-So both the config field and the rendered banner are asserted, in a guest
-page (a separate browser context with none of the suite's cookies) so the
-check observes what an ordinary visitor sees.
+RootAction registers it as "notification" and index.jsp emits
+<div class="notification">${notification}</div>. That div is not wrapped in a
+<c:if>, so it exists even when the setting is empty — the assertion has to be
+about the text inside it, not about the element being present.
 
-The test value is deliberately plain alphanumeric text so it round-trips
-through the sanitizer unchanged.
+The top page is fetched with an anonymous HTTP GET so the check does not depend
+on the shared logged-in session, and so it observes what an ordinary visitor
+sees.
+
+${notification} is written unescaped (it is not ${f:h(...)}), which is Fess's
+documented behaviour and lets an administrator put markup in the banner. The
+test value is deliberately plain alphanumeric text so it round-trips through
+the JSP byte-for-byte.
 """
 import logging
+import re
 
-from fess.test import assert_equal
+import requests
+
+from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
 from fess.test.ui.cleanup import Cleanup
-from fess.test.ui.version import run_jsp_variant
 
-from . import notificationSearchTop_jsp
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -32,7 +36,7 @@ FIELD = "#notificationSearchTop"
 # lives on this page and `has-text` matches substrings.
 SAVE_BUTTON = 'button[name="update"]'
 
-BANNER = "#home-view #home-notification"
+HTTP_TIMEOUT = 15
 
 
 def setup(playwright: Playwright) -> FessContext:
@@ -60,25 +64,22 @@ def _save(context: FessContext, page, value: str) -> None:
 
 
 def _notification_on_top_page(context: FessContext) -> str:
-    """Return the banner text a guest sees on the top page, after checking
-    that /api/v2/ui/config carries the same text."""
-    with context.guest_page() as guest:
-        with guest.expect_response(lambda r: "/api/v2/ui/config" in r.url) as info:
-            guest.goto(context.url(TOP_PATH))
-        configured = info.value.json()["response"]["notifications"]["search_top"]
-        # Visible only when app.js filled it; loginRequired would keep the
-        # home view hidden behind the login modal and time out here.
-        banner = guest.wait_for_selector(f"{BANNER}:not(.d-none)")
-        shown = banner.inner_text().strip()
-    assert_equal(shown, configured.strip(),
-                 "the top page banner differs from notifications.search_top "
-                 "in /api/v2/ui/config")
-    return shown
+    """Return the contents of div.notification on the anonymous top page."""
+    response = requests.get(context.url(TOP_PATH), timeout=HTTP_TIMEOUT)
+    # loginRequired would bounce an anonymous caller to the login page, whose
+    # notification comes from a different setting entirely.
+    assert_true("/login" not in response.url,
+                f"anonymous GET {TOP_PATH} was redirected to {response.url}; "
+                f"loginRequired must be off for this test to observe anything")
+    match = re.search(r'<div class="notification">(.*?)</div>', response.text,
+                      re.DOTALL)
+    assert_true(match,
+                "top page has no div.notification; index.jsp should always "
+                "render it, empty or not")
+    return match.group(1).strip()
 
 
 def run(context: FessContext) -> None:
-    if run_jsp_variant(context, notificationSearchTop_jsp):
-        return
     logger.info("Starting notificationSearchTop test")
     page = context.get_admin_page()
 

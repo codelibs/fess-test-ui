@@ -1,33 +1,22 @@
-"""Toggle sort=created.asc vs sort=created.desc and verify result order differs.
-
-Since fess#3460, /search is the bootstrap static-theme SPA, whose result
-links point at go/?rt=... rather than the document, so the document URL is
-read from the title link's data-uri.
-"""
+"""Toggle sort=created.asc vs sort=created.desc and verify result order differs."""
 import logging
 
 from playwright.sync_api import Playwright, sync_playwright
 
 from fess.test import assert_true, assert_not_equal
 from fess.test.ui import FessContext
-from fess.test.ui.search import sort_jsp
-from fess.test.ui.version import run_jsp_variant
 
 logger = logging.getLogger(__name__)
 
 QUERY = "page"
-FIRST_RESULT = "#result0 h3.title a.link"
 
 
 def _first_url(context: FessContext, page, sort: str) -> str:
     page.goto(context.url(f"/search/?q={QUERY}&sort={sort}"))
-    # Each goto reloads the SPA, so #result0 is the new sort's first result.
-    first = page.wait_for_selector(FIRST_RESULT)
-    uri = first.get_attribute("data-uri")
-    assert_true(uri and "sampledata01" in uri,
-                f"no sampledata01 result at {FIRST_RESULT} for q={QUERY} "
-                f"sort={sort}; data-uri={uri!r}")
-    return uri
+    page.wait_for_load_state("domcontentloaded")
+    first = page.query_selector('a[href*="sampledata01"]')
+    assert_true(first is not None, f"no result link for q={QUERY} sort={sort}")
+    return first.get_attribute("href")
 
 
 def setup(playwright: Playwright) -> FessContext:
@@ -37,8 +26,6 @@ def setup(playwright: Playwright) -> FessContext:
 
 
 def run(context: FessContext) -> None:
-    if run_jsp_variant(context, sort_jsp):
-        return
     logger.info("Starting search/sort")
     page = context.get_wrapped_page() or context.get_admin_page()
 

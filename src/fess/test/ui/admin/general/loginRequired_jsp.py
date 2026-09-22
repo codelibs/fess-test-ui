@@ -6,11 +6,10 @@ would send every later module to the login screen. Its restore path is the most
 important code here: the finally block re-checks the setting and, if the admin
 session was somehow lost, logs back in before restoring.
 
-Effect is observed in a guest page -- a separate browser context with none of
-the suite's cookies (FessContext.guest_page) -- rather than by logging the
-browser out. Two reasons: the suite shares one logged-in session across every
-module, and an older version of this test clicked logout before asserting, so
-any failure after that point left loginRequired switched on with no way back.
+Effect is observed with anonymous HTTP GETs rather than by logging the browser
+out. Two reasons: the suite shares one logged-in session across every module,
+and the previous version of this test clicked logout before asserting, so any
+failure after that point left loginRequired switched on with no way back.
 
 The admin's own session is NOT affected by this setting. isLoginRequired() is
 `fessConfig.isLoginRequired() && !getSavedUserBean().isPresent()`, so an
@@ -18,22 +17,18 @@ authenticated user short-circuits to false, and /admin/* is gated by @Secured
 independently. The re-login in the restore path is therefore a safety net, not
 the expected flow.
 
-Since fess#3460 (and #3459) the top page is the bootstrap static-theme SPA and
-the server no longer redirects a guest: / answers the SPA, /api/v2/ui/config
-reports login_required, and app.js keeps the page behind a login modal that
-cannot be closed (its close controls are hidden and hide.bs.modal is
-prevented), or goes to sso/ when SSO is served. The suite runs without SSO,
-so the modal is what is asserted.
+An anonymous GET / with loginRequired=true redirects twice — to /sso/ and then,
+with the default ssoType=none, on to /login/. The assertion is on the final
+landing URL so it does not depend on which SSO type is configured.
 """
 import logging
-from urllib.parse import urlparse
+
+import requests
 
 from fess.test import assert_equal, assert_true
 from fess.test.ui import FessContext
 from fess.test.ui.cleanup import Cleanup
-from fess.test.ui.version import run_jsp_variant
 
-from . import loginRequired_jsp
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -46,7 +41,12 @@ FIELD = "#loginRequired"
 # lives on this page and `has-text` matches substrings.
 SAVE_BUTTON = 'button[name="update"]'
 
-LOGIN_MODAL = "#login-modal.show"
+HTTP_TIMEOUT = 15
+
+# index.jsp's own search box. It is the only view in Fess carrying this id, so
+# it is what tells the restored top page apart from an error page: an error page
+# is not the login page either, so the URL check below cannot see it.
+TOP_PAGE_MARKER = 'id="contentQuery"'
 
 
 def setup(playwright: Playwright) -> FessContext:
@@ -100,43 +100,7 @@ def _restore(context: FessContext, page, original: bool) -> None:
     logger.info(f"loginRequired restored to {original}")
 
 
-def _guest_view(context: FessContext, required: bool) -> None:
-    """Open the top page as a guest and check it is gated iff `required`."""
-    with context.guest_page() as guest:
-        with guest.expect_response(lambda r: "/api/v2/ui/config" in r.url) as info:
-            guest.goto(context.url(TOP_PATH))
-        reported = info.value.json()["response"]["login_required"]
-        assert_equal(reported, required,
-                     f"loginRequired={required} but /api/v2/ui/config reports "
-                     f"login_required={reported!r}")
-
-        if not required:
-            # Public access restored: the home view renders and no login
-            # prompt stands in front of it.
-            guest.wait_for_selector("#home-view:not([hidden])")
-            assert_true(guest.query_selector(LOGIN_MODAL) is None,
-                        "loginRequired=false but the guest is still asked to log in")
-            return
-
-        guest.wait_for_selector(f"{LOGIN_MODAL} #login-form")
-        assert_equal(urlparse(guest.url).path, TOP_PATH,
-                     f"the guest should be asked to log in at {TOP_PATH}, not "
-                     f"sent to {guest.url}")
-        closers = guest.query_selector_all('#login-modal [data-bs-dismiss="modal"]')
-        assert_true(closers and all(not c.is_visible() for c in closers),
-                    "loginRequired=true but the login modal can be closed")
-        # Escape (and a backdrop click) would close an ordinary modal.
-        guest.keyboard.press("Escape")
-        guest.wait_for_timeout(500)
-        assert_true(guest.is_visible(LOGIN_MODAL),
-                    "the required login modal closed on Escape")
-        assert_true(guest.is_hidden("#home-view"),
-                    "loginRequired=true but the guest can see the home view")
-
-
 def run(context: FessContext) -> None:
-    if run_jsp_variant(context, loginRequired_jsp):
-        return
     logger.info("Starting loginRequired test")
     page = context.get_admin_page()
 
@@ -152,11 +116,21 @@ def run(context: FessContext) -> None:
         _set_login_required(context, page, True)
         assert_saved(page)
 
-        _guest_view(context, True)
+        required = requests.get(context.url(TOP_PATH), timeout=HTTP_TIMEOUT)
+        assert_true("/login" in required.url,
+                    f"loginRequired=true but an anonymous GET {TOP_PATH} ended at "
+                    f"{required.url} instead of the login page")
 
         _set_login_required(context, page, False)
-        assert_saved(page)
-        _guest_view(context, False)
+
+        public = requests.get(context.url(TOP_PATH), timeout=HTTP_TIMEOUT)
+        assert_true("/login" not in public.url,
+                    f"loginRequired=false but an anonymous GET {TOP_PATH} was "
+                    f"still redirected to {public.url}")
+        assert_true(TOP_PAGE_MARKER in public.text,
+                    f"loginRequired=false but an anonymous GET {TOP_PATH} landed "
+                    f"on {public.url} without the top page's search box; public "
+                    f"access is not actually restored")
     finally:
         cleanup = Cleanup()
         with cleanup.guard("loginRequired possibly left ON — every later module "

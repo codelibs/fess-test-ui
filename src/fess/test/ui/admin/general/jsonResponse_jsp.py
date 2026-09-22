@@ -8,12 +8,6 @@ manager matching and no LastaFlute action mapped under /api/v2, the request
 falls through to a 404. So the observable effect of this checkbox today is
 exactly: /api/v2/* answers, or it 404s.
 
-Since fess#3460 that 404 is answered in place, at the requested URL, with the
-real status: there is no error/redirect.jsp hop to an /error/notfound/ page
-served as 200 any more. An /api/ path gets a plain-text "Not Found." rather
-than the theme's HTML error view, so status, content type and body are all
-asserted.
-
 The request goes through page.request so it carries the logged-in session
 cookie. That keeps the checkbox as the only variable under test — an anonymous
 call could differ for authentication reasons that have nothing to do with
@@ -24,9 +18,7 @@ import logging
 from fess.test import assert_contains, assert_equal
 from fess.test.ui import FessContext
 from fess.test.ui.cleanup import Cleanup
-from fess.test.ui.version import run_jsp_variant
 
-from . import jsonResponse_jsp
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
 
@@ -71,8 +63,6 @@ def _set_web_api_json(context: FessContext, page, enabled: bool) -> None:
 
 
 def run(context: FessContext) -> None:
-    if run_jsp_variant(context, jsonResponse_jsp):
-        return
     logger.info("Starting jsonResponse (webApiJson) test")
     page = context.get_admin_page()
 
@@ -95,20 +85,15 @@ def run(context: FessContext) -> None:
                      "webApiJson checkbox did not stay unchecked after save")
 
         disabled_response = page.request.get(context.url(API_PATH))
-        # Status, URL, type and body together: the status alone would also
-        # match an HTML error page, and the URL alone a 200 that answered.
-        assert_equal(disabled_response.status, 404,
-                     f"webApiJson=false should leave {API_PATH} unrouted (404), "
-                     f"got HTTP {disabled_response.status}")
-        assert_contains(disabled_response.url, API_PATH,
-                        f"the 404 should be answered in place at {API_PATH}, but "
-                        f"the request ended at {disabled_response.url}")
-        disabled_type = disabled_response.headers.get("content-type", "")
-        assert_contains(disabled_type, "text/plain",
-                        f"the {API_PATH} 404 should be plain text; content-type "
-                        f"was {disabled_type!r}")
-        assert_equal(disabled_response.text().strip(), "Not Found.",
-                     f"unexpected body for the {API_PATH} 404")
+        # The unrouted path does 404 internally, but web.xml maps 404 to
+        # error/redirect.jsp, which sendRedirect()s to /error/notfound/ — an
+        # HTML page served as 200. So the wire never shows a 404 status to a
+        # redirect-following client; landing on the not-found page is the
+        # observable signal that the API is gated off.
+        assert_contains(disabled_response.url, "/error/notfound/",
+                        f"webApiJson=false should leave {API_PATH} unrouted and land on "
+                        f"the not-found page, but the request ended at "
+                        f"{disabled_response.url} (HTTP {disabled_response.status})")
 
         _set_web_api_json(context, page, True)
 
@@ -118,9 +103,10 @@ def run(context: FessContext) -> None:
                      "webApiJson checkbox did not stay checked after save")
 
         enabled_response = page.request.get(context.url(API_PATH))
-        assert_equal(enabled_response.status, 200,
-                     f"webApiJson=true should let {API_PATH} answer, got "
-                     f"HTTP {enabled_response.status}")
+        # Assert the landing URL, not the status: the not-found page is itself
+        # served as 200 (see the disabled case above), so a status check would
+        # pass even if the API were still gated off. Staying on the API path is
+        # what distinguishes "answered" from "laundered into /error/notfound/".
         assert_contains(enabled_response.url, "/api/v2/search",
                         f"webApiJson=true should leave {API_PATH} routed, but the "
                         f"request ended at {enabled_response.url} "

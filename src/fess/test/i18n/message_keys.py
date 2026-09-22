@@ -5,8 +5,10 @@ Fess-rendered user message MUST go through these constants rather than an
 inline key string, so that a Fess rename or removal surfaces as a KeyError
 naming the key instead of a silent mismatch.
 
-Messages reach the search UI through <la:errors> in index.jsp, which wraps
-each one in errors.front_prefix = '<div class="alert alert-warning">'.
+On Fess 15.8 and earlier, messages reach the search UI through <la:errors>
+in index.jsp, which wraps each one in errors.front_prefix =
+'<div class="alert alert-warning">'. Since 15.9 the static theme shows the
+message of an /api/v2/* error response (response.error.message) as it is.
 """
 
 
@@ -28,7 +30,8 @@ class Messages:
     # renders it through <la:errors>; CacheAction (:79-80) redirects to
     # /error/notfound/?message_key=errors.docid_not_found instead, and
     # error/notFound.jsp renders neither <la:errors> nor the message_key
-    # parameter -- so this text is assertable on the Go path only.
+    # parameter -- so this text is assertable on the Go path only. JSP
+    # search pages only (search/go_click_jsp.py, Fess 15.8 and earlier).
     ERRORS_DOCID_NOT_FOUND = "errors.docid_not_found"
 
     # ---- Admin wizard (AdminWizardAction) -----------------------------

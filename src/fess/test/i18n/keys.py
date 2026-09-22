@@ -76,6 +76,7 @@ class Labels:
     SCHEDULER_BUTTON_START = "labels.scheduledjob_button_start"
 
     # ---- Search results ----------------------------------------------
+    # JSP search pages only (search/*_jsp.py, Fess 15.8 and earlier).
     # Renders as a message containing "{0}" placeholder for the query, e.g.
     # JP: "<b>{0}</b> に一致する情報は見つかりませんでした。"
     # EN: "Your search - <b>{0}</b> - did not match any documents."
@@ -89,6 +90,7 @@ class Labels:
     DATA_CRAWLING_BUTTON_CREATE_JOB = "labels.data_crawling_button_create_job"
 
     # ---- Error pages -------------------------------------------------
+    # JSP search pages only (search/*_jsp.py, Fess 15.8 and earlier).
     # One marker per error view, each rendered only by its own page, so a
     # body-text assertion proves which error page was served. All four live
     # in <body>; labels.system_error_title is also the <title> of the other
@@ -112,16 +114,18 @@ class Labels:
     # cannot distinguish error.jsp from error/system.jsp in most locales --
     # verified empirically against ./labels/. Assert exact equality on a
     # selector scoped to error.jsp's own <h2> (e.g. "main h2") instead; see
-    # search/go_click.py and search/cache.py for the pattern.
+    # search/go_click_jsp.py and search/cache_jsp.py for the pattern.
     ERROR_TITLE = "labels.error_title"                        # error/error.jsp
 
     # ---- OpenSearch description (OSDD) -------------------------------
+    # JSP search pages only (search/*_jsp.py, Fess 15.8 and earlier).
     # title= of the <link rel="search"> that index.jsp:8-12 emits.
     INDEX_OSDD_TITLE = "labels.index_osdd_title"
 
     # ---- Cached copy (CacheAction / cache.hbs) -----------------------
     # Text of the per-result cache link (searchResults.jsp:141-148). Only
-    # rendered for documents whose has_cache field is 'true'.
+    # rendered for documents whose has_cache field is 'true'. JSP search
+    # pages only (search/cache_jsp.py, Fess 15.8 and earlier).
     SEARCH_RESULT_CACHE = "labels.search_result_cache"
     # The banner cache.hbs renders above the snapshot. ViewHelper fills
     # {0} with the document URL and {1} with the crawl timestamp, so only

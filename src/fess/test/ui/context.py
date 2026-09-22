@@ -3,6 +3,7 @@ import os
 import random
 import string
 import time
+from contextlib import contextmanager
 from datetime import datetime
 from typing import Callable, Any, Optional, TYPE_CHECKING
 
@@ -192,6 +193,7 @@ class FessContext:
         playwright_locale = explicit_locale or self._browser_locale
 
         self._browser = self._create_browser()
+        self._playwright_locale = playwright_locale
         self._context = self._browser.new_context(locale=playwright_locale)
         self._base_url: str = os.environ.get(
             "FESS_URL", "http://localhost:8080")
@@ -239,6 +241,18 @@ class FessContext:
 
         logger.debug(f"URL: {page.url}")
         return True  # TODO
+
+    @contextmanager
+    def guest_page(self):
+        """Yield a page in a separate browser context: same browser and
+        locale, but none of the suite's cookies, so it sees Fess as an
+        anonymous visitor while the shared admin session stays logged in.
+        Closed on exit."""
+        guest = self._browser.new_context(locale=self._playwright_locale)
+        try:
+            yield guest.new_page()
+        finally:
+            guest.close()
 
     def _start_tracing(self) -> None:
         """Start Playwright tracing."""
