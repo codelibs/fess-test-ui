@@ -209,6 +209,7 @@ The test suite covers the following Fess admin functionality:
 - **Users & Groups**: User account and group management
 - **Roles**: Role-based access control
 - **Labels**: Search result labeling
+- **Tags**: Per-user tag management (Fess 15.9+)
 - **Virtual Hosts**: Virtual host configuration
 
 ### Search Configuration
