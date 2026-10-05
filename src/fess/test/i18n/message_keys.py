@@ -52,3 +52,14 @@ class Messages:
     # action rather than merely reloading the list.
     SUCCESS_JOB_LOG_DELETE_ALL = "success.job_log_delete_all"
     SUCCESS_CRAWLING_INFO_DELETE_ALL = "success.crawling_info_delete_all"
+
+    # ---- Admin tag (AdminTagtypeAction) -------------------------------
+    # validateTagType() adds it to the name field when the name is not
+    # empty but TagTypeHelper.normalizeName() rejects it: blank after NFKC
+    # and whitespace folding (U+3000 passes @Required, whose blank check is
+    # String.trim()), longer than user.tag.name.max.length (default 50, the
+    # {0}), or holding a control/format character.
+    ERRORS_TAGTYPE_INVALID_NAME = "errors.tagtype_invalid_name"
+    # The id is derived from name + owner, so a second create of the same
+    # pair is refused with this global error rather than overwriting.
+    ERRORS_TAGTYPE_ALREADY_EXISTS = "errors.tagtype_already_exists"

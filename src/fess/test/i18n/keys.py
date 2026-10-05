@@ -32,6 +32,7 @@ class Labels:
     MENU_FILE_SYSTEM = "labels.menu_file_system"
     MENU_DATA_STORE = "labels.menu_data_store"
     MENU_LABEL_TYPE = "labels.menu_label_type"
+    MENU_TAG_TYPE = "labels.menu_tag_type"
     MENU_KEY_MATCH = "labels.menu_key_match"
     MENU_BOOST_DOCUMENT_RULE = "labels.menu_boost_document_rule"
     MENU_RELATED_CONTENT = "labels.menu_related_content"
@@ -71,6 +72,14 @@ class Labels:
     CRUD_BUTTON_CANCEL = "labels.crud_button_cancel"
     CRUD_BUTTON_BACK = "labels.crud_button_back"
     CRUD_BUTTON_EDIT = "labels.crud_button_edit"
+
+    # ---- CRUD list search form (collapsed #listSearchForm) -----------
+    CRUD_BUTTON_SEARCH = "labels.crud_button_search"
+    CRUD_BUTTON_RESET = "labels.crud_button_reset"
+
+    # ---- Tag (admin/tagtype) -----------------------------------------
+    TAGTYPE_NAME = "labels.tagtype_name"
+    TAGTYPE_OWNER = "labels.tagtype_owner"
 
     # ---- Scheduler ---------------------------------------------------
     SCHEDULER_BUTTON_START = "labels.scheduledjob_button_start"
