@@ -5,7 +5,7 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 ## Key Features
 
 - **Multi-Version Testing**: Supports Fess 15.x and snapshot builds across different OS distributions (Debian, AL2023, Noble)
-- **Multi-Engine Support**: Tests against OpenSearch 2.x and 3.x configurations
+- **Multi-Engine Support**: Tests against OpenSearch 3.x
 - **Comprehensive Admin UI Coverage**: Tests all major admin functionality including search configurations, dictionaries, user management, and content management
 - **Docker-Based**: Fully containerized test environment with dynamic compose file selection
 - **Multi-Language UI Testing**: Runs against all 16 supported Fess UI locales, defaulting to a random pick per run
@@ -15,8 +15,8 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 
 - **Testing Framework**: [Playwright](https://playwright.dev/) 1.56.0 with Python
 - **Containerization**: Docker & Docker Compose
-- **Search Engines**: OpenSearch 2.19.1, OpenSearch 3.9.0
-- **Fess Versions**: 15.8.0 (stable), snapshot builds
+- **Search Engines**: OpenSearch 3.9.0
+- **Fess Versions**: 15.9.0 (stable), snapshot builds
 - **Base Images**: Microsoft Playwright (Ubuntu Noble), CodeLibs Fess & OpenSearch
 
 ## Status
@@ -29,10 +29,7 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 | [![run-fessx-slim-opensearch3](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-slim-opensearch3.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-slim-opensearch3.yml) | Fess (snapshot-slim) | OpenSearch 3 |
 | [![run-fessx-slim-al2023-opensearch3](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-slim-al2023-opensearch3.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-slim-al2023-opensearch3.yml) | Fess (snapshot-slim-al2023) | OpenSearch 3 |
 | [![run-fessx-slim-noble-opensearch3](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-slim-noble-opensearch3.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fessx-slim-noble-opensearch3.yml) | Fess (snapshot-slim-noble) | OpenSearch 3 |
-| [![run-fess15-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-opensearch2.yml) | Fess 15 | OpenSearch 2 |
-| [![run-fess15-al2023-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch2.yml) | Fess 15 (al2023) | OpenSearch 2 |
 | [![run-fess15-al2023-opensearch3](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch3.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-al2023-opensearch3.yml) | Fess 15 (al2023) | OpenSearch 3 |
-| [![run-fess15-noble-opensearch2](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-noble-opensearch2.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-noble-opensearch2.yml) | Fess 15 (noble) | OpenSearch 2 |
 | [![run-fess15-noble-opensearch3](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-noble-opensearch3.yml/badge.svg)](https://github.com/codelibs/fess-test-ui/actions/workflows/run-fess15-noble-opensearch3.yml) | Fess 15 (noble) | OpenSearch 3 |
 
 ## Quick Start
@@ -57,11 +54,9 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 
 3. **Run tests** (specify both Fess version and search engine)
    ```bash
-   # Fess 15.x with OpenSearch
-   ./run_test.sh fess15 opensearch2
-   ./run_test.sh fess15-al2023 opensearch2
+   # Fess 15.x with OpenSearch 3
+   ./run_test.sh fess15 opensearch3
    ./run_test.sh fess15-al2023 opensearch3
-   ./run_test.sh fess15-noble opensearch2
    ./run_test.sh fess15-noble opensearch3
 
    # Fess snapshot builds with OpenSearch 3
@@ -78,9 +73,9 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 ## Available Configurations
 
 ### Fess Versions
-- `fess15` - Fess 15.8.0 (Debian-based)
-- `fess15-al2023` - Fess 15.8.0 (Amazon Linux 2023)
-- `fess15-noble` - Fess 15.8.0 (Ubuntu Noble)
+- `fess15` - Fess 15.9.0 (Debian-based)
+- `fess15-al2023` - Fess 15.9.0 (Amazon Linux 2023)
+- `fess15-noble` - Fess 15.9.0 (Ubuntu Noble)
 - `fessx` - Latest snapshot (Debian-based)
 - `fessx-al2023` - Latest snapshot (Amazon Linux 2023)
 - `fessx-noble` - Latest snapshot (Ubuntu Noble)
@@ -89,7 +84,6 @@ Automated UI testing suite for [Fess](https://fess.codelibs.org/) (Enterprise Se
 - `fessx-slim-noble` - Latest snapshot, slim image (Ubuntu Noble)
 
 ### Search Engines
-- `opensearch2` - OpenSearch 2.19.1 (`fess15*` only: snapshot builds refuse to start against OpenSearch 2)
 - `opensearch3` - OpenSearch 3.9.0
 
 ## Configuration
@@ -255,7 +249,6 @@ fess-test-ui/
 ├── compose.yaml                      # Base test container configuration
 ├── compose-fess15.yaml               # Fess 15 configuration
 ├── compose-fessx.yaml                # Fess snapshot configuration
-├── compose-opensearch2.yaml          # OpenSearch 2 configuration
 ├── compose-opensearch3.yaml          # OpenSearch 3 configuration
 ├── run_test.sh                       # Test execution script
 ├── Dockerfile                        # Test container image
@@ -342,7 +335,7 @@ branch alone does not trigger it).
 Run tests with visible browser:
 ```bash
 export HEADLESS=false
-./run_test.sh fess15 opensearch2
+./run_test.sh fess15 opensearch3
 ```
 
 ### Log Analysis
@@ -373,7 +366,7 @@ docker compose build --no-cache
 1. Fork the repository
 2. Create feature branch (`git checkout -b feature/new-test`)
 3. Add tests following existing patterns
-4. Ensure all tests pass: `./run_test.sh fess15 opensearch2`
+4. Ensure all tests pass: `./run_test.sh fess15 opensearch3`
 5. Submit pull request
 
 ### Code Style
