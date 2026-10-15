@@ -13,9 +13,11 @@ renders the link as `a.cache href="cache/?docId=...&hq=..." target=_blank`
 (relative to the <base href> Fess injects), so this module opens that URL in
 the same tab instead of following the new tab. cache.js asks
 /api/v2/cache/<docId> for the stored copy -- still rendered through cache.hbs,
-so it keeps its <base href> to the original document, its banner
-(labels.search_cache_msg) and the <strong> highlighting -- and shows it in a
-sandboxed iframe.cache-frame, where frame_locator reads it.
+so it keeps its banner (labels.search_cache_msg) and the <strong>
+highlighting -- and shows it in a sandboxed iframe.cache-frame, where
+frame_locator reads it. The frame's CSP ignores <base href>, so since
+fess#3580 (15.9.0) cache.js drops that element and rewrites the stored copy's
+relative URLs to absolute ones against the original document instead.
 
 A docId that is missing or resolves to nothing never reaches an error page:
 the view stays at /cache/ and says labels.cache_not_found in an
@@ -111,10 +113,11 @@ def _assert_cache_link_is_rendered(page, context: FessContext) -> None:
 
 
 def _assert_snapshot_renders(page, context: FessContext) -> None:
-    """Opening the link serves the snapshot: cache.hbs points <base> at the
-    original document, banners it with the localized labels.search_cache_msg,
-    and emits the stored copy with the hq terms wrapped in
-    query.highlight.tag.pre (default <strong>)."""
+    """Opening the link serves the snapshot: cache.js resolves the stored
+    copy's relative URLs against the original document (and drops <base>),
+    cache.hbs banners it with the localized labels.search_cache_msg, and the
+    stored copy has the hq terms wrapped in query.highlight.tag.pre (default
+    <strong>)."""
     title_link = _search(page, context)
     doc_url = title_link.get_attribute("data-uri")
     href = _cache_link(page).get_attribute("href")
@@ -127,10 +130,19 @@ def _assert_snapshot_renders(page, context: FessContext) -> None:
     page.wait_for_selector(CACHE_FRAME)
     frame = page.frame_locator(CACHE_FRAME)
 
-    base = frame.locator("base").first
-    assert_equal(base.get_attribute("href"), doc_url,
-                 f"cache.hbs should <base href> the original document "
-                 f"{doc_url}, got {base.get_attribute('href')}")
+    frame.locator("body").wait_for()
+    # cache.js drops <base> and rewrites relative URLs instead. Which sampledata
+    # page ranks first varies; index.html links its siblings with root-relative
+    # hrefs and the intro pages have no links, so this is vacuous for the latter.
+    assert_equal(frame.locator("base").count(), 0,
+                 "cache.js should drop <base> from the snapshot")
+    origin = "{0.scheme}://{0.netloc}/".format(urlparse(doc_url))
+    hrefs = frame.locator("a[href]").evaluate_all(
+        "els => els.map(e => e.getAttribute('href'))")
+    unresolved = [h for h in hrefs if not h.startswith(origin)]
+    assert_equal(unresolved, [],
+                 f"the snapshot kept links that are not resolved against "
+                 f"{doc_url}: {unresolved[:5]}")
 
     # ViewHelper fills {0} with the document URL and {1} with the crawl
     # timestamp. Only the {0} half is predictable, so assert up to {1}.
