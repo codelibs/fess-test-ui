@@ -8,7 +8,7 @@ does not, the user silently lands on the Not Found view instead of the view
 the branch names; this module pins where users actually land so that closing
 one of those gaps is a deliberate, visible change rather than a silent one.
 
-The suite runs against several Fess builds (README: 15.8.0 and snapshot), and
+The suite runs against several Fess builds (README: 15.9.0 and snapshot; this JSP-era module serves 15.8.0 and earlier), and
 the request error view is served at a different path depending on the build --
 /error/badrequrest/ on 15.7.0 and below, /error/badrequest/ on 15.8.0 and
 later. No version flag is plumbed to the runner, so which spelling is routed
