@@ -18,7 +18,7 @@ authenticated user short-circuits to false, and /admin/* is gated by @Secured
 independently. The re-login in the restore path is therefore a safety net, not
 the expected flow.
 
-Since fess#3460 (and #3459) the top page is the bootstrap static-theme SPA and
+Since fess#3460 (and #3459) the top page is the bootstrap theme SPA and
 the server no longer redirects a guest: / answers the SPA, /api/v2/ui/config
 reports login_required, and app.js keeps the page behind a login modal that
 cannot be closed (its close controls are hidden and hide.bs.modal is

@@ -8,7 +8,7 @@ one of crawler.document.cache.supported.mimetypes (default text/html) -- so
 sampledata's HTML pages qualify and its files/sample.txt does not. The query
 below is chosen to hit HTML.
 
-Since fess#3460, /cache is the bootstrap static-theme SPA. The results view
+Since fess#3460, /cache is the bootstrap theme SPA. The results view
 renders the link as `a.cache href="cache/?docId=...&hq=..." target=_blank`
 (relative to the <base href> Fess injects), so this module opens that URL in
 the same tab instead of following the new tab. cache.js asks

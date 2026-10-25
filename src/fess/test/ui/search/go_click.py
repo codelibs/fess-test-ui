@@ -4,7 +4,7 @@ how GoAction's two failure paths are answered.
 /go/ is the redirect-and-click-log hop behind every search-result click, and
 nothing else in the suite touches it.
 
-Since fess#3460, /search is the bootstrap static-theme SPA. It renders the
+Since fess#3460, /search is the bootstrap theme SPA. It renders the
 title link's href as the /go/ URL up front --
 go/?rt=<#rt>&docId=<data-id>&queryId=<#queryId>&order=<n>, relative to the
 <base href> Fess injects -- with the document URL kept in data-uri. There is
@@ -21,7 +21,7 @@ never fabricated: GoAction calls Long.parseLong(form.rt) with no guard, so
 an invented rt would be a 500 rather than the behaviour under test.
 
 Errors are rendered in place: ErrorPageServlet answers the failing /go/ URL
-itself with the real HTTP status and the static theme's error view, and
+itself with the real HTTP status and the theme's error view, and
 names the reason in <meta name="x-fess-error-detail-key">, which the view
 turns into its .error-detail-additional line. So status, URL and the
 rendered title/detail are all observable.

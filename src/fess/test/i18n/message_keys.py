@@ -7,7 +7,7 @@ naming the key instead of a silent mismatch.
 
 On Fess 15.8 and earlier, messages reach the search UI through <la:errors>
 in index.jsp, which wraps each one in errors.front_prefix =
-'<div class="alert alert-warning">'. Since 15.9 the static theme shows the
+'<div class="alert alert-warning">'. Since 15.9 the theme shows the
 message of an /api/v2/* error response (response.error.message) as it is.
 """
 

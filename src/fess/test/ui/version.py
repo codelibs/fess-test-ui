@@ -2,7 +2,7 @@
 
 Fess 15.9 (codelibs/fess#3460) serves the search pages -- /, /search, /help,
 /profile, /cache, /advance, /error/* -- from the bundled bootstrap
-static-theme SPA and renders errors in place; 15.8 and earlier serve JSPs
+theme SPA and renders errors in place; 15.8 and earlier serve JSPs
 and redirect errors through error/redirect.jsp. A module asserting one of the
 two UIs therefore keeps its JSP-era version next to it as <module>_jsp.py,
 unchanged, and its run() starts with
@@ -25,7 +25,7 @@ from fess.test.ui import FessContext
 
 logger = logging.getLogger(__name__)
 
-# The first Fess whose search pages are the static-theme SPA.
+# The first Fess whose search pages are the theme SPA.
 STATIC_THEME_SINCE = (15, 9)
 
 # Every /api/admin/* response is an ApiResult, whose envelope carries the

@@ -1,6 +1,6 @@
 """Search for 'intro' and assert at least one result renders.
 
-Since fess#3460, /search is the bootstrap static-theme SPA: the results are
+Since fess#3460, /search is the bootstrap theme SPA: the results are
 rendered after /api/v2/search answers, so the check waits for them.
 """
 import logging

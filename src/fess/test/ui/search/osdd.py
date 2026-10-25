@@ -4,7 +4,7 @@ Two halves that can regress independently: the top page must advertise the
 document with a <link rel="search">, and OsddAction must actually serve it at
 the advertised href.
 
-Since fess#3460, / is the bootstrap static-theme SPA: search.js adds the
+Since fess#3460, / is the bootstrap theme SPA: search.js adds the
 <link rel="search"> to <head> once /api/v2/ui/config has answered, with a
 relative href ("osdd", resolved against the <base href> Fess injects) and the
 site name from that config as its title.

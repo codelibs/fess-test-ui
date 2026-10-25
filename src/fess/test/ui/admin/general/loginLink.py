@@ -1,7 +1,7 @@
 """The "login link" checkbox (loginLink) on /admin/general/ controls whether the
 search top page offers a link to the login page.
 
-Since fess#3460 the top page is the bootstrap static-theme SPA. It learns the
+Since fess#3460 the top page is the bootstrap theme SPA. It learns the
 setting from /api/v2/ui/config (features.login_link: true/false, or "sso/"
 when SSO is served), and auth.js renders a#login-btn into #auth-controls only
 for a guest and only when the flag is on. Nothing of that is in the HTML the

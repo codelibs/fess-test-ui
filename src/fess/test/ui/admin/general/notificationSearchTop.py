@@ -1,7 +1,7 @@
 """The "search top notification" textarea (notificationSearchTop) on
 /admin/general/ sets a message rendered on the search top page.
 
-Since fess#3460 the top page is the bootstrap static-theme SPA: the server's
+Since fess#3460 the top page is the bootstrap theme SPA: the server's
 HTML carries an empty <div class="notification" id="home-notification">, and
 app.js fills it from /api/v2/ui/config (notifications.search_top) through
 the theme's HTML sanitizer, hiding it with d-none when the setting is empty.

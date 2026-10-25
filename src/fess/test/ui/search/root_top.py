@@ -1,7 +1,7 @@
-"""Open / and assert the static-theme home view renders its search form and
+"""Open / and assert the theme home view renders its search form and
 the Help header link.
 
-Since fess#3460, / is the bootstrap static-theme SPA. The page carries two
+Since fess#3460, / is the bootstrap theme SPA. The page carries two
 copies of input[name=q] / button[name=search]: the header form (#query /
 #searchButton), which the home view hides, and the home form
 (#contentQuery / #home-search-submit). The header copy comes first in the

@@ -1,7 +1,7 @@
 """Exercise /search/advance: fill the advanced-search fields, submit, and assert
 the query the form assembled from them.
 
-Since fess#3460, /search/advance is the bootstrap static-theme SPA. The form
+Since fess#3460, /search/advance is the bootstrap theme SPA. The form
 fields carry ids, not the JSP's as.* names, and advance.js compose()
 assembles the query client-side, then pushState()s to /search?q=<query>. So
 the q parameter of the URL it lands on is the assembly's observable output

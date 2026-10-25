@@ -1,7 +1,7 @@
-"""Strings from the bootstrap static theme's own i18n bundle.
+"""Strings from the bootstrap theme's own i18n bundle.
 
 Since fess#3460 the search pages (/, /search, /help, /profile, /cache,
-/advance, /error/*) are the built-in bootstrap static-theme SPA, not JSPs.
+/advance, /error/*) are the built-in bootstrap theme SPA, not JSPs.
 The SPA does not render fess_label/fess_message text: it localizes itself
 from its own JSON bundle, served at
 /themes/bootstrap/i18n/messages.<locale>.json, where <locale> is the Fess

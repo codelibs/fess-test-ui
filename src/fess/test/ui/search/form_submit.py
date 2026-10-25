@@ -3,7 +3,7 @@
 Existing search/* modules construct the URL directly. This module exercises
 the form wiring so a regression in form submission would surface.
 
-Since fess#3460, / is the bootstrap static-theme SPA. The home form
+Since fess#3460, / is the bootstrap theme SPA. The home form
 (#contentQuery / #home-search-submit) does not GET a page: search.js
 pushState()s to /search?q=... and renders #results-view in place, so the
 checks wait for the URL and the view rather than for a page load.

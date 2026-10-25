@@ -1,6 +1,6 @@
 """Toggle sort=created.asc vs sort=created.desc and verify result order differs.
 
-Since fess#3460, /search is the bootstrap static-theme SPA, whose result
+Since fess#3460, /search is the bootstrap theme SPA, whose result
 links point at go/?rt=... rather than the document, so the document URL is
 read from the title link's data-uri.
 """
