@@ -6,7 +6,7 @@ robust across Fess/OpenSearch combinations where default analyzers tokenize
 content differently (observed: `q=page` returns 23 hits on OpenSearch 2 but
 <=10 hits on OpenSearch 3 because of analyzer differences).
 
-Since fess#3460, /search is the bootstrap static-theme SPA. Its pager
+Since fess#3460, /search is the bootstrap theme SPA. Its pager
 (#pagination) is a list of `a.page-link href="#"` driven by click handlers
 that re-run /api/v2/search with start=<offset>, so a page turn is observed
 through that request and the re-rendered results, not a page load.

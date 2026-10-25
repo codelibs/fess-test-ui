@@ -1,6 +1,6 @@
 """Apply a label facet filter and verify it narrows the results.
 
-Since fess#3460, /search is the bootstrap static-theme SPA. Its facet
+Since fess#3460, /search is the bootstrap theme SPA. Its facet
 entries under #facet-body are `a href="#"` with click handlers, showing the
 label's name and a count badge; a click re-runs /api/v2/search with
 ex_q=label:<value>. So the click is verified through that request.

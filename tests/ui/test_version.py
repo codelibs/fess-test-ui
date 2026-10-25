@@ -1,4 +1,4 @@
-"""Tests for the Fess version switch between the JSP and static-theme modules.
+"""Tests for the Fess version switch between the JSP and theme modules.
 
 Picking the wrong line would not fail loudly in a Docker run: it would report
 every search module as a broken UI. The parsing and the dispatch are pure

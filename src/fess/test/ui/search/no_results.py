@@ -1,6 +1,6 @@
 """Search for an impossible query and assert the no-result UI renders.
 
-Since fess#3460, /search is the bootstrap static-theme SPA, which renders
+Since fess#3460, /search is the bootstrap theme SPA, which renders
 the no-result message from its own bundle (search.did_not_match) into
 #empty-did-not-match.
 """

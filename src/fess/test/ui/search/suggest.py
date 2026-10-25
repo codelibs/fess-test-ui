@@ -1,6 +1,6 @@
 """Type partial text into the home search box and verify the suggest wiring.
 
-Since fess#3460, / and /search are the bootstrap static-theme SPA. /search
+Since fess#3460, / and /search are the bootstrap theme SPA. /search
 without q sends the visitor back to the home view, so the home box
 (#contentQuery) is where a user first types. search.js debounces the input
 and asks /api/v2/suggest-words for the prefix; the answer fills

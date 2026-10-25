@@ -2,7 +2,7 @@
 
 Since fess#3460 there is no error/redirect.jsp hop: ErrorPageServlet answers
 the failing URL itself with the real status, an X-Fess-Error-Code header, and
-the bootstrap static theme's error view, into which it injects
+the bootstrap theme's error view, into which it injects
 <meta name="x-fess-error-code"> (and, when a reason is known,
 <meta name="x-fess-error-detail-key">). error.js renders the view from those:
 h2.error-title from the theme bundle's error.title_<code>, and the requested

@@ -1,6 +1,6 @@
 """Verify the search query errors reach the user on the results page.
 
-Since fess#3460, /search is the bootstrap static-theme SPA. It asks
+Since fess#3460, /search is the bootstrap theme SPA. It asks
 /api/v2/search, and the two query errors this module covers come back from
 that API as HTTP 400 with the localized server message in
 response.error.message. search.js shows that message in

@@ -1,7 +1,7 @@
 """Verify /profile renders the password-change form and rejects a mismatched
 confirmation.
 
-Since fess#3460, /profile is the bootstrap static-theme SPA: profile.js
+Since fess#3460, /profile is the bootstrap theme SPA: profile.js
 builds #password-form with #old-password / #new-password /
 #confirm-password and checks new != confirm client-side, before any
 request. The mismatch shows profile.error_mismatch in #profile-error and
