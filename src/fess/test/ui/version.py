@@ -28,6 +28,11 @@ logger = logging.getLogger(__name__)
 # The first Fess whose search pages are the theme SPA.
 STATIC_THEME_SINCE = (15, 9)
 
+# The first Fess whose JSP login page (/login/) no longer renders the
+# "login page notification" (fess#3728): the theme shows it in the login
+# modal from /api/v2/ui/config notifications.login instead.
+LOGIN_NOTIFICATION_IN_THEME_SINCE = (15, 10)
+
 # Every /api/admin/* response is an ApiResult, whose envelope carries the
 # product version (major.minor, SystemHelper#getProductVersion) -- the 401
 # an unauthenticated caller gets included, on 15.8 as on 15.9. The admin API
@@ -67,13 +72,15 @@ def fess_version(context: FessContext) -> Tuple[int, int]:
     return _version
 
 
-def run_jsp_variant(context: FessContext, jsp_module: ModuleType) -> bool:
-    """Run jsp_module on Fess older than STATIC_THEME_SINCE; return whether
-    it ran, i.e. whether the caller should stop there."""
+def run_jsp_variant(context: FessContext, jsp_module: ModuleType,
+                    since: Tuple[int, int] = STATIC_THEME_SINCE) -> bool:
+    """Run jsp_module on Fess older than `since` (default
+    STATIC_THEME_SINCE); return whether it ran, i.e. whether the caller
+    should stop there."""
     version = fess_version(context)
-    if version >= STATIC_THEME_SINCE:
+    if version >= since:
         return False
-    logger.info(f"Fess {version[0]}.{version[1]} serves the JSP search "
-                f"pages: running {jsp_module.__name__}")
+    logger.info(f"Fess {version[0]}.{version[1]} predates {since[0]}.{since[1]}: "
+                f"running {jsp_module.__name__}")
     jsp_module.run(context)
     return True
