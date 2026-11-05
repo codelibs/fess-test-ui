@@ -1,37 +1,38 @@
 """The "login page notification" textarea (notificationLogin) on
-/admin/general/ sets a message rendered on the login screen.
+/admin/general/ sets a message shown on the login screen.
 
-LoginAction registers it as "notification" and login/index.jsp emits
-<div class="notification">${notification}</div>. That div is not wrapped in a
-<c:if>, so it exists even when the setting is empty — the assertion has to be
-about the text inside it, not about the element being present.
+Since fess#3728 (15.10) the JSP login page (/login/) no longer renders it: the
+theme fills it into the login modal from /api/v2/ui/config
+(notifications.login). The config endpoint is therefore what is asserted here;
+the 15.9 and earlier behaviour (a <div class="notification"> on /login/) lives
+in notificationLogin_jsp.py and runs on those versions.
 
-The login screen is fetched with an anonymous HTTP GET: the suite shares one
+The config is fetched with an anonymous HTTP GET: the suite shares one
 logged-in session across every module, and logging out to look at the login
-page is what made the previous version of this test leave settings behind when
-it failed.
+screen is what made the previous version of this test leave settings behind
+when it failed.
 
-${notification} is written unescaped (it is not ${f:h(...)}), which is Fess's
-documented behaviour and lets an administrator put markup in the banner. The
-test value is deliberately plain alphanumeric text so it round-trips through
-the JSP byte-for-byte.
+The test value is deliberately plain alphanumeric text so it round-trips
+unchanged.
 """
 import logging
-import re
 
 import requests
 
-from fess.test import assert_equal, assert_true
+from fess.test import assert_equal
 from fess.test.ui import FessContext
 from fess.test.ui.cleanup import Cleanup
+from fess.test.ui.version import (LOGIN_NOTIFICATION_IN_THEME_SINCE,
+                                  run_jsp_variant)
 
+from . import notificationLogin_jsp
 from ._saved import assert_saved
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
 
 GENERAL_PATH = "/admin/general/"
-LOGIN_PATH = "/login/"
+CONFIG_PATH = "/api/v2/ui/config"
 FIELD = "#notificationLogin"
 # Selected by element name, not label: a second submit button (name="sendmail")
 # lives on this page and `has-text` matches substrings.
@@ -64,18 +65,18 @@ def _save(context: FessContext, page, value: str) -> None:
     page.wait_for_load_state("domcontentloaded")
 
 
-def _notification_on_login_page(context: FessContext) -> str:
-    """Return the contents of div.notification on the anonymous login page."""
-    response = requests.get(context.url(LOGIN_PATH), timeout=HTTP_TIMEOUT)
-    match = re.search(r'<div class="notification">(.*?)</div>', response.text,
-                      re.DOTALL)
-    assert_true(match,
-                "login page has no div.notification; login/index.jsp should "
-                "always render it, empty or not")
-    return match.group(1).strip()
+def _notification_in_ui_config(context: FessContext) -> str:
+    """Return notifications.login from the anonymous /api/v2/ui/config."""
+    response = requests.get(context.url(CONFIG_PATH), timeout=HTTP_TIMEOUT)
+    assert_equal(response.status_code, 200,
+                 f"{CONFIG_PATH} answered HTTP {response.status_code}")
+    return response.json()["response"]["notifications"]["login"].strip()
 
 
 def run(context: FessContext) -> None:
+    if run_jsp_variant(context, notificationLogin_jsp,
+                       since=LOGIN_NOTIFICATION_IN_THEME_SINCE):
+        return
     logger.info("Starting notificationLogin test")
     page = context.get_admin_page()
 
@@ -96,15 +97,15 @@ def run(context: FessContext) -> None:
         assert_equal(persisted, test_value,
                      f"notificationLogin textarea lost the saved value; got {persisted!r}")
 
-        assert_equal(_notification_on_login_page(context), test_value,
-                     "saved notificationLogin text is not what the login page shows")
+        assert_equal(_notification_in_ui_config(context), test_value,
+                     "saved notificationLogin text is not what notifications.login carries")
     finally:
         # assert_saved, not just the click: a rejected save raises nothing --
         # the page simply re-renders with ul.has-error -- so without it the
         # log below would claim a restore that never happened.
         cleanup = Cleanup()
         with cleanup.guard(f"notificationLogin not restored (left showing the "
-                           f"test banner {test_value!r} on the login page)"):
+                           f"test banner {test_value!r} on the login screen)"):
             _save(context, page, original)
             assert_saved(page)
             logger.info("notificationLogin restored")

@@ -121,6 +121,17 @@ def test_run_jsp_variant_leaves_15_9_and_later_to_the_caller(monkeypatch, ver):
     assert jsp.ran == []
 
 
+@pytest.mark.parametrize("ver, runs_jsp", [
+    ("15.9", True), ("15.9.0", True), ("15.10", False), ("16.0", False)])
+def test_run_jsp_variant_since_moves_the_gate(monkeypatch, ver, runs_jsp):
+    _serve(monkeypatch, 401, _api_result(ver))
+    jsp = _JspModule()
+    ran = version.run_jsp_variant(
+        _FakeContext(), jsp, since=version.LOGIN_NOTIFICATION_IN_THEME_SINCE)
+    assert ran is runs_jsp
+    assert bool(jsp.ran) is runs_jsp
+
+
 def test_run_jsp_variant_propagates_a_failed_detection(monkeypatch):
     _serve(monkeypatch, 404, ValueError("Not Found."))
     jsp = _JspModule()
@@ -140,11 +151,11 @@ def test_every_switched_module_has_its_jsp_variant():
     switched = []
     for path in sorted(root.rglob("*.py")):
         text = path.read_text(encoding="utf-8")
-        for name in re.findall(r"run_jsp_variant\(context, (\w+)\)", text):
+        for name in re.findall(r"run_jsp_variant\(context, (\w+)[,)]", text):
             switched.append(path)
             assert name == path.stem + "_jsp", path
             package = ".".join(path.relative_to(root.parent.parent.parent)
                                .with_suffix("").parts[:-1])
             module = importlib.import_module(f"{package}.{name}")
             assert callable(getattr(module, "run", None)), module
-    assert len(switched) == 19
+    assert len(switched) == 20
