@@ -76,6 +76,7 @@ from fess.test.ui.search import (
 )
 
 from fess.test.ui import integration
+from fess.test.ui.integration import role_search_workflow as integration_role_search
 
 # Leaves of the general/ and sysinfo/ packages. The default run drives the two
 # composers imported above; these aliases exist so TEST_MODULES can name a
@@ -232,6 +233,7 @@ def get_modules_to_run() -> List[Any]:
         'searchlist': sysinfo_searchlist,
         'searchlog': sysinfo_searchlog,
         'crawling_config': wizard_crawling_config,
+        'role_search': integration_role_search,
     }
 
     # Check for TEST_MODULES environment variable
