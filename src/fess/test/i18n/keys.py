@@ -141,6 +141,10 @@ class Labels:
     # the {0} half is predictable from a test.
     SEARCH_CACHE_MSG = "labels.search_cache_msg"
 
+    # ---- Theme admin screen (/admin/theme/) ----------------------------
+    THEME_UPLOAD = "labels.theme_upload"
+    THEME_SET_DEFAULT = "labels.theme_set_default"
+
     # ---- Read-only page markers (for body-content assertions) --------
     SYSTEM_INFO_FESS_PROP_TITLE = "labels.system_info_fess_prop_title"
     LIST_COULD_NOT_FIND_CRUD_TABLE = "labels.list_could_not_find_crud_table"

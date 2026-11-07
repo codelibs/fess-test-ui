@@ -63,3 +63,16 @@ class Messages:
     # The id is derived from name + owner, so a second create of the same
     # pair is refused with this global error rather than overwriting.
     ERRORS_TAGTYPE_ALREADY_EXISTS = "errors.tagtype_already_exists"
+
+    # ---- Theme admin screen (AdminThemeAction) ------------------------
+    # Info messages, saved with saveInfo() and shown on the list page after
+    # the redirect. {0} is the uploaded file name / the theme name.
+    SUCCESS_UPLOAD_THEME = "success.upload_theme"
+    SUCCESS_DELETE_THEME = "success.delete_theme"
+    SUCCESS_CHANGE_DEFAULT_THEME = "success.change_default_theme"
+    SUCCESS_CLEAR_DEFAULT_THEME = "success.clear_default_theme"
+    # Errors re-rendered on the page that was submitted. {0} is the theme name
+    # (the file name for the unsupported-file one).
+    ERRORS_FILE_IS_NOT_SUPPORTED = "errors.file_is_not_supported"
+    ERRORS_THEME_IS_BUILTIN = "errors.theme_is_builtin"
+    ERRORS_THEME_MANIFEST_INVALID_NAME = "errors.theme_manifest_invalid_name"
