@@ -206,6 +206,7 @@ The test suite covers the following Fess admin functionality:
 - **Labels**: Search result labeling
 - **Tags**: Per-user tag management (Fess 15.9+)
 - **Virtual Hosts**: Virtual host configuration
+- **Page structure**: every admin screen listed in the sidebar has one heading that its title names
 - **Themes**: Upload a theme ZIP, make it the default, check what an anonymous visitor gets, reject bad archives (Fess 15.9+)
 
 ### Search Page
