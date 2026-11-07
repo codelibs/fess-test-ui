@@ -202,6 +202,7 @@ The test suite covers the following Fess admin functionality:
 - **Boost Documents**: Document ranking boost configuration
 - **Users & Groups**: User account and group management
 - **Roles**: Role-based access control
+- **Role-based search visibility**: crawl pages with role/group permissions and check what each signed-in user and an anonymous visitor can find (`TEST_MODULES=role_search`)
 - **Labels**: Search result labeling
 - **Tags**: Per-user tag management (Fess 15.9+)
 - **Virtual Hosts**: Virtual host configuration

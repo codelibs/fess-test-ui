@@ -1,6 +1,6 @@
 from fess.test.ui import FessContext
 
-from . import crawler_workflow, dictionary_workflow, suggest_workflow, user_permission_workflow
+from . import crawler_workflow, dictionary_workflow, role_search_workflow, suggest_workflow, user_permission_workflow
 
 
 def run(context: FessContext) -> None:
@@ -14,5 +14,6 @@ def run(context: FessContext) -> None:
     """
     crawler_workflow.run(context)
     user_permission_workflow.run(context)
+    role_search_workflow.run(context)
     dictionary_workflow.run(context)
     suggest_workflow.run(context)
