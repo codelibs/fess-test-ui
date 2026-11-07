@@ -217,6 +217,7 @@ The test suite covers the following Fess admin functionality:
 
 ### Search Configuration
 - **Web Crawl Config**: Web crawling configuration management
+- **Web Authentication**: crawl a page behind BASIC authentication with and without a Web Authentication entry, and see the 401 on the failure URL list (`TEST_MODULES=webauth_crawl`)
 - **File Crawl Config**: File system crawling setup
 - **Duplicate Hosts**: Duplicate content handling
 - **Key Match**: Keyword matching rules
