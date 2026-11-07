@@ -208,6 +208,12 @@ The test suite covers the following Fess admin functionality:
 - **Virtual Hosts**: Virtual host configuration
 - **Themes**: Upload a theme ZIP, make it the default, check what an anonymous visitor gets, reject bad archives (Fess 15.9+)
 
+### Search Page
+- **Query forms**: trailing `?`, wildcards, fuzzy typos and quoted exact words
+- **Result markup**: markup in a title or snippet is neutralised, not run
+- **History**: Back/Forward, reload and deep links restore the same view
+- **Click redirect**: `/go/` appends the `hash` parameter only when it is a fragment (Fess 15.10+)
+
 ### Search Configuration
 - **Web Crawl Config**: Web crawling configuration management
 - **File Crawl Config**: File system crawling setup

@@ -40,7 +40,7 @@ from fess.test import assert_contains, assert_equal, assert_true
 from fess.test.ui import FessContext
 from fess.test.ui.search._theme import ThemeKeys, tt
 from fess.test.ui.search import go_click_jsp
-from fess.test.ui.version import run_jsp_variant
+from fess.test.ui.version import GO_FRAGMENT_SINCE, fess_version, run_jsp_variant
 
 logger = logging.getLogger(__name__)
 
@@ -187,6 +187,31 @@ def _assert_missing_required_params_are_a_bad_request(
                  "/go/ without rt/queryId did not render the Bad Request view")
 
 
+def _go_location(page, context: FessContext, link, **extra) -> str:
+    """The Location header /go/ answers with for this result, redirect not followed."""
+    params = _go_params(link)
+    query = {name: values[0] for name, values in params.items()}
+    query.update(extra)
+    response = page.request.get(context.url("/go/"), params=query, max_redirects=0)
+    assert_equal(response.status, 302, f"/go/ with {extra} should redirect, got HTTP {response.status}")
+    return response.headers["location"]
+
+
+def _assert_hash_is_appended_only_as_a_fragment(page, context: FessContext) -> None:
+    """The hash parameter of /go/ becomes the fragment of the redirect, but only
+    when it is one (codelibs/fess#3674): a hash that does not start with '#'
+    used to be glued onto the document URL, so hash=.evil.example sent the
+    visitor to another host."""
+    link = _search(page, context)
+    doc_url = link.get_attribute("data-uri")
+    assert_equal(_go_location(page, context, link), doc_url, "/go/ without a hash")
+    assert_equal(_go_location(page, context, link, hash="#section"), doc_url + "#section",
+                 "/go/ with a #fragment hash")
+    for hostile in (".evil.example", "@evil.example", "plain", "/path"):
+        assert_equal(_go_location(page, context, link, hash=hostile), doc_url,
+                     f"/go/ with the non-fragment hash {hostile!r}")
+
+
 def _assert_order_is_the_zero_based_position(page, context: FessContext) -> None:
     """order in the /go/ href is the result's 0-based data-order, as the JSP
     pages sent it (codelibs/fess#3463)."""
@@ -210,6 +235,8 @@ def run(context: FessContext) -> None:
     _assert_unknown_docid_is_not_found(page, context)
     _assert_missing_required_params_are_a_bad_request(page, context)
     _assert_order_is_the_zero_based_position(page, context)
+    if fess_version(context) >= GO_FRAGMENT_SINCE:
+        _assert_hash_is_appended_only_as_a_fragment(page, context)
 
     logger.info("search/go_click completed")
 

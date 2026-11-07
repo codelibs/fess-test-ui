@@ -71,6 +71,9 @@ from fess.test.ui.search import (
     top as search_top,
     i18n_smoke as search_i18n_smoke,
     multibyte_query as search_multibyte_query,
+    history as search_history,
+    result_markup as search_result_markup,
+    query_forms as search_query_forms,
     layout_overflow as search_layout_overflow,
     console_errors as search_console_errors,
     multibyte_admin_input as search_multibyte_admin_input,
@@ -200,6 +203,9 @@ def get_modules_to_run() -> List[Any]:
         'search_related': search_related,
         'search_i18n_smoke': search_i18n_smoke,
         'search_multibyte_query': search_multibyte_query,
+        'search_history': search_history,
+        'search_result_markup': search_result_markup,
+        'search_query_forms': search_query_forms,
         'search_layout_overflow': search_layout_overflow,
         'search_console_errors': search_console_errors,
         'search_multibyte_admin_input': search_multibyte_admin_input,
@@ -260,6 +266,7 @@ def get_modules_to_run() -> List[Any]:
             # go_click's click writes a ClickLog for the document it opens.
             search_go_click, search_cache,
             search_i18n_smoke, search_multibyte_query,
+            search_query_forms, search_result_markup, search_history,
             search_layout_overflow, search_console_errors,
             search_multibyte_admin_input,
             # search_osdd must precede general: /osdd is behind the

@@ -72,6 +72,24 @@ def fess_version(context: FessContext) -> Tuple[int, int]:
     return _version
 
 
+# The first Fess line with the 15.10 fixes the search checks below depend on:
+# a quoted single word is an exact phrase (fess#3670) and /go/ appends the
+# hash parameter only when it is a fragment (fess#3674).
+QUOTED_EXACT_SINCE = (15, 10)
+GO_FRAGMENT_SINCE = (15, 10)
+
+
+def skip_before_theme(context: FessContext, module: str) -> bool:
+    """True, after logging, when the search pages are still JSPs (Fess 15.8
+    and earlier): modules written for the theme SPA only have nothing to
+    check there."""
+    version = fess_version(context)
+    if version >= STATIC_THEME_SINCE:
+        return False
+    logger.info(f"Fess {version[0]}.{version[1]} serves JSP search pages: skipping {module}")
+    return True
+
+
 def run_jsp_variant(context: FessContext, jsp_module: ModuleType,
                     since: Tuple[int, int] = STATIC_THEME_SINCE) -> bool:
     """Run jsp_module on Fess older than `since` (default
