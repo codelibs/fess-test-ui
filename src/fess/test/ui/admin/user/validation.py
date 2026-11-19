@@ -6,6 +6,7 @@ from fess.test.i18n import t
 from fess.test.i18n.keys import Labels
 from fess.test.ui import FessContext
 from fess.test.ui.cleanup import Cleanup, delete_by_name
+from fess.test.ui.version import USER_NAME_CONFLICT_SINCE, fess_version
 from playwright.sync_api import Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
@@ -124,8 +125,7 @@ def run(context: FessContext) -> None:
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
         page.wait_for_load_state("domcontentloaded")
 
-        # Try to create a duplicate. Fess has no duplicate check for user
-        # names; the id is Base64(name), so this upserts the same row.
+        # Try to create a duplicate. The id is Base64(name).
         page.click(f"text={t(Labels.CRUD_LINK_CREATE)}")
         page.fill("input[name=\"name\"]", duplicate_username)
         page.fill("input[name=\"password\"]", "password456")
@@ -133,11 +133,25 @@ def run(context: FessContext) -> None:
         page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
         page.wait_for_load_state("domcontentloaded")
 
-        assert_equal(page.locator("ul.has-error").count(), 0,
-                     "Fess does not reject duplicate names")
-        assert_equal(page.locator(f'table tr:has-text("{duplicate_username}")').count(), 1,
-                     "duplicate user create must upsert onto a single row")
-        logger.info("Test 5 passed: duplicate username upserts onto a single row")
+        if fess_version(context) >= USER_NAME_CONFLICT_SINCE:
+            # fess#3820: the create is refused and reported as a failed
+            # create, which leaves the create form re-rendered under the
+            # list URL.
+            assert_true(page.locator("ul.has-error").count() > 0,
+                        "creating a user under a taken name must be rejected")
+            page.goto(context.url("/admin/user/"))
+            page.wait_for_load_state("domcontentloaded")
+            assert_equal(page.locator(f'table tr:has-text("{duplicate_username}")').count(), 1,
+                         "the rejected duplicate must leave a single stored user")
+            logger.info("Test 5 passed: duplicate username rejected")
+        else:
+            # Before fess#3820 there is no duplicate check, so this upserts
+            # the same row.
+            assert_equal(page.locator("ul.has-error").count(), 0,
+                         "Fess does not reject duplicate names")
+            assert_equal(page.locator(f'table tr:has-text("{duplicate_username}")').count(), 1,
+                         "duplicate user create must upsert onto a single row")
+            logger.info("Test 5 passed: duplicate username upserts onto a single row")
     finally:
         cleanup = Cleanup()
         with cleanup.guard(f"user '{duplicate_username}'"):
