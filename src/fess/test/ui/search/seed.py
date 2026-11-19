@@ -87,6 +87,11 @@ def _create_webconfig(page, context: FessContext) -> None:
               "(?i).*(css|js|jpeg|jpg|gif|png|bmp|wmv|xml|ico)")
     page.fill("input[name=\"maxAccessCount\"]", "100")
     page.fill("input[name=\"numOfThread\"]", "5")
+    # The form defaults to 10000 ms. A crawl ends only after its threads have
+    # found the queue empty 20 times, each wait lasting this long, so the
+    # default adds ~3.5 minutes to every Default Crawler run (the seed one and
+    # every one the integration workflows start after it).
+    page.fill("input[name=\"intervalTime\"]", "100")
     page.fill("textarea[name=\"description\"]", "E2E sampledata (managed by search/seed)")
 
     # Attach both labels. The labelTypeIds select is hidden by display:none in
