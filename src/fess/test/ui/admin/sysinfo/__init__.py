@@ -9,11 +9,12 @@ structural pages first, then the ones that read crawl/search data.
 """
 from fess.test.ui import FessContext
 
-from . import (backup, backup_download, configinfo, crawlinfo, deleteall,
+from . import (admin_shell, backup, backup_download, configinfo, crawlinfo, deleteall,
                failureurl, joblog, logfile, maintenance, searchlist, searchlog)
 
 
 def run(context: FessContext) -> None:
+    admin_shell.run(context)
     configinfo.run(context)
     logfile.run(context)
     crawlinfo.run(context)
