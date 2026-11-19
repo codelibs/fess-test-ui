@@ -78,6 +78,11 @@ def fess_version(context: FessContext) -> Tuple[int, int]:
 QUOTED_EXACT_SINCE = (15, 10)
 GO_FRAGMENT_SINCE = (15, 10)
 
+# The first Fess line that refuses to create a user whose name is already
+# taken (fess#3820); before it the create replaced the stored user, with its
+# password and roles, and was answered as a success.
+USER_NAME_CONFLICT_SINCE = (15, 10)
+
 
 def skip_before_theme(context: FessContext, module: str) -> bool:
     """True, after logging, when the search pages are still JSPs (Fess 15.8
