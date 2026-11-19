@@ -48,6 +48,8 @@ def create_webconfig(page: Page, context: FessContext, name: str, url: str,
     page.fill('textarea[name="includedUrls"]', url)
     page.fill('input[name="maxAccessCount"]', "1")
     page.fill('input[name="numOfThread"]', "1")
+    # Not the 10000 ms default: see search/seed.py, a crawl waits it out 20 times.
+    page.fill('input[name="intervalTime"]', "100")
     page.fill('textarea[name="permissions"]', f"{permission}\n{ADMIN_PERMISSION}")
     page.click(f'button:has-text("{t(Labels.CRUD_BUTTON_CREATE)}")')
     page.wait_for_load_state("domcontentloaded")
