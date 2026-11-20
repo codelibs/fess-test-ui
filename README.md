@@ -207,6 +207,7 @@ The test suite covers the following Fess admin functionality:
 - **Tags**: Per-user tag management (Fess 15.9+)
 - **Virtual Hosts**: Virtual host configuration
 - **Page structure**: every admin screen listed in the sidebar has one heading that its title names
+- **Console shell**: the admin pages load every stylesheet, script and font without an error, the side menu opens, closes and collapses (also on a phone-sized screen, with no sideways scroll), and the search log date range survives a search; on the 15.10 console the long forms open in tabs and short fields stand side by side (`TEST_MODULES=admin_shell`; it checks what the page offers, so it runs on Fess 15.9 and on the console of 15.10)
 - **Themes**: Upload a theme ZIP, make it the default, check what an anonymous visitor gets, reject bad archives (Fess 15.9+)
 
 ### Search Page

@@ -99,6 +99,7 @@ from fess.test.ui.admin.general import (
     storage as general_storage,
 )
 from fess.test.ui.admin.sysinfo import (
+    admin_shell as sysinfo_admin_shell,
     backup as sysinfo_backup,
     backup_download as sysinfo_backup_download,
     configinfo as sysinfo_configinfo,
@@ -232,6 +233,7 @@ def get_modules_to_run() -> List[Any]:
         'plugin': general_plugin,
         'popularWord': general_popularWord,
         'storage': general_storage,
+        'admin_shell': sysinfo_admin_shell,
         'backup': sysinfo_backup,
         'backup_download': sysinfo_backup_download,
         'configinfo': sysinfo_configinfo,

@@ -65,10 +65,32 @@ class PageWrapper:
         """Delegate unknown attributes to the wrapped page."""
         return getattr(self._page, name)
 
+    _REVEAL_TAB_JS = """el => {
+        const pane = el.closest('.tab-pane');
+        if (pane && !pane.classList.contains('active')) {
+            const link = document.getElementById(pane.id + '-tab')
+                || document.querySelector('[data-toggle="tab"][href="#' + pane.id + '"]');
+            if (link) { link.click(); }
+        }
+    }"""
+
+    def _reveal(self, selector: str) -> None:
+        """Open the tab that holds the element, if it sits in a hidden one.
+
+        Since the long admin forms are split into tabs (Fess 15.10), a field outside the open tab is
+        not visible and cannot be filled. A page without tabs, or an element that is not on the page
+        yet, is left to the action itself.
+        """
+        try:
+            self._page.locator(selector).first.evaluate(self._REVEAL_TAB_JS, timeout=2000)
+        except Exception:
+            pass
+
     def click(self, selector: str, **kwargs) -> None:
         """Click an element with logging."""
         selector = _normalize_text_selector(selector)
         self._logger.debug(f"[CLICK] selector='{selector}'")
+        self._reveal(selector)
         try:
             self._page.click(selector, **kwargs)
             self._logger.debug(f"[CLICK] completed: {selector}")
@@ -81,6 +103,7 @@ class PageWrapper:
         selector = _normalize_text_selector(selector)
         display_value = '***' if self._is_sensitive_field(selector) else self._truncate_value(value)
         self._logger.debug(f"[FILL] selector='{selector}' value='{display_value}'")
+        self._reveal(selector)
         try:
             self._page.fill(selector, value, **kwargs)
             self._logger.debug(f"[FILL] completed: {selector}")
@@ -135,6 +158,7 @@ class PageWrapper:
         """Get input value with logging."""
         selector = _normalize_text_selector(selector)
         self._logger.debug(f"[INPUT_VALUE] selector='{selector}'")
+        self._reveal(selector)
         result = self._page.input_value(selector, **kwargs)
         display_result = '***' if self._is_sensitive_field(selector) else self._truncate_value(result)
         self._logger.debug(f"[INPUT_VALUE] value='{display_result}'")
@@ -144,6 +168,7 @@ class PageWrapper:
         """Select option with logging."""
         selector = _normalize_text_selector(selector)
         self._logger.debug(f"[SELECT_OPTION] selector='{selector}' value='{value}'")
+        self._reveal(selector)
         try:
             result = self._page.select_option(selector, value, **kwargs)
             self._logger.debug(f"[SELECT_OPTION] completed: {selector}")
@@ -151,6 +176,22 @@ class PageWrapper:
         except Exception as e:
             self._logger.error(f"[SELECT_OPTION] failed: {selector} - {e}")
             raise
+
+    def check(self, selector: str, **kwargs) -> None:
+        """Check a checkbox, opening its tab first."""
+        selector = _normalize_text_selector(selector)
+        self._reveal(selector)
+        self._page.check(selector, **kwargs)
+
+    def uncheck(self, selector: str, **kwargs) -> None:
+        """Uncheck a checkbox, opening its tab first."""
+        selector = _normalize_text_selector(selector)
+        self._reveal(selector)
+        self._page.uncheck(selector, **kwargs)
+
+    def is_checked(self, selector: str, **kwargs) -> bool:
+        """Tell whether a checkbox is checked."""
+        return self._page.is_checked(_normalize_text_selector(selector), **kwargs)
 
     def screenshot(self, **kwargs) -> bytes:
         """Take screenshot with logging."""
